@@ -1,0 +1,485 @@
+.blackjack-container {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+.game-layout {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+.blackjack-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  padding: 20px 30px;
+  background: rgba(26, 31, 46, 0.6);
+  border-radius: 15px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.blackjack-header h1 {
+  font-size: 2.5rem;
+  color: #d4af37;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.balance-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.balance-label {
+  font-size: 0.9rem;
+  color: #cbd5e0;
+  margin-bottom: 5px;
+}
+
+.balance-amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.connection-warning {
+  padding: 20px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.connection-warning p {
+  color: #fca5a5;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Betting Panel */
+.betting-panel {
+  background: linear-gradient(135deg, rgba(20, 25, 45, 0.95), rgba(30, 35, 60, 0.95));
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  position: sticky;
+  top: 20px;
+}
+
+.betting-panel h2 {
+  color: #d4af37;
+  margin-bottom: 25px;
+  font-size: 1.5rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.bet-section {
+  margin-bottom: 30px;
+}
+
+.bet-section label {
+  display: block;
+  color: #cbd5e0;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.bet-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.bet-input-group button {
+  width: 40px;
+  height: 40px;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 8px;
+  color: #d4af37;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.bet-input-group button:hover {
+  background: rgba(212, 175, 55, 0.4);
+  transform: scale(1.1);
+}
+
+.bet-input-group input {
+  flex: 1;
+  padding: 12px;
+  background: rgba(26, 31, 46, 0.8);
+  border: 2px solid rgba(212, 175, 55, 0.5);
+  border-radius: 8px;
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.quick-bet-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.quick-bet-chips button {
+  padding: 10px;
+  background: rgba(212, 175, 55, 0.15);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+.deal-button {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #d4af37 0%, #f0c674 100%);
+  border: none;
+  border-radius: 12px;
+  color: #1a1f2e;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.deal-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+}
+
+.deal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+} color: #d4af37;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.side-bet {
+  margin-bottom: 15px;
+}
+
+.side-bet label {
+  display: block;
+  color: #cbd5e0;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.deal-button {
+  padding: 18px 60px;
+  background: linear-gradient(135deg, #d4af37 0%, #f0c674 100%);
+  border: none;
+  border-radius: 12px;
+  color: #1a1f2e;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+}
+
+.deal-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+}
+
+.deal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Game Table */
+.game-table {
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.15), rgba(101, 67, 33, 0.15));
+  padding: 60px 40px;
+  border-radius: 25px;
+  border: 3px solid rgba(212, 175, 55, 0.4);
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.game-table::before {
+  content: 'BLACKJACK PAYS 3 TO 2';
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+  color: white;
+  padding: 8px 30px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  box-shadow: 0 5px 15px rgba(220, 38, 38, 0.5);
+}
+
+.hand {
+  margin-bottom: 50px;
+  text-align: center;
+}
+
+.hand h3 {
+  color: #d4af37;
+  margin-bottom: 25px;
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: -30px;
+  flex-wrap: wrap;
+  min-height: 200px;
+  align-items: center;
+  perspective: 1000px;
+}
+
+.card {
+  width: 140px;
+  height: 200px;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 18px;
+  position: relative;
+  transition: all 0.3s;
+  animation: dealCard 0.4s ease-out;
+  margin: 0 -15px;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  z-index: 10;
+}
+
+@keyframes dealCard {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) rotateY(90deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateY(0);
+  }
+}
+
+.card-hidden {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-back {
+  font-size: 4rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.card-rank {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.card-suit {
+  font-size: 3rem;
+  text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.card-rank.red,
+.card-suit.red {
+  color: #dc2626;
+}
+
+.card-rank.black,
+.card-suit.black {
+  color: #1f2937;
+}
+
+/* Game Controls */
+.game-controls {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  margin-top: 40px;
+}
+
+.action-button {
+  padding: 20px 60px;
+  border: none;
+  border-radius: 15px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.hit-button {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  color: white;
+}
+
+.hit-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(6, 182, 212, 0.6);
+}
+
+.stand-button {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.stand-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(239, 68, 68, 0.6);
+}
+
+/* Game Result */
+.game-result {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.result-message {
+  font-size: 1.8rem;
+  color: #d4af37;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.play-again-button {
+  padding: 18px 50px;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+}
+
+.play-again-button:hover {
+  transform: translateY(-3px);
+.game-message {
+  text-align: center;
+  color: #cbd5e0;
+  font-size: 1.2rem;
+  margin-top: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .betting-panel {
+    position: relative;
+    top: 0;
+    max-width: 500px;
+    margin: 0 auto 30px;
+  }
+}
+
+@media (max-width: 768px) {
+  .blackjack-header {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .blackjack-header h1 {
+    font-size: 2rem;
+  }
+
+  .balance-display {
+    align-items: center;
+  }
+
+  .betting-panel {
+    padding: 20px;
+  }
+
+  .quick-bet-chips {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cards {
+    gap: 10px;
+  }
+
+  .card {
+    width: 90px;
+    height: 130px;
+    padding: 10px;
+    margin: 0 -10px;
+  }
+
+  .card-rank {
+    font-size: 1.5rem;
+  }
+
+  .card-suit {
+    font-size: 2rem;
+  }
+
+  .game-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+} .card-rank {
+    font-size: 1.5rem;
+  }
+
+  .card-suit {
+    font-size: 2rem;
+  }
+
+  .game-controls {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+}

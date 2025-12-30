@@ -1,0 +1,505 @@
+.mines-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 100vh;
+}
+
+.mines-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  padding: 20px 30px;
+  background: rgba(26, 31, 46, 0.6);
+  border-radius: 15px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.mines-header h1 {
+  font-size: 2.5rem;
+  color: #d4af37;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
+
+.balance-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.balance-label {
+  font-size: 0.9rem;
+  color: #cbd5e0;
+  margin-bottom: 5px;
+}
+
+.balance-amount {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.connection-warning {
+  padding: 20px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.connection-warning p {
+  color: #fca5a5;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Main Content Layout */
+.mines-content {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 30px;
+}
+
+/* Controls Panel */
+.controls-panel {
+  background: rgba(26, 31, 46, 0.8);
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  height: fit-content;
+}
+
+.control-section {
+  margin-bottom: 30px;
+}
+
+.control-section label {
+  display: block;
+  color: #d4af37;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.bet-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.bet-controls button {
+  padding: 10px 15px;
+  background: rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 8px;
+  color: #d4af37;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.bet-controls button:hover {
+  background: rgba(212, 175, 55, 0.3);
+  transform: translateY(-2px);
+}
+
+.bet-controls input {
+  flex: 1;
+  padding: 10px;
+  background: rgba(26, 31, 46, 0.8);
+  border: 2px solid rgba(212, 175, 55, 0.5);
+  border-radius: 8px;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.quick-bets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.quick-bets button {
+  padding: 10px;
+  background: rgba(100, 200, 100, 0.2);
+  border: 1px solid rgba(100, 200, 100, 0.5);
+  border-radius: 8px;
+  color: #6ee7b7;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.quick-bets button:hover {
+  background: rgba(100, 200, 100, 0.3);
+  transform: scale(1.05);
+}
+
+.mine-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.mine-selector button {
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.mine-selector button:hover {
+  background: rgba(239, 68, 68, 0.3);
+  transform: scale(1.05);
+}
+
+.mine-selector button.selected {
+  background: rgba(239, 68, 68, 0.4);
+  border-color: #ef4444;
+  color: #fee2e2;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.start-button {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #d4af37 0%, #f0c674 100%);
+  border: none;
+  border-radius: 12px;
+  color: #1a1f2e;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+}
+
+.start-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(212, 175, 55, 0.6);
+}
+
+.start-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Game Stats */
+.game-stats {
+  margin-bottom: 30px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  color: #cbd5e0;
+  font-weight: 500;
+}
+
+.stat-value {
+  color: #d4af37;
+  font-weight: 700;
+}
+
+/* Multiplier Display */
+.multiplier-display {
+  background: rgba(16, 185, 129, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.multiplier-label {
+  color: #6ee7b7;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+
+.multiplier-value {
+  color: #10b981;
+  font-size: 2.5rem;
+  font-weight: 900;
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.profit-display {
+  color: #cbd5e0;
+  margin-top: 10px;
+  font-size: 1.1rem;
+}
+
+.profit-positive {
+  color: #10b981;
+  font-weight: 700;
+}
+
+.cashout-button {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4);
+}
+
+.cashout-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.6);
+}
+
+.cashout-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Game Result */
+.game-result {
+  text-align: center;
+}
+
+.result-message {
+  background: rgba(26, 31, 46, 0.8);
+  padding: 30px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+.result-message.won {
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+}
+
+.result-message.lost {
+  border: 2px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+}
+
+.result-icon {
+  font-size: 4rem;
+  margin-bottom: 15px;
+}
+
+.result-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.result-message.won .result-title {
+  color: #10b981;
+}
+
+.result-message.lost .result-title {
+  color: #ef4444;
+}
+
+.result-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #d4af37;
+}
+
+.play-again-button {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4);
+}
+
+.play-again-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(59, 130, 246, 0.6);
+}
+
+/* Game Grid */
+.game-grid-panel {
+  background: rgba(26, 31, 46, 0.8);
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mines-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 15px;
+  width: 600px;
+  height: 600px;
+  margin: 0 auto;
+}
+
+.cell {
+  width: 100%;
+  height: 100%;
+  background: rgba(45, 55, 72, 0.8);
+  border: 2px solid rgba(212, 175, 55, 0.4);
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.cell.hidden:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.6);
+  transform: scale(1.05);
+}
+
+.cell.revealed {
+  cursor: default;
+  animation: revealCell 0.3s ease-out;
+}
+
+@keyframes revealCell {
+  0% {
+    transform: scale(0.8) rotateY(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) rotateY(90deg);
+  }
+  100% {
+    transform: scale(1) rotateY(180deg);
+    opacity: 1;
+  }
+}
+
+.cell.safe {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(52, 211, 153, 0.3));
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+}
+
+.cell.mine {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.3));
+  border-color: rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  animation: explode 0.5s ease-out;
+}
+
+@keyframes explode {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.gem-icon {
+  animation: shimmer 1s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.mine-icon {
+  animation: shake 0.5s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  75% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .mines-content {
+    grid-template-columns: 1fr;
+  }
+
+  .controls-panel {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .mines-header {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .mines-header h1 {
+    font-size: 2rem;
+  }
+
+  .balance-display {
+    align-items: center;
+  }
+
+  .controls-panel {
+    padding: 20px;
+  }
+
+  .game-grid-panel {
+    padding: 20px;
+  }
+
+  .mines-grid {
+    gap: 10px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .cell {
+    font-size: 2rem;
+  }
+}

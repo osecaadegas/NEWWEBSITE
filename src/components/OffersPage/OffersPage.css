@@ -1,0 +1,539 @@
+.offers-page {
+  min-height: 100vh;
+  background: #1a1d23;
+  padding: 80px 20px 40px;
+}
+
+.offers-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.offers-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.offers-container h1 {
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.offers-subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 40px;
+}
+
+/* Premium Card Ribbon */
+.premium-card-box > span {
+  position: absolute;
+  overflow: hidden;
+  width: 100px;
+  height: 100px;
+  top: -10px;
+  left: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  filter: drop-shadow(0 0 10px rgba(255, 101, 71, 0.8)) 
+          drop-shadow(0 0 20px rgba(255, 177, 68, 0.6))
+          drop-shadow(0 0 30px rgba(255, 112, 83, 0.4));
+  animation: flameGlow 1.5s ease-in-out infinite;
+}
+
+.premium-card-box > span::before {
+  content: 'Premium';
+  position: absolute;
+  width: 150%;
+  height: 30px;
+  font-size: 0.7rem;
+  background-image: linear-gradient(45deg, #ff6547 0%, #ffb144 51%, #ff7053 100%);
+  transform: rotate(-45deg) translateY(-15px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.23), 
+              0 0 15px rgba(255, 101, 71, 0.5),
+              0 0 25px rgba(255, 177, 68, 0.3);
+}
+
+.premium-card-box > span::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  bottom: 0;
+  left: 0;
+  height: 10px;
+  z-index: -1;
+  box-shadow: 140px -140px #cc3f47;
+  background-image: linear-gradient(45deg, #FF512F 0%, #F09819 51%, #FF512F 100%);
+}
+
+.offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* Card flip container */
+.offer-card-wrapper {
+  perspective: 1000px;
+  height: 450px;
+}
+
+.offer-card-wrapper.premium {
+  position: relative;
+  animation: softShake 3s ease-in-out infinite;
+}
+
+.offer-card-wrapper.premium::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  padding: 2px;
+  background: linear-gradient(135deg, #d4af37, #f4e5a1, #d4af37, #b8941f, #d4af37);
+  background-size: 300% 300%;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: premiumBorder 3s ease infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes premiumBorder {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes flameGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px rgba(255, 101, 71, 0.8)) 
+            drop-shadow(0 0 20px rgba(255, 177, 68, 0.6))
+            drop-shadow(0 0 30px rgba(255, 112, 83, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(255, 101, 71, 1)) 
+            drop-shadow(0 0 30px rgba(255, 177, 68, 0.8))
+            drop-shadow(0 0 45px rgba(255, 112, 83, 0.6));
+  }
+}
+
+@keyframes softShake {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  10% {
+    transform: translate(-1px, -1px) rotate(-0.5deg);
+  }
+  20% {
+    transform: translate(1px, 1px) rotate(0.5deg);
+  }
+  30% {
+    transform: translate(-1px, 1px) rotate(-0.5deg);
+  }
+  40% {
+    transform: translate(1px, -1px) rotate(0.5deg);
+  }
+  50% {
+    transform: translate(-1px, -1px) rotate(-0.5deg);
+  }
+  60% {
+    transform: translate(1px, 1px) rotate(0.5deg);
+  }
+  70% {
+    transform: translate(-1px, 1px) rotate(-0.5deg);
+  }
+  80% {
+    transform: translate(1px, -1px) rotate(0.5deg);
+  }
+  90% {
+    transform: translate(-1px, -1px) rotate(-0.5deg);
+  }
+}
+
+.offer-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  z-index: 2;
+}
+
+.offer-card-wrapper.flipped .offer-card-inner {
+  transform: rotateY(180deg);
+}
+
+/* Front and back common styles */
+.offer-card-front,
+.offer-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: #1a1f2e;
+  border: 1px solid #2a3142;
+  overflow: hidden;
+}
+
+.offer-card-wrapper.premium .offer-card-front,
+.offer-card-wrapper.premium .offer-card-back {
+  background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  box-shadow: 0 8px 32px rgba(212, 175, 55, 0.15);
+}
+
+.offer-card-back {
+  transform: rotateY(180deg);
+  justify-content: space-between;
+  padding: 20px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Premium shine effect */
+.premium-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.2), transparent);
+  animation: shine 3s infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes shine {
+  0% {
+    left: -100%;
+  }
+  50%, 100% {
+    left: 100%;
+  }
+}
+
+/* Badge */
+.offer-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  z-index: 11;
+}
+
+.offer-badge.hot {
+  background: rgba(239, 68, 68, 0.9);
+}
+
+.offer-badge.new {
+  background: rgba(99, 102, 241, 0.9);
+}
+
+.offer-card-wrapper.premium .offer-badge.hot {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.4);
+}
+
+.offer-card-wrapper.premium .offer-badge.new {
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+/* Casino image */
+.casino-image-container {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 0 0 12px 12px;
+}
+
+.casino-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0 0 12px 12px;
+}
+
+.casino-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  padding: 14px 12px 8px;
+}
+
+.casino-name {
+  color: #d4af37;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.offer-title {
+  color: #d4af37;
+  font-size: 0.75rem;
+  padding: 8px 12px 6px;
+  line-height: 1.3;
+  min-height: 36px;
+}
+
+.offer-terms {
+  color: #6b7280;
+  font-size: 0.6rem;
+  padding: 0 12px 8px;
+  margin: 0;
+}
+
+.vpn-indicator {
+  color: #6b7280;
+  font-size: 0.6rem;
+  cursor: help;
+  transition: all 0.2s ease;
+  display: inline;
+}
+
+.vpn-indicator:hover {
+  color: #9ca3af;
+}
+
+/* Stats grid */
+.offer-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  padding: 0 12px 12px;
+  flex: 1;
+}
+
+.stat {
+  background: #0f1318;
+  border-radius: 12px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid #2a3142;
+}
+
+.stat-icon {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.stat-label {
+  color: #ffffff !important;
+  font-size: 0.55rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.stat-value {
+  color: #d4af37 !important;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* Action buttons */
+.card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.info-btn,
+.claim-btn {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.info-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.info-btn:hover {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.claim-btn {
+  background: #d4af37;
+  color: #0f1318;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.claim-btn:hover {
+  background: #e5c158;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+/* Back of card */
+.offer-details {
+  flex: 1;
+  color: white;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.offer-details h4 {
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+  color: #d4af37;
+  font-weight: 600;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.offer-details p {
+  color: #9ca3af;
+  line-height: 1.6;
+  font-size: 0.85rem;
+  white-space: pre-line;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.offer-details .deposit-methods {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.deposit-method-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.deposit-method-item:hover {
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+}
+
+.deposit-method-item .method-icon {
+  font-size: 1.2rem;
+  color: #d4af37;
+}
+
+.deposit-method-item .method-label {
+  color: #d4af37;
+  font-weight: 500;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.back-btn {
+  width: 100%;
+  max-width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d4af37;
+  margin-top: 16px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 8px 20px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.back-btn:hover {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+/* Scrollbar for details */
+.offer-details::-webkit-scrollbar {
+  width: 6px;
+}
+
+.offer-details::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.offer-details::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.offer-details::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+  .offers-container h1 {
+    font-size: 2rem;
+  }
+  
+  .offers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .offer-card-wrapper {
+    height: 480px;
+  }
+}

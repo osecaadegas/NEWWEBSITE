@@ -1,0 +1,84 @@
+.overlay-widget.session-stats {
+  background: var(--bg-color, rgba(0, 0, 0, 0.8));
+  backdrop-filter: blur(10px);
+  border: 2px solid var(--primary-color, #d4af37);
+  border-radius: 12px;
+  padding: 1rem;
+  min-width: 250px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.overlay-widget .widget-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--primary-color, #d4af37);
+}
+
+.overlay-widget .widget-icon {
+  font-size: 1.5rem;
+}
+
+.overlay-widget .widget-header h3 {
+  color: var(--primary-color, #d4af37);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.overlay-widget .widget-content {
+  color: #fff;
+}
+
+.overlay-widget .stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.overlay-widget .stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.overlay-widget .stat-value {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.overlay-widget .stat-row.highlight {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 0.75rem;
+  margin: 0.5rem -0.5rem 0;
+  border-radius: 6px;
+  border: 1px solid var(--primary-color, #d4af37);
+}
+
+.overlay-widget .stat-row.highlight .stat-label {
+  color: var(--primary-color, #d4af37);
+  font-weight: 700;
+}
+
+.overlay-widget .stat-row.highlight .stat-value {
+  color: var(--primary-color, #d4af37);
+  font-size: 1.3rem;
+}

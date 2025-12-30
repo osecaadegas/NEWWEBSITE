@@ -1,0 +1,317 @@
+.modern-sidebar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Statistics Card */
+.modern-stats-card {
+  background: linear-gradient(135deg, #23243a 0%, #2d2e4a 100%);
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid rgba(0, 225, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.modern-stats-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modern-stats-header .stats-icon {
+  font-size: 1.5rem;
+}
+
+.modern-stats-header h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #00e1ff;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.modern-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.modern-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  background: rgba(35, 36, 58, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.modern-stat-item:hover {
+  transform: translateY(-2px);
+  background: rgba(35, 36, 58, 0.6);
+  border-color: rgba(0, 225, 255, 0.3);
+}
+
+.modern-stat-item .stat-icon {
+  font-size: 1.2rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.modern-stat-item .stat-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.modern-stat-item .stat-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+  line-height: 1;
+}
+
+.modern-stat-item .stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f3f4f6;
+  line-height: 1;
+}
+
+.modern-stat-item .stat-value.positive {
+  color: #10b981;
+}
+
+.modern-stat-item .stat-value.negative {
+  color: #ef4444;
+}
+
+.modern-stat-item .stat-subtext {
+  font-size: 0.65rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Bonus List Card */
+.modern-bonus-list-card {
+  background: linear-gradient(135deg, #23243a 0%, #2d2e4a 100%);
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid rgba(0, 225, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100vh - 520px);
+}
+
+.modern-bonus-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modern-bonus-header .bonus-header-icon {
+  font-size: 1.5rem;
+}
+
+.modern-bonus-header h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #00e1ff;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* Carousel with Auto-Scroll */
+.modern-bonus-carousel {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-right: 0.5rem;
+  scroll-behavior: smooth;
+}
+
+.modern-bonus-carousel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modern-bonus-carousel::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.modern-bonus-carousel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #9147ff 0%, #00e1ff 100%);
+  border-radius: 3px;
+}
+
+.modern-bonus-carousel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #00e1ff 0%, #9147ff 100%);
+}
+
+/* Bonus Items */
+.modern-bonus-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(20, 20, 50, 0.6);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.modern-bonus-item:hover {
+  transform: translateX(5px);
+  background: rgba(20, 20, 50, 0.8);
+  border-color: rgba(0, 225, 255, 0.5);
+  box-shadow: 0 4px 16px rgba(0, 225, 255, 0.2);
+}
+
+.modern-bonus-item.super {
+  border-color: rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(20, 20, 50, 0.6));
+}
+
+.modern-bonus-item.opened {
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.modern-bonus-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(0, 225, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.modern-bonus-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  overflow: hidden;
+}
+
+.modern-bonus-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f3f4f6;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modern-bonus-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.bonus-bet {
+  color: #9ca3af;
+}
+
+.bonus-separator {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.bonus-payout {
+  color: #6b7280;
+}
+
+.bonus-payout.opened {
+  color: #10b981;
+}
+
+.bonus-mult {
+  color: #9ca3af;
+}
+
+.bonus-mult.positive {
+  color: #10b981;
+}
+
+.bonus-mult.negative {
+  color: #ef4444;
+}
+
+.super-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.9rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.bonus-status-icon {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.modern-bonus-item.opened .bonus-status-icon {
+  color: #10b981;
+}
+
+/* No Bonuses State */
+.no-bonuses-modern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.no-bonuses-modern .no-bonuses-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-bonuses-modern p {
+  margin: 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.no-bonuses-modern .no-bonuses-subtext {
+  font-size: 0.85rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .modern-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modern-bonus-list-card {
+    max-height: calc(100vh - 600px);
+  }
+}

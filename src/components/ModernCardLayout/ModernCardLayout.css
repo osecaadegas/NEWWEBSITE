@@ -1,0 +1,433 @@
+.modern-card-layout {
+  flex: 1;
+  padding: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.card-carousel {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  min-height: 500px;
+}
+
+.bonus-card {
+  flex: 0 0 320px;
+  background: rgba(20, 20, 50, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 2px solid rgba(0, 225, 255, 0.4);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.bonus-card.opened {
+  border-color: rgba(0, 255, 136, 0.6);
+}
+
+.bonus-card.unopened {
+  border-color: rgba(255, 107, 107, 0.6);
+}
+
+.bonus-card:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+
+.card-image-section {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  perspective: 1000px;
+  overflow: visible;
+}
+
+/* Flipper container for 3D rotation */
+.card-flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 1.8s ease-in-out;
+}
+
+/* Trigger flip on card hover */
+.bonus-card:hover .card-flipper {
+  transform: rotateY(180deg);
+}
+
+/* Card faces - front and back */
+.card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+/* Opacity transitions synced with rotation - front face visible 0-85°, invisible 85-180° */
+.bonus-card:hover .card-face-front {
+  animation: hideFront 1.8s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+.bonus-card:not(:hover) .card-face-front {
+  animation: showFront 1.8s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+/* Back face invisible 0-95°, visible 95-180° */
+.bonus-card:hover .card-face-back {
+  animation: showBack 1.8s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+.bonus-card:not(:hover) .card-face-back {
+  animation: hideBack 1.8s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+/* Front face: Fade out at 85° (47.2% of 180°) when flipping to back */
+@keyframes hideFront {
+  0% { opacity: 1; }
+  44% { opacity: 1; }    /* Hold until 79° */
+  47% { opacity: 0; }    /* Fade out by 85° */
+  100% { opacity: 0; }
+}
+
+/* Front face: Fade in when flipping back to front */
+@keyframes showFront {
+  0% { opacity: 0; }
+  52% { opacity: 0; }
+  55% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Back face: Fade in at 95° (52.8% of 180°) when flipping to back */
+@keyframes showBack {
+  0% { opacity: 0; }
+  52% { opacity: 0; }    /* Stay hidden until 94° */
+  55% { opacity: 1; }    /* Fade in by 99° */
+  100% { opacity: 1; }
+}
+
+/* Back face: Fade out when flipping back to front */
+@keyframes hideBack {
+  0% { opacity: 1; }
+  44% { opacity: 1; }
+  47% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Front face - Slot image */
+.card-face-front {
+  transform: rotateY(0deg);
+  z-index: 2;
+}
+
+/* Back face - Provider info (pre-rotated 180deg) */
+.card-face-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, rgba(147, 70, 255, 0.3), rgba(0, 225, 255, 0.3));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  opacity: 0;
+}
+
+/* Slot image styling */
+.card-slot-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Provider logo container */
+.provider-logo-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.provider-logo-image {
+  max-width: 70%;
+  max-height: 70%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  opacity: 1;
+  will-change: transform;
+}
+
+/* Fallback for providers without logos */
+.provider-text-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.provider-text {
+  font-size: 2rem;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
+}
+
+.card-super-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #000;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.card-status-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.card-payout-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(25, 30, 40, 0.95), rgba(25, 30, 40, 0.75));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border-radius: 0 0 14px 14px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.payout-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #5eead4;
+  text-shadow: 0 0 8px rgba(94, 234, 212, 0.4), 0 2px 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 1px;
+  flex: 1;
+}
+
+.multiplier-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fbbf24;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.4), 0 2px 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 1px;
+}
+
+.card-details-section {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-slot-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  color: white;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.card-provider {
+  font-size: 0.9rem;
+  color: #9346ff;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: auto;
+}
+
+.card-stat {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 225, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+}
+
+.stat-value.positive {
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.stat-value.negative {
+  color: #ff4757;
+  text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+}
+
+.no-bonuses-card {
+  width: 100%;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 20, 50, 0.5);
+  border: 2px dashed rgba(0, 225, 255, 0.3);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.no-bonuses-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.no-bonuses-card p {
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Scrollbar styling */
+.modern-card-layout::-webkit-scrollbar {
+  height: 12px;
+}
+
+.modern-card-layout::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  margin: 0 1rem;
+}
+
+.modern-card-layout::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #00e1ff, #9346ff);
+  border-radius: 6px;
+}
+
+.modern-card-layout::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #9346ff, #00e1ff);
+}
+
+/* Best multiplier - green glow */
+.bonus-card.best-glow {
+  border-color: rgba(0, 255, 136, 1);
+  box-shadow: 
+    0 0 20px rgba(0, 255, 136, 0.6),
+    0 0 40px rgba(0, 255, 136, 0.4),
+    0 0 60px rgba(0, 255, 136, 0.2);
+  animation: greenPulse 2s ease-in-out infinite;
+}
+
+/* Worst multiplier - red glow */
+.bonus-card.worst-glow {
+  border-color: rgba(255, 107, 107, 1);
+  box-shadow: 
+    0 0 20px rgba(255, 107, 107, 0.6),
+    0 0 40px rgba(255, 107, 107, 0.4),
+    0 0 60px rgba(255, 107, 107, 0.2);
+  animation: redPulse 2s ease-in-out infinite;
+}
+
+@keyframes greenPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(0, 255, 136, 0.6),
+      0 0 40px rgba(0, 255, 136, 0.4),
+      0 0 60px rgba(0, 255, 136, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(0, 255, 136, 0.8),
+      0 0 60px rgba(0, 255, 136, 0.6),
+      0 0 90px rgba(0, 255, 136, 0.4);
+  }
+}
+
+@keyframes redPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(255, 107, 107, 0.6),
+      0 0 40px rgba(255, 107, 107, 0.4),
+      0 0 60px rgba(255, 107, 107, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(255, 107, 107, 0.8),
+      0 0 60px rgba(255, 107, 107, 0.6),
+      0 0 90px rgba(255, 107, 107, 0.4);
+  }
+}
+
+@media (max-width: 768px) {
+  .bonus-card {
+    flex: 0 0 280px;
+  }
+
+  .card-image-section {
+    height: 280px;
+  }
+
+  .card-slot-name {
+    font-size: 1.25rem;
+  }
+}

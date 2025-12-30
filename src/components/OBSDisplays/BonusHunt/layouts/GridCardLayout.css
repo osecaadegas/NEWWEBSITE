@@ -1,0 +1,238 @@
+.grid-card-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+  min-height: 400px;
+}
+
+/* Empty State */
+.grid-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.grid-empty h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.grid-empty p {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Card Grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1400px;
+}
+
+/* Grid Card */
+.grid-card {
+  background: rgba(20, 20, 50, 0.7);
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(255, 107, 107, 0.6);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-card.opened {
+  border-color: rgba(0, 255, 136, 0.6);
+}
+
+.grid-card:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+
+/* Best/Worst Glow */
+.grid-card.best-glow {
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+  animation: pulse-best 2s infinite;
+}
+
+.grid-card.worst-glow {
+  box-shadow: 0 0 30px rgba(255, 107, 107, 0.6);
+  animation: pulse-worst 2s infinite;
+}
+
+@keyframes pulse-best {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.8); }
+}
+
+@keyframes pulse-worst {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 107, 107, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(255, 107, 107, 0.8); }
+}
+
+/* Card Image Section */
+.grid-card-image-section {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  perspective: 1000px;
+  overflow: visible;
+}
+
+.grid-card-flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 1.8s ease-in-out;
+}
+
+.grid-card:hover .grid-card-flipper {
+  transform: rotateY(180deg);
+}
+
+.grid-card-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+.grid-card-face-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-card-slot-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.provider-info {
+  text-align: center;
+  padding: 2rem;
+}
+
+.provider-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #3b82f6;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Card Details */
+.grid-card-details {
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.grid-card-slot-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grid-card-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.grid-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.grid-stat-label {
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.grid-stat-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.grid-stat-value.multiplier {
+  color: #3b82f6;
+}
+
+/* Result Display */
+.grid-card-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.grid-card-result.profit {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.grid-card-result.loss {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.result-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.grid-card-result.profit .result-label,
+.grid-card-result.profit .result-value {
+  color: #10b981;
+}
+
+.grid-card-result.loss .result-label,
+.grid-card-result.loss .result-value {
+  color: #ef4444;
+}
+
+.result-value {
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  
+  .grid-card-image-section {
+    height: 220px;
+  }
+}

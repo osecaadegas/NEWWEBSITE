@@ -1,0 +1,171 @@
+.stream-page {
+  min-height: 100vh;
+  background: #1a1d23;
+  padding: 80px 15px 15px;
+}
+
+.stream-container {
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+.stream-container h1 {
+  font-size: 1.75rem;
+  color: white;
+  text-align: center;
+  margin-bottom: 3px;
+}
+
+.stream-subtitle {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.stream-content {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.stream-embed {
+  flex: 1;
+  max-width: 480px;
+  min-height: 280px;
+  height: 280px;
+  overflow: hidden;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.chat-embed {
+  width: 240px;
+  min-height: 280px;
+  height: 280px;
+  overflow: hidden;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+
+.stream-info {
+  background: rgba(13, 17, 23, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 8px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+.stream-placeholder {
+  text-align: center;
+}
+
+.stream-icon {
+  font-size: 5rem;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.stream-placeholder h3 {
+  font-size: 1.8rem;
+  color: #e5e7eb;
+  margin-bottom: 15px;
+}
+
+.stream-placeholder p {
+  color: #9ca3af;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.connect-btn {
+  padding: 15px 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.connect-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.info-value {
+  color: #e5e7eb;
+  font-size: 0.85rem;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.offline {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.status-badge.online {
+  background: #c6f6d5;
+  color: #2f855a;
+}
+
+@media (max-width: 1024px) {
+  .stream-content {
+    flex-direction: column;
+  }
+  
+  .stream-sidebar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .stream-container h1 {
+    font-size: 2rem;
+  }
+  
+  .stream-embed {
+    min-height: 400px;
+  }
+  
+  .chat-embed {
+    min-height: 300px;
+    height: 300px;
+  }
+}

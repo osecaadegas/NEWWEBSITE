@@ -1,0 +1,247 @@
+.overlay-container {
+  width: 2560px;
+  height: 1440px;
+  position: relative;
+  background: transparent;
+  font-family: 'Inter', Arial, sans-serif;
+  overflow: hidden;
+}
+
+.overlay-loading,
+.overlay-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 1.5rem;
+  text-align: center;
+  background: var(--bg-color, rgba(0, 0, 0, 0.8));
+  padding: 2rem;
+  border-radius: 12px;
+  border: 2px solid var(--primary-color, #d4af37);
+}
+
+.overlay-widget {
+  position: absolute;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--primary-color, #d4af37);
+}
+
+.widget-icon {
+  font-size: 1.5rem;
+}
+
+.widget-header h3 {
+  color: var(--primary-color, #d4af37);
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.widget-content {
+  color: #fff;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.stat-value {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.stat-row.highlight {
+  background: rgba(212, 175, 55, 0.1);
+  padding: 0.75rem;
+  margin: 0.5rem -0.5rem 0;
+  border-radius: 6px;
+  border: 1px solid var(--primary-color, #d4af37);
+}
+
+.stat-row.highlight .stat-label {
+  color: var(--primary-color, #d4af37);
+  font-weight: 700;
+}
+
+.stat-row.highlight .stat-value {
+  color: var(--primary-color, #d4af37);
+  font-size: 1.3rem;
+}
+
+.wins-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.win-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.win-slot {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.win-amount {
+  color: var(--primary-color, #d4af37);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* Bonus Hunt Styles */
+.hunt-stats {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.bonus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.75rem;
+}
+
+.bonus-card {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.bonus-card.opened {
+  border-color: #4caf50;
+}
+
+.bonus-card.locked {
+  opacity: 0.6;
+}
+
+.bonus-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bonus-result {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(76, 175, 80, 0.95);
+  color: #fff;
+  text-align: center;
+  padding: 0.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.bonus-lock {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+}
+
+.empty-state {
+  padding: 1.5rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Navbar Styles */
+.navbar {
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.navbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 2rem;
+}
+
+.navbar-logo {
+  color: var(--primary-color, #d4af37);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.navbar-links span {
+  color: #fff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.navbar-links span:hover {
+  color: var(--primary-color, #d4af37);
+}
+
+.coinflip-display {
+  text-align: center;
+  font-size: 1.5rem;
+  padding: 2rem;
+  color: var(--primary-color, #d4af37);
+  font-weight: 700;
+}
+
+/* Draggable hint (only visible in controls, not in OBS) */
+.overlay-widget.draggable {
+  cursor: move;
+}
+
+.overlay-widget.draggable:hover {
+  border-color: var(--primary-color, #d4af37);
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
+}
