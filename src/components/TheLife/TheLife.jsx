@@ -824,14 +824,9 @@ export default function TheLife() {
           <div className="crimes-section">
             <div className="robberies-grid">
               {robberies.map(robbery => {
-                const crimeImages = {
-                  'Pickpocket': 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=500',
-                  'Car Theft': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=500',
-                  'House Burglary': 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500',
-                  'Convenience Store': 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=500',
-                  'Bank Heist': 'https://images.unsplash.com/photo-1551135049-8a33b5883817?w=500',
-                  'Casino Vault': 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?w=500'
-                };
+                // Fallback to default image if none provided
+                const defaultImage = 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=500';
+                const imageUrl = robbery.image_url || defaultImage;
                 
                 return (
                   <div 
@@ -839,7 +834,7 @@ export default function TheLife() {
                     className={`crime-card ${player.level < robbery.min_level_required ? 'locked' : ''}`}
                   >
                     <div className="crime-image-container">
-                      <img src={crimeImages[robbery.name] || crimeImages['Pickpocket']} alt={robbery.name} className="crime-image" />
+                      <img src={imageUrl} alt={robbery.name} className="crime-image" />
                       {player.level < robbery.min_level_required && (
                         <div className="locked-overlay">
                           <span>🔒 Level {robbery.min_level_required} Required</span>

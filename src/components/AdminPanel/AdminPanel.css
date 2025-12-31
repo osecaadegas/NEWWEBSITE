@@ -1344,3 +1344,365 @@
   color: #2d3748;
   font-size: 0.95rem;
 }
+
+/* === THE LIFE MANAGEMENT STYLES === */
+.thelife-management {
+  max-width: 1400px;
+  margin: 0 auto;
+  background: rgba(26, 31, 46, 0.8);
+  border-radius: 15px;
+  padding: 30px;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.thelife-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.thelife-header h2 {
+  color: #d4af37;
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+}
+
+.thelife-header p {
+  color: #cbd5e0;
+  font-size: 1.1rem;
+}
+
+.thelife-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.thelife-tab {
+  padding: 15px 30px;
+  background: none;
+  border: none;
+  color: #cbd5e0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.thelife-tab:hover {
+  color: #d4af37;
+}
+
+.thelife-tab.active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+}
+
+.section-header h3 {
+  color: #d4af37;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+/* Crime Cards */
+.crimes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+}
+
+.crime-admin-card {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  transition: all 0.3s;
+}
+
+.crime-admin-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+}
+
+.crime-preview-image {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.crime-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.crime-preview-image .no-image {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  color: #888;
+  font-size: 1.2rem;
+}
+
+.crime-info {
+  padding: 20px;
+}
+
+.crime-info h4 {
+  color: #d4af37;
+  font-size: 1.5rem;
+  margin: 0 0 10px 0;
+}
+
+.crime-desc {
+  color: #cbd5e0;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.crime-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.crime-stats-grid .stat {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.crime-stats-grid .stat .label {
+  color: #888;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+
+.crime-stats-grid .stat .value {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.crime-actions {
+  display: flex;
+  gap: 10px;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.crime-actions button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-edit:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-delete:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+/* Item Cards */
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.item-admin-card {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.item-admin-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(212, 175, 55, 0.6);
+  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+}
+
+.item-icon-large {
+  font-size: 4rem;
+  margin-bottom: 15px;
+}
+
+.item-info h4 {
+  color: #d4af37;
+  font-size: 1.3rem;
+  margin: 0 0 10px 0;
+}
+
+.item-desc {
+  color: #cbd5e0;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+  min-height: 40px;
+}
+
+.item-meta {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.item-type, .item-rarity, .item-tradeable {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.item-type {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.item-rarity.common {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+}
+
+.item-rarity.rare {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.item-rarity.epic {
+  background: rgba(168, 85, 247, 0.2);
+  color: #a855f7;
+}
+
+.item-rarity.legendary {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.item-tradeable {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.item-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* Modal Enhancements for The Life */
+.modal-content.large {
+  max-width: 800px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-grid .full-width {
+  grid-column: span 2;
+}
+
+.image-preview {
+  margin-top: 10px;
+  width: 100%;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid rgba(212, 175, 55, 0.3);
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: #cbd5e0;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .crimes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .items-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid .full-width {
+    grid-column: span 1;
+  }
+
+  .thelife-tabs {
+    flex-direction: column;
+  }
+
+  .crime-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -20,7 +20,7 @@ export default function AdminPanel() {
   const usersPerPage = 10;
   
   // Offer Card Builder State
-  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'offers'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'offers', or 'thelife'
   const [offers, setOffers] = useState([]);
   const [editingOffer, setEditingOffer] = useState(null);
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -43,6 +43,36 @@ export default function AdminPanel() {
     display_order: 0
   });
 
+  // The Life Management State
+  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'drugs', 'items'
+  const [crimes, setCrimes] = useState([]);
+  const [items, setItems] = useState([]);
+  const [showCrimeModal, setShowCrimeModal] = useState(false);
+  const [showItemModal, setShowItemModal] = useState(false);
+  const [editingCrime, setEditingCrime] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [crimeFormData, setCrimeFormData] = useState({
+    name: '',
+    description: '',
+    image_url: '',
+    min_level_required: 1,
+    ticket_cost: 1,
+    base_reward: 100,
+    max_reward: 500,
+    success_rate: 50,
+    jail_time_minutes: 30,
+    hp_loss_on_fail: 10,
+    xp_reward: 10
+  });
+  const [itemFormData, setItemFormData] = useState({
+    name: '',
+    description: '',
+    type: 'item',
+    icon: '📦',
+    rarity: 'common',
+    tradeable: false
+  });
+
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       navigate('/');
@@ -52,6 +82,8 @@ export default function AdminPanel() {
   useEffect(() => {
     loadUsers();
     loadOffers();
+    loadCrimes();
+    loadItems();
   }, []);
 
   const loadUsers = async () => {
@@ -306,6 +338,212 @@ export default function AdminPanel() {
     }
   };
 
+  // === THE LIFE MANAGEMENT FUNCTIONS ===
+  
+  const loadCrimes = async () => {
+    const { data, error } = await supabase
+      .from('the_life_robberies')
+      .select('*')
+      .order('min_level_required', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading crimes:', error);
+    } else {
+      setCrimes(data || []);
+    }
+  };
+
+  const loadItems = async () => {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*')
+      .order('name', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading items:', error);
+    } else {
+      setItems(data || []);
+    }
+  };
+
+  const openCrimeModal = (crime = null) => {
+    if (crime) {
+      setCrimeFormData({
+        name: crime.name,
+        description: crime.description || '',
+        image_url: crime.image_url || '',
+        min_level_required: crime.min_level_required,
+        ticket_cost: crime.ticket_cost,
+        base_reward: crime.base_reward,
+        max_reward: crime.max_reward,
+        success_rate: crime.success_rate,
+        jail_time_minutes: crime.jail_time_minutes,
+        hp_loss_on_fail: crime.hp_loss_on_fail,
+        xp_reward: crime.xp_reward
+      });
+      setEditingCrime(crime);
+    } else {
+      setCrimeFormData({
+        name: '',
+        description: '',
+        image_url: '',
+        min_level_required: 1,
+        ticket_cost: 1,
+        base_reward: 100,
+        max_reward: 500,
+        success_rate: 50,
+        jail_time_minutes: 30,
+        hp_loss_on_fail: 10,
+        xp_reward: 10
+      });
+      setEditingCrime(null);
+    }
+    setShowCrimeModal(true);
+  };
+
+  const closeCrimeModal = () => {
+    setShowCrimeModal(false);
+    setEditingCrime(null);
+  };
+
+  const saveCrime = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!crimeFormData.name) {
+      setError('Crime name is required');
+      return;
+    }
+
+    try {
+      if (editingCrime) {
+        const { error } = await supabase
+          .from('the_life_robberies')
+          .update(crimeFormData)
+          .eq('id', editingCrime.id);
+
+        if (error) throw error;
+        setSuccess('Crime updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('the_life_robberies')
+          .insert([crimeFormData]);
+
+        if (error) throw error;
+        setSuccess('Crime created successfully!');
+      }
+
+      closeCrimeModal();
+      loadCrimes();
+    } catch (err) {
+      setError('Failed to save crime: ' + err.message);
+    }
+  };
+
+  const deleteCrime = async (crimeId) => {
+    if (!confirm('Are you sure you want to delete this crime?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('the_life_robberies')
+        .delete()
+        .eq('id', crimeId);
+
+      if (error) throw error;
+      setSuccess('Crime deleted successfully!');
+      loadCrimes();
+    } catch (err) {
+      setError('Failed to delete crime: ' + err.message);
+    }
+  };
+
+  const openItemModal = (item = null) => {
+    if (item) {
+      setItemFormData({
+        name: item.name,
+        description: item.description || '',
+        type: item.type,
+        icon: item.icon,
+        rarity: item.rarity,
+        tradeable: item.tradeable || false
+      });
+      setEditingItem(item);
+    } else {
+      setItemFormData({
+        name: '',
+        description: '',
+        type: 'item',
+        icon: '📦',
+        rarity: 'common',
+        tradeable: false
+      });
+      setEditingItem(null);
+    }
+    setShowItemModal(true);
+  };
+
+  const closeItemModal = () => {
+    setShowItemModal(false);
+    setEditingItem(null);
+  };
+
+  const saveItem = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!itemFormData.name || !itemFormData.icon) {
+      setError('Item name and icon are required');
+      return;
+    }
+
+    try {
+      if (editingItem) {
+        const { error } = await supabase
+          .from('items')
+          .update(itemFormData)
+          .eq('id', editingItem.id);
+
+        if (error) throw error;
+        setSuccess('Item updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('items')
+          .insert([itemFormData]);
+
+        if (error) throw error;
+        setSuccess('Item created successfully!');
+      }
+
+      closeItemModal();
+      loadItems();
+    } catch (err) {
+      setError('Failed to save item: ' + err.message);
+    }
+  };
+
+  const deleteItem = async (itemId) => {
+    if (!confirm('Are you sure you want to delete this item?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('items')
+        .delete()
+        .eq('id', itemId);
+
+      if (error) throw error;
+      setSuccess('Item deleted successfully!');
+      loadItems();
+    } catch (err) {
+      setError('Failed to delete item: ' + err.message);
+    }
+  };
+
   const toggleOfferActive = async (offerId, currentStatus) => {
     try {
       const { error } = await supabase
@@ -355,6 +593,12 @@ export default function AdminPanel() {
           onClick={() => setActiveTab('offers')}
         >
           🎰 Casino Offers
+        </button>
+        <button 
+          className={`admin-tab ${activeTab === 'thelife' ? 'active' : ''}`}
+          onClick={() => setActiveTab('thelife')}
+        >
+          🔫 The Life Management
         </button>
       </div>
 
@@ -922,6 +1166,369 @@ export default function AdminPanel() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* The Life Management Tab */}
+      {activeTab === 'thelife' && (
+        <>
+          <div className="thelife-management">
+            <div className="thelife-header">
+              <h2>🔫 The Life Game Management</h2>
+              <p>Manage crimes, drugs, items, and brothel content for The Life RPG</p>
+            </div>
+
+            {/* Sub-tabs for The Life */}
+            <div className="thelife-tabs">
+              <button 
+                className={`thelife-tab ${theLifeTab === 'crimes' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('crimes')}
+              >
+                💰 Crimes
+              </button>
+              <button 
+                className={`thelife-tab ${theLifeTab === 'items' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('items')}
+              >
+                🎒 Items
+              </button>
+            </div>
+
+            {/* Crimes Section */}
+            {theLifeTab === 'crimes' && (
+              <div className="crimes-management">
+                <div className="section-header">
+                  <h3>💰 Crime Management</h3>
+                  <button onClick={() => openCrimeModal()} className="btn-primary">
+                    ➕ Add New Crime
+                  </button>
+                </div>
+
+                <div className="crimes-grid">
+                  {crimes.map(crime => (
+                    <div key={crime.id} className="crime-admin-card">
+                      <div className="crime-preview-image">
+                        {crime.image_url ? (
+                          <img src={crime.image_url} alt={crime.name} />
+                        ) : (
+                          <div className="no-image">No Image</div>
+                        )}
+                      </div>
+                      <div className="crime-info">
+                        <h4>{crime.name}</h4>
+                        <p className="crime-desc">{crime.description}</p>
+                        <div className="crime-stats-grid">
+                          <div className="stat">
+                            <span className="label">Level</span>
+                            <span className="value">{crime.min_level_required}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Tickets</span>
+                            <span className="value">{crime.ticket_cost}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Success</span>
+                            <span className="value">{crime.success_rate}%</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Reward</span>
+                            <span className="value">${crime.base_reward}-${crime.max_reward}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">XP</span>
+                            <span className="value">{crime.xp_reward}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Jail Time</span>
+                            <span className="value">{crime.jail_time_minutes}m</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="crime-actions">
+                        <button onClick={() => openCrimeModal(crime)} className="btn-edit">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => deleteCrime(crime.id)} className="btn-delete">
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Items Section */}
+            {theLifeTab === 'items' && (
+              <div className="items-management">
+                <div className="section-header">
+                  <h3>🎒 Item Management</h3>
+                  <button onClick={() => openItemModal()} className="btn-primary">
+                    ➕ Add New Item
+                  </button>
+                </div>
+
+                <div className="items-grid">
+                  {items.map(item => (
+                    <div key={item.id} className="item-admin-card">
+                      <div className="item-icon-large">{item.icon}</div>
+                      <div className="item-info">
+                        <h4>{item.name}</h4>
+                        <p className="item-desc">{item.description}</p>
+                        <div className="item-meta">
+                          <span className={`item-type ${item.type}`}>{item.type}</span>
+                          <span className={`item-rarity ${item.rarity}`}>{item.rarity}</span>
+                          {item.tradeable && <span className="item-tradeable">Tradeable</span>}
+                        </div>
+                      </div>
+                      <div className="item-actions">
+                        <button onClick={() => openItemModal(item)} className="btn-edit">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => deleteItem(item.id)} className="btn-delete">
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Crime Modal */}
+          {showCrimeModal && (
+            <div className="modal-overlay" onClick={closeCrimeModal}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingCrime ? 'Edit Crime' : 'Add New Crime'}</h2>
+                  <button onClick={closeCrimeModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Crime Name *</label>
+                      <input
+                        type="text"
+                        value={crimeFormData.name}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, name: e.target.value})}
+                        placeholder="e.g., Bank Heist"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Description</label>
+                      <textarea
+                        value={crimeFormData.description}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, description: e.target.value})}
+                        placeholder="Describe the crime..."
+                        rows="3"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Image URL</label>
+                      <input
+                        type="text"
+                        value={crimeFormData.image_url}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, image_url: e.target.value})}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                      {crimeFormData.image_url && (
+                        <div className="image-preview">
+                          <img src={crimeFormData.image_url} alt="Preview" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Min Level Required</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.min_level_required}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, min_level_required: parseInt(e.target.value)})}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Ticket Cost</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.ticket_cost}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, ticket_cost: parseInt(e.target.value)})}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Base Reward ($)</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.base_reward}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, base_reward: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Max Reward ($)</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.max_reward}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, max_reward: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Success Rate (%)</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.success_rate}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, success_rate: parseInt(e.target.value)})}
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Jail Time (minutes)</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.jail_time_minutes}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, jail_time_minutes: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>HP Loss on Fail</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.hp_loss_on_fail}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, hp_loss_on_fail: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>XP Reward</label>
+                      <input
+                        type="number"
+                        value={crimeFormData.xp_reward}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, xp_reward: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={saveCrime} className="btn-save">
+                    {editingCrime ? 'Update Crime' : 'Create Crime'}
+                  </button>
+                  <button onClick={closeCrimeModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Item Modal */}
+          {showItemModal && (
+            <div className="modal-overlay" onClick={closeItemModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
+                  <button onClick={closeItemModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-group">
+                    <label>Item Name *</label>
+                    <input
+                      type="text"
+                      value={itemFormData.name}
+                      onChange={(e) => setItemFormData({...itemFormData, name: e.target.value})}
+                      placeholder="e.g., Golden Trophy"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Description</label>
+                    <textarea
+                      value={itemFormData.description}
+                      onChange={(e) => setItemFormData({...itemFormData, description: e.target.value})}
+                      placeholder="Describe the item..."
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Icon (Emoji) *</label>
+                    <input
+                      type="text"
+                      value={itemFormData.icon}
+                      onChange={(e) => setItemFormData({...itemFormData, icon: e.target.value})}
+                      placeholder="🏆"
+                      maxLength="4"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Type</label>
+                    <select
+                      value={itemFormData.type}
+                      onChange={(e) => setItemFormData({...itemFormData, type: e.target.value})}
+                    >
+                      <option value="item">Item</option>
+                      <option value="achievement">Achievement</option>
+                      <option value="badge">Badge</option>
+                      <option value="skin">Skin</option>
+                      <option value="weapon">Weapon</option>
+                      <option value="armor">Armor</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Rarity</label>
+                    <select
+                      value={itemFormData.rarity}
+                      onChange={(e) => setItemFormData({...itemFormData, rarity: e.target.value})}
+                    >
+                      <option value="common">Common</option>
+                      <option value="rare">Rare</option>
+                      <option value="epic">Epic</option>
+                      <option value="legendary">Legendary</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={itemFormData.tradeable}
+                        onChange={(e) => setItemFormData({...itemFormData, tradeable: e.target.checked})}
+                      />
+                      <span>Tradeable</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={saveItem} className="btn-save">
+                    {editingItem ? 'Update Item' : 'Create Item'}
+                  </button>
+                  <button onClick={closeItemModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

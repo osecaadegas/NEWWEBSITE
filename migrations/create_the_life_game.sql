@@ -10,9 +10,9 @@ CREATE TABLE IF NOT EXISTS the_life_players (
   max_hp INTEGER DEFAULT 100,
   stamina INTEGER DEFAULT 100,
   max_stamina INTEGER DEFAULT 100,
-  tickets INTEGER DEFAULT 20,
-  max_tickets INTEGER DEFAULT 20,
-  cash BIGINT DEFAULT 1000,
+  tickets INTEGER DEFAULT 300,
+  max_tickets INTEGER DEFAULT 300,
+  cash BIGINT DEFAULT 500,
   bank_balance BIGINT DEFAULT 0,
   jail_until TIMESTAMPTZ,
   hospital_until TIMESTAMPTZ,
@@ -99,6 +99,21 @@ ALTER TABLE the_life_robbery_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE the_life_drug_ops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE the_life_brothels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE the_life_pvp_logs ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own player data" ON the_life_players;
+DROP POLICY IF EXISTS "Users can view other players for PvP" ON the_life_players;
+DROP POLICY IF EXISTS "Users can insert own player data" ON the_life_players;
+DROP POLICY IF EXISTS "Users can update own player data" ON the_life_players;
+DROP POLICY IF EXISTS "Anyone can view robberies" ON the_life_robberies;
+DROP POLICY IF EXISTS "Users can view own robbery history" ON the_life_robbery_history;
+DROP POLICY IF EXISTS "Users can insert own robbery history" ON the_life_robbery_history;
+DROP POLICY IF EXISTS "Users can view own drug ops" ON the_life_drug_ops;
+DROP POLICY IF EXISTS "Users can manage own drug ops" ON the_life_drug_ops;
+DROP POLICY IF EXISTS "Users can view own brothel" ON the_life_brothels;
+DROP POLICY IF EXISTS "Users can manage own brothel" ON the_life_brothels;
+DROP POLICY IF EXISTS "Users can view PvP logs they're involved in" ON the_life_pvp_logs;
+DROP POLICY IF EXISTS "Users can insert PvP logs" ON the_life_pvp_logs;
 
 -- Policies for the_life_players
 CREATE POLICY "Users can view own player data"

@@ -27,6 +27,13 @@ CREATE TABLE IF NOT EXISTS user_inventory (
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_inventory ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Anyone can view items" ON items;
+DROP POLICY IF EXISTS "Admins can insert items" ON items;
+DROP POLICY IF EXISTS "Users can view own inventory" ON user_inventory;
+DROP POLICY IF EXISTS "Users can insert own inventory" ON user_inventory;
+DROP POLICY IF EXISTS "Users can update own inventory" ON user_inventory;
+
 -- Policy: Everyone can view items
 CREATE POLICY "Anyone can view items"
   ON items
