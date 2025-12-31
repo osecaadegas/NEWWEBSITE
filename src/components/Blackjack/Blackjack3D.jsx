@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useStreamElements } from '../../context/StreamElementsContext';
+import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../config/supabaseClient';
 import './Blackjack3D.css';
 
@@ -11,8 +12,11 @@ const CARD_VALUES = {
 const SUITS = ['♥', '♦', '♣', '♠'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
+const CHIP_VALUES = [10, 25, 50, 100, 500];
+
 export default function Blackjack() {
-  const { points, isConnected, updateUserPoints } = useStreamElements();
+  const { points, isConnected, seAccount, updateUserPoints } = useStreamElements();
+  const { user } = useAuth();
   
   // Game state
   const [deck, setDeck] = useState([]);

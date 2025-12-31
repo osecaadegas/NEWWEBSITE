@@ -26,16 +26,14 @@ export default function StreamElementsPanel() {
   const [linkError, setLinkError] = useState('');
   const [redemptionItems, setRedemptionItems] = useState([]);
   const [redeeming, setRedeeming] = useState(null);
-  const [userRedemptions, setUserRedemptions] = useState([]);
+  const [allRedemptions, setAllRedemptions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 8;
 
   useEffect(() => {
     loadRedemptionItems();
-    if (isConnected && user) {
-      loadUserRedemptions();
-    }
-  }, [isConnected, user]);
+    loadAllRedemptions();
+  }, []);
 
   const loadRedemptionItems = async () => {
     try {
@@ -57,7 +55,7 @@ export default function StreamElementsPanel() {
     }
   };
 
-  const loadUserRedemptions = async () => {
+  const loadAllRedemptions = async () => {
     try {
       const { data, error } = await supabase
         .from('point_redemptions')
@@ -69,14 +67,36 @@ export default function StreamElementsPanel() {
             image_url
           )
         `)
-        .eq('user_id', user.id)
         .order('redeemed_at', { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) throw error;
-      setUserRedemptions(data || []);
+      
+      // Fetch usernames separately from streamelements_connections
+      if (data && data.length > 0) {
+        const userIds = [...new Set(data.map(r => r.user_id))];
+        const { data: seConnections } = await supabase
+          .from('streamelements_connections')
+          .select('user_id, se_username')
+          .in('user_id', userIds);
+        
+        // Map usernames to redemptions
+        const usernameMap = {};
+        seConnections?.forEach(conn => {
+          usernameMap[conn.user_id] = conn.se_username;
+        });
+        
+        const enrichedData = data.map(redemption => ({
+          ...redemption,
+          username: usernameMap[redemption.user_id] || 'User'
+        }));
+        
+        setAllRedemptions(enrichedData);
+      } else {
+        setAllRedemptions(data || []);
+      }
     } catch (err) {
-      console.error('Error loading user redemptions:', err);
+      console.error('Error loading redemptions:', err);
     }
   };
 
@@ -134,7 +154,7 @@ export default function StreamElementsPanel() {
       alert('Redemption successful! Your reward has been applied.');
       await refreshPoints();
       await loadRedemptionItems(); // Reload items to update stock count
-      await loadUserRedemptions(); // Reload user's redemption history
+      await loadAllRedemptions(); // Reload redemption history
     } else {
       console.error('Redemption failed:', result.error);
       alert(`Redemption failed: ${result.error}\n\nPlease contact an admin if this issue persists.`);
@@ -287,34 +307,36 @@ export default function StreamElementsPanel() {
                 })}
               </div>
 
-              {isConnected && userRedemptions.length > 0 && (
+              {allRedemptions.length > 0 && (
                 <div className="se-redemption-history-sidebar">
               <div className="se-history-card">
                 <div className="se-history-header">
-                  <h3>Redemption History</h3>
-                  <span className="se-history-count">({userRedemptions.length})</span>
+                  <h3>Recent Redemptions</h3>
+                  <span className="se-history-count">{allRedemptions.length}</span>
                 </div>
                 <div className="se-history-list">
-                  {userRedemptions
+                  {allRedemptions
                     .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                    .map((redemption) => (
-                    <div key={redemption.id} className="se-history-item">
-                      <div className="se-history-content">
-                        <div className="se-history-name">
-                          {redemption.redemption_items?.name || 'Unknown Item'}
+                    .map((redemption) => {
+                      return (
+                        <div key={redemption.id} className="se-history-item">
+                          <div className="se-history-content">
+                            <div className="se-history-name">
+                              {redemption.redemption_items?.name || 'Unknown Item'}
+                            </div>
+                            <div className="se-history-meta">
+                              <span className="se-history-user">@{redemption.username}</span>
+                              <span className="se-history-points">{redemption.points_spent.toLocaleString()} pts</span>
+                            </div>
+                          </div>
+                          <div className="se-history-status">
+                            {redemption.processed ? '✓' : '○'}
+                          </div>
                         </div>
-                        <div className="se-history-meta">
-                          <span className="se-history-points">{redemption.points_spent.toLocaleString()} pts</span>
-                          <span className="se-history-date">{new Date(redemption.redeemed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-                        </div>
-                      </div>
-                      <div className="se-history-status">
-                        {redemption.processed ? '✓' : '○'}
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
                 </div>
-                {userRedemptions.length > itemsPerPage && (
+                {allRedemptions.length > itemsPerPage && (
                   <div className="se-history-pagination">
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
@@ -324,11 +346,11 @@ export default function StreamElementsPanel() {
                       ‹
                     </button>
                     <span className="se-page-info">
-                      {currentPage} / {Math.ceil(userRedemptions.length / itemsPerPage)}
+                      {currentPage} / {Math.ceil(allRedemptions.length / itemsPerPage)}
                     </span>
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(userRedemptions.length / itemsPerPage), prev + 1))}
-                      disabled={currentPage >= Math.ceil(userRedemptions.length / itemsPerPage)}
+                      onClick={() => setCurrentPage(prev => Math.min(Math.ceil(allRedemptions.length / itemsPerPage), prev + 1))}
+                      disabled={currentPage === Math.ceil(allRedemptions.length / itemsPerPage)}
                       className="se-page-btn"
                     >
                       ›

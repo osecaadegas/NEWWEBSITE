@@ -1,5 +1,23 @@
 -- StreamElements Integration Database Setup
 
+-- Table: user_roles (if not exists)
+-- Required for admin/moderator checks in RLS policies
+CREATE TABLE IF NOT EXISTS user_roles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'user',
+  access_expires_at TIMESTAMP WITH TIME ZONE,
+  is_active BOOLEAN DEFAULT true,
+  moderator_permissions JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Create index for faster queries
+CREATE INDEX IF NOT EXISTS idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_role ON user_roles(role);
+
 -- Table: streamelements_connections
 -- Stores user's StreamElements account connections
 CREATE TABLE IF NOT EXISTS streamelements_connections (
@@ -79,24 +97,13 @@ CREATE POLICY "Admins can manage redemption items"
   );
 
 -- RLS Policies for point_redemptions
-CREATE POLICY "Users can view their own redemptions"
+CREATE POLICY "Anyone can view all redemptions"
   ON point_redemptions FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (true);
 
 CREATE POLICY "Users can create redemptions"
   ON point_redemptions FOR INSERT
   WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Admins can view all redemptions"
-  ON point_redemptions FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM user_roles
-      WHERE user_id = auth.uid()
-      AND role IN ('admin', 'moderator')
-      AND is_active = true
-    )
-  );
 
 CREATE POLICY "Admins can update redemptions"
   ON point_redemptions FOR UPDATE
