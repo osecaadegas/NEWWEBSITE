@@ -10,11 +10,22 @@ export default function TheLife() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [activeTab, setActiveTab] = useState('crimes');
+  const [onlinePlayers, setOnlinePlayers] = useState([]);
+  const [drugOps, setDrugOps] = useState([]);
+  const [brothel, setBrothel] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [equippedItems, setEquippedItems] = useState([]);
 
   useEffect(() => {
     if (user) {
       initializePlayer();
       loadRobberies();
+      loadInventory();
+      loadDrugOps();
+      loadBrothel();
+      loadOnlinePlayers();
+      loadLeaderboard();
       startTicketRefill();
     }
   }, [user]);
@@ -286,6 +297,387 @@ export default function TheLife() {
     }
   };
 
+  // Load player inventory
+  const loadInventory = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_inventory')
+        .select(`
+          id,
+          quantity,
+          equipped,
+          items (
+            id,
+            name,
+            type,
+            icon,
+            rarity
+          )
+        `)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setInventory(data || []);
+      setEquippedItems(data?.filter(item => item.equipped) || []);
+    } catch (err) {
+      console.error('Error loading inventory:', err);
+    }
+  };
+
+  // Load online players for PvP
+  const loadOnlinePlayers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .select('id, user_id, level, xp, cash, pvp_wins, pvp_losses')
+        .neq('user_id', user.id)
+        .gte('updated_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+        .limit(20);
+
+      if (error) throw error;
+      setOnlinePlayers(data || []);
+    } catch (err) {
+      console.error('Error loading online players:', err);
+    }
+  };
+
+  // Attack another player (PvP)
+  const attackPlayer = async (targetPlayer) => {
+    if (player.tickets < 3) {
+      setMessage({ type: 'error', text: 'Need 3 tickets to attack!' });
+      return;
+    }
+
+    if (player.hp < 20) {
+      setMessage({ type: 'error', text: 'Not enough HP to attack!' });
+      return;
+    }
+
+    try {
+      // Calculate combat outcome based on level, HP, and equipped items
+      const playerPower = player.level * 10 + player.hp + (equippedItems.length * 20);
+      const targetPower = targetPlayer.level * 10 + 100; // Assume target has full HP
+      
+      const winChance = (playerPower / (playerPower + targetPower)) * 100;
+      const roll = Math.random() * 100;
+      const won = roll < winChance;
+
+      const hpLost = Math.floor(Math.random() * 30) + 10;
+      const cashStolen = won ? Math.floor(targetPlayer.cash * 0.1) : 0;
+
+      let updates = {
+        tickets: player.tickets - 3,
+        hp: Math.max(0, player.hp - hpLost)
+      };
+
+      if (won) {
+        updates.cash = player.cash + cashStolen;
+        updates.pvp_wins = player.pvp_wins + 1;
+        
+        // Send target to hospital
+        await supabase
+          .from('the_life_players')
+          .update({
+            hp: Math.max(0, 100 - hpLost),
+            cash: Math.max(0, targetPlayer.cash - cashStolen),
+            hospital_until: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+          })
+          .eq('id', targetPlayer.id);
+
+        setMessage({ 
+          type: 'success', 
+          text: `Victory! You stole $${cashStolen.toLocaleString()} and sent them to hospital!` 
+        });
+      } else {
+        updates.pvp_losses = player.pvp_losses + 1;
+        updates.hospital_until = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+        setMessage({ 
+          type: 'error', 
+          text: `Defeated! You're in hospital for 30 minutes` 
+        });
+      }
+
+      // Update player
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update(updates)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Log PvP battle
+      await supabase.from('the_life_pvp_logs').insert({
+        attacker_id: player.id,
+        defender_id: targetPlayer.id,
+        winner_id: won ? player.id : targetPlayer.id,
+        cash_stolen: cashStolen,
+        attacker_hp_lost: hpLost,
+        defender_hp_lost: hpLost
+      });
+
+      setPlayer(data);
+      loadOnlinePlayers();
+    } catch (err) {
+      console.error('Error attacking player:', err);
+      setMessage({ type: 'error', text: 'Attack failed' });
+    }
+  };
+
+  // Load drug operations
+  const loadDrugOps = async () => {
+    try {
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!playerData) return;
+
+      const { data, error } = await supabase
+        .from('the_life_drug_ops')
+        .select('*')
+        .eq('player_id', playerData.id);
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setDrugOps(data || []);
+    } catch (err) {
+      console.error('Error loading drug ops:', err);
+    }
+  };
+
+  // Start drug production
+  const startDrugProduction = async (drugType, hours) => {
+    const cost = hours * 100;
+    
+    if (player.cash < cost) {
+      setMessage({ type: 'error', text: 'Not enough cash!' });
+      return;
+    }
+
+    try {
+      const readyAt = new Date(Date.now() + hours * 60 * 60 * 1000);
+      
+      await supabase.from('the_life_drug_ops').upsert({
+        player_id: player.id,
+        drug_type: drugType,
+        quantity: hours * 10,
+        production_started_at: new Date().toISOString(),
+        production_ready_at: readyAt.toISOString(),
+        status: 'producing'
+      }, { onConflict: 'player_id,drug_type' });
+
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - cost })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadDrugOps();
+      setMessage({ type: 'success', text: `Started producing ${drugType}!` });
+    } catch (err) {
+      console.error('Error starting production:', err);
+    }
+  };
+
+  // Collect and sell drugs
+  const collectDrugs = async (drugOp) => {
+    if (new Date(drugOp.production_ready_at) > new Date()) {
+      setMessage({ type: 'error', text: 'Production not ready yet!' });
+      return;
+    }
+
+    try {
+      const sellPrice = drugOp.quantity * 50;
+
+      await supabase
+        .from('the_life_drug_ops')
+        .update({ status: 'idle', quantity: 0 })
+        .eq('id', drugOp.id);
+
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash + sellPrice })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadDrugOps();
+      setMessage({ type: 'success', text: `Sold for $${sellPrice.toLocaleString()}!` });
+    } catch (err) {
+      console.error('Error collecting drugs:', err);
+    }
+  };
+
+  // Load brothel
+  const loadBrothel = async () => {
+    try {
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!playerData) return;
+
+      const { data, error } = await supabase
+        .from('the_life_brothels')
+        .select('*')
+        .eq('player_id', playerData.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setBrothel(data);
+    } catch (err) {
+      console.error('Error loading brothel:', err);
+    }
+  };
+
+  // Initialize brothel
+  const initBrothel = async () => {
+    const cost = 5000;
+    
+    if (player.cash < cost) {
+      setMessage({ type: 'error', text: 'Need $5,000 to start a brothel!' });
+      return;
+    }
+
+    try {
+      await supabase.from('the_life_brothels').insert({
+        player_id: player.id,
+        workers: 1,
+        income_per_hour: 50
+      });
+
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - cost })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadBrothel();
+      setMessage({ type: 'success', text: 'Brothel opened!' });
+    } catch (err) {
+      console.error('Error initializing brothel:', err);
+    }
+  };
+
+  // Hire brothel worker
+  const hireWorker = async () => {
+    const cost = 1000;
+    
+    if (player.cash < cost) {
+      setMessage({ type: 'error', text: 'Need $1,000 to hire a worker!' });
+      return;
+    }
+
+    try {
+      const newWorkers = brothel.workers + 1;
+      await supabase
+        .from('the_life_brothels')
+        .update({
+          workers: newWorkers,
+          income_per_hour: newWorkers * 50
+        })
+        .eq('id', brothel.id);
+
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - cost })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadBrothel();
+      setMessage({ type: 'success', text: 'Worker hired!' });
+    } catch (err) {
+      console.error('Error hiring worker:', err);
+    }
+  };
+
+  // Collect brothel income
+  const collectBrothelIncome = async () => {
+    const lastCollection = new Date(brothel.last_collection);
+    const now = new Date();
+    const hoursPassed = (now - lastCollection) / 1000 / 60 / 60;
+    const income = Math.floor(hoursPassed * brothel.income_per_hour);
+
+    if (income <= 0) {
+      setMessage({ type: 'error', text: 'No income to collect yet!' });
+      return;
+    }
+
+    try {
+      await supabase
+        .from('the_life_brothels')
+        .update({
+          last_collection: now.toISOString(),
+          total_earned: brothel.total_earned + income
+        })
+        .eq('id', brothel.id);
+
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash + income })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadBrothel();
+      setMessage({ type: 'success', text: `Collected $${income.toLocaleString()}!` });
+    } catch (err) {
+      console.error('Error collecting income:', err);
+    }
+  };
+
+  // Load leaderboard
+  const loadLeaderboard = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .select('user_id, level, xp, cash, bank_balance, pvp_wins, total_robberies')
+        .order('xp', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setLeaderboard(data || []);
+    } catch (err) {
+      console.error('Error loading leaderboard:', err);
+    }
+  };
+
+  // Equip/unequip inventory item
+  const toggleEquipItem = async (item) => {
+    try {
+      await supabase
+        .from('user_inventory')
+        .update({ equipped: !item.equipped })
+        .eq('id', item.id);
+
+      loadInventory();
+      setMessage({ 
+        type: 'success', 
+        text: `${item.equipped ? 'Unequipped' : 'Equipped'} ${item.items.name}!` 
+      });
+    } catch (err) {
+      console.error('Error toggling equip:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="the-life-container">
@@ -388,6 +780,36 @@ export default function TheLife() {
           🏦 Bank
         </button>
         <button 
+          className={`tab ${activeTab === 'pvp' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pvp')}
+        >
+          🥊 PvP
+        </button>
+        <button 
+          className={`tab ${activeTab === 'drugs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('drugs')}
+        >
+          💊 Drugs
+        </button>
+        <button 
+          className={`tab ${activeTab === 'brothel' ? 'active' : ''}`}
+          onClick={() => setActiveTab('brothel')}
+        >
+          💃 Brothel
+        </button>
+        <button 
+          className={`tab ${activeTab === 'inventory' ? 'active' : ''}`}
+          onClick={() => setActiveTab('inventory')}
+        >
+          🎒 Inventory
+        </button>
+        <button 
+          className={`tab ${activeTab === 'leaderboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('leaderboard')}
+        >
+          🏆 Leaderboard
+        </button>
+        <button 
           className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
           onClick={() => setActiveTab('stats')}
         >
@@ -446,6 +868,234 @@ export default function TheLife() {
                 <button onClick={() => withdrawFromBank(player.bank_balance)}>Withdraw All</button>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'pvp' && (
+          <div className="pvp-section">
+            <h2>🥊 Player vs Player</h2>
+            <p>Attack other players and steal their cash! Win chance depends on your level and HP.</p>
+            <div className="online-players">
+              <h3>Online Players ({onlinePlayers.length})</h3>
+              {onlinePlayers.length === 0 ? (
+                <p className="no-players">No other players online right now...</p>
+              ) : (
+                <div className="players-grid">
+                  {onlinePlayers.map(target => {
+                    const winChance = Math.min(95, Math.max(5, 50 + ((player?.level || 0) - target.level) * 5));
+                    return (
+                      <div key={target.id} className="pvp-card">
+                        <div className="pvp-player-info">
+                          <h4>{target.username}</h4>
+                          <p>Level {target.level} | HP: {target.current_hp}/{target.max_hp}</p>
+                          <p>Cash: ${target.cash?.toLocaleString()}</p>
+                        </div>
+                        <div className="pvp-action">
+                          <p className="win-chance">Win Chance: {winChance}%</p>
+                          <button 
+                            onClick={() => attackPlayer(target.id)}
+                            disabled={player?.current_hp <= 0}
+                            className="attack-btn"
+                          >
+                            Attack
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'drugs' && (
+          <div className="drugs-section">
+            <h2>💊 Drug Operations</h2>
+            <p>Produce drugs and sell them for profit. Higher levels unlock more profitable operations.</p>
+            <div className="drugs-grid">
+              <div className="drug-card">
+                <h3>Weed Farm</h3>
+                <p>Cost: $500 | Profit: $1,500 | Time: 30m</p>
+                {drugOps?.weed ? (
+                  <>
+                    <p>Status: {new Date(drugOps.weed_completed_at) > new Date() ? 'Producing...' : 'Ready!'}</p>
+                    {new Date(drugOps.weed_completed_at) <= new Date() ? (
+                      <button onClick={() => collectDrugs('weed')} className="collect-btn">Collect $1,500</button>
+                    ) : (
+                      <p className="timer">
+                        {Math.ceil((new Date(drugOps.weed_completed_at) - new Date()) / 60000)} min left
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <button onClick={() => startDrugProduction('weed')} disabled={player?.cash < 500}>
+                    Start Production ($500)
+                  </button>
+                )}
+              </div>
+
+              <div className="drug-card">
+                <h3>Meth Lab</h3>
+                <p>Cost: $2,000 | Profit: $7,000 | Time: 1h</p>
+                {player?.level >= 5 ? (
+                  <>
+                    {drugOps?.meth ? (
+                      <>
+                        <p>Status: {new Date(drugOps.meth_completed_at) > new Date() ? 'Producing...' : 'Ready!'}</p>
+                        {new Date(drugOps.meth_completed_at) <= new Date() ? (
+                          <button onClick={() => collectDrugs('meth')} className="collect-btn">Collect $7,000</button>
+                        ) : (
+                          <p className="timer">
+                            {Math.ceil((new Date(drugOps.meth_completed_at) - new Date()) / 60000)} min left
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <button onClick={() => startDrugProduction('meth')} disabled={player?.cash < 2000}>
+                        Start Production ($2,000)
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <p className="locked">🔒 Level 5 Required</p>
+                )}
+              </div>
+
+              <div className="drug-card">
+                <h3>Cocaine Factory</h3>
+                <p>Cost: $5,000 | Profit: $20,000 | Time: 2h</p>
+                {player?.level >= 10 ? (
+                  <>
+                    {drugOps?.cocaine ? (
+                      <>
+                        <p>Status: {new Date(drugOps.cocaine_completed_at) > new Date() ? 'Producing...' : 'Ready!'}</p>
+                        {new Date(drugOps.cocaine_completed_at) <= new Date() ? (
+                          <button onClick={() => collectDrugs('cocaine')} className="collect-btn">Collect $20,000</button>
+                        ) : (
+                          <p className="timer">
+                            {Math.ceil((new Date(drugOps.cocaine_completed_at) - new Date()) / 60000)} min left
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <button onClick={() => startDrugProduction('cocaine')} disabled={player?.cash < 5000}>
+                        Start Production ($5,000)
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <p className="locked">🔒 Level 10 Required</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'brothel' && (
+          <div className="brothel-section">
+            <h2>💃 Brothel Management</h2>
+            <p>Run your brothel empire! Hire workers for passive income.</p>
+            {brothel ? (
+              <div className="brothel-active">
+                <div className="brothel-stats">
+                  <div className="brothel-stat">
+                    <h3>Workers</h3>
+                    <p className="big-number">{brothel.workers}</p>
+                  </div>
+                  <div className="brothel-stat">
+                    <h3>Income Per Hour</h3>
+                    <p className="big-number">${(brothel.workers * 100).toLocaleString()}</p>
+                  </div>
+                  <div className="brothel-stat">
+                    <h3>Uncollected</h3>
+                    <p className="big-number">${brothel.uncollected_income?.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="brothel-actions">
+                  <button onClick={hireWorker} disabled={player?.cash < 1000}>
+                    Hire Worker ($1,000)
+                  </button>
+                  <button onClick={collectBrothelIncome} disabled={brothel.uncollected_income <= 0} className="collect-btn">
+                    Collect Income
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="brothel-init">
+                <h3>Start Your Brothel Empire</h3>
+                <p>Initial investment: $5,000</p>
+                <p>Each worker generates $100/hour passive income</p>
+                <button onClick={initBrothel} disabled={player?.cash < 5000}>
+                  Open Brothel ($5,000)
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'inventory' && (
+          <div className="inventory-section">
+            <h2>🎒 Equipment</h2>
+            <p>Equip items from your inventory to boost your stats!</p>
+            {inventory.length === 0 ? (
+              <p className="no-items">No items in your inventory. Complete games to earn items!</p>
+            ) : (
+              <div className="equipment-grid">
+                {inventory.map(item => {
+                  const isEquipped = equippedItems.some(e => e.item_id === item.item_id);
+                  return (
+                    <div key={item.item_id} className={`equipment-card ${isEquipped ? 'equipped' : ''}`}>
+                      <div className="item-icon">{item.icon || '📦'}</div>
+                      <h4>{item.name}</h4>
+                      <p className="item-description">{item.description}</p>
+                      {item.attack_bonus > 0 && <p className="bonus">⚔️ +{item.attack_bonus} Attack</p>}
+                      {item.defense_bonus > 0 && <p className="bonus">🛡️ +{item.defense_bonus} Defense</p>}
+                      {item.luck_bonus > 0 && <p className="bonus">🍀 +{item.luck_bonus}% Luck</p>}
+                      <button 
+                        onClick={() => toggleEquipItem(item.item_id)}
+                        className={isEquipped ? 'unequip-btn' : 'equip-btn'}
+                      >
+                        {isEquipped ? 'Unequip' : 'Equip'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'leaderboard' && (
+          <div className="leaderboard-section">
+            <h2>🏆 Leaderboard</h2>
+            <p>Top players in The Life</p>
+            {leaderboard.length === 0 ? (
+              <p>Loading leaderboard...</p>
+            ) : (
+              <div className="leaderboard-table">
+                <div className="leaderboard-header">
+                  <span>Rank</span>
+                  <span>Player</span>
+                  <span>Level</span>
+                  <span>XP</span>
+                  <span>Net Worth</span>
+                  <span>PvP Wins</span>
+                </div>
+                {leaderboard.map((player, index) => (
+                  <div key={player.id} className={`leaderboard-row ${index < 3 ? 'top-three' : ''}`}>
+                    <span className="rank">
+                      {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                    </span>
+                    <span className="username">{player.username}</span>
+                    <span>{player.level}</span>
+                    <span>{player.xp.toLocaleString()}</span>
+                    <span>${player.net_worth.toLocaleString()}</span>
+                    <span>{player.pvp_wins}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
