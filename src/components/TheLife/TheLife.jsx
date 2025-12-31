@@ -822,33 +822,61 @@ export default function TheLife() {
       <div className="tab-content">
         {activeTab === 'crimes' && (
           <div className="crimes-section">
-            <h2>Available Crimes</h2>
             <div className="robberies-grid">
-              {robberies.map(robbery => (
-                <div 
-                  key={robbery.id} 
-                  className={`robbery-card ${player.level < robbery.min_level_required ? 'locked' : ''}`}
-                >
-                  <h3>{robbery.name}</h3>
-                  <p className="robbery-desc">{robbery.description}</p>
-                  <div className="robbery-stats">
-                    <span>💪 Level {robbery.min_level_required}</span>
-                    <span>🎫 {robbery.ticket_cost} tickets</span>
-                    <span>✅ {robbery.success_rate}% success</span>
-                  </div>
-                  <div className="robbery-rewards">
-                    <span>💰 ${robbery.base_reward.toLocaleString()} - ${robbery.max_reward.toLocaleString()}</span>
-                    <span>⭐ +{robbery.xp_reward} XP</span>
-                  </div>
-                  <button 
-                    className="robbery-button"
-                    onClick={() => attemptRobbery(robbery)}
-                    disabled={player.level < robbery.min_level_required || isInJail || isInHospital || player.tickets < robbery.ticket_cost}
+              {robberies.map(robbery => {
+                const crimeImages = {
+                  'Pickpocket': 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=500',
+                  'Car Theft': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=500',
+                  'House Burglary': 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=500',
+                  'Convenience Store': 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=500',
+                  'Bank Heist': 'https://images.unsplash.com/photo-1551135049-8a33b5883817?w=500',
+                  'Casino Vault': 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?w=500'
+                };
+                
+                return (
+                  <div 
+                    key={robbery.id} 
+                    className={`crime-card ${player.level < robbery.min_level_required ? 'locked' : ''}`}
                   >
-                    {player.level < robbery.min_level_required ? 'Locked' : 'Attempt Crime'}
-                  </button>
-                </div>
-              ))}
+                    <div className="crime-image-container">
+                      <img src={crimeImages[robbery.name] || crimeImages['Pickpocket']} alt={robbery.name} className="crime-image" />
+                      {player.level < robbery.min_level_required && (
+                        <div className="locked-overlay">
+                          <span>🔒 Level {robbery.min_level_required} Required</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="crime-content">
+                      <h3 className="crime-title">{robbery.name}</h3>
+                      <p className="crime-desc">{robbery.description}</p>
+                      <div className="crime-stats">
+                        <div className="stat-item">
+                          <span className="stat-icon">🎫</span>
+                          <span>{robbery.ticket_cost}</span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-icon">✅</span>
+                          <span>{robbery.success_rate}%</span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-icon">⭐</span>
+                          <span>+{robbery.xp_reward} XP</span>
+                        </div>
+                      </div>
+                      <div className="crime-reward">
+                        <span className="reward-amount">${robbery.base_reward.toLocaleString()} - ${robbery.max_reward.toLocaleString()}</span>
+                      </div>
+                      <button 
+                        className="crime-button"
+                        onClick={() => attemptRobbery(robbery)}
+                        disabled={player.level < robbery.min_level_required || isInJail || isInHospital || player.tickets < robbery.ticket_cost}
+                      >
+                        {player.level < robbery.min_level_required ? '🔒 Locked' : 'Commit Crime'}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -916,7 +944,10 @@ export default function TheLife() {
             <p>Produce drugs and sell them for profit. Higher levels unlock more profitable operations.</p>
             <div className="drugs-grid">
               <div className="drug-card">
-                <h3>Weed Farm</h3>
+                <div className="drug-image-container">
+                  <img src="https://images.unsplash.com/photo-1566890579320-47fad3d2880c?w=400" alt="Weed" className="drug-image" />
+                </div>
+                <h3>🌿 Weed Farm</h3>
                 <p>Cost: $500 | Profit: $1,500 | Time: 30m</p>
                 {drugOps?.weed ? (
                   <>
@@ -937,7 +968,10 @@ export default function TheLife() {
               </div>
 
               <div className="drug-card">
-                <h3>Meth Lab</h3>
+                <div className="drug-image-container">
+                  <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400" alt="Meth Lab" className="drug-image" />
+                </div>
+                <h3>🧪 Meth Lab</h3>
                 <p>Cost: $2,000 | Profit: $7,000 | Time: 1h</p>
                 {player?.level >= 5 ? (
                   <>
@@ -964,7 +998,10 @@ export default function TheLife() {
               </div>
 
               <div className="drug-card">
-                <h3>Cocaine Factory</h3>
+                <div className="drug-image-container">
+                  <img src="https://images.unsplash.com/photo-1519671845924-1fd18db430b8?w=400" alt="Cocaine" className="drug-image" />
+                </div>
+                <h3>❄️ Cocaine Factory</h3>
                 <p>Cost: $5,000 | Profit: $20,000 | Time: 2h</p>
                 {player?.level >= 10 ? (
                   <>
@@ -999,10 +1036,13 @@ export default function TheLife() {
             <p>Run your brothel empire! Hire workers for passive income.</p>
             {brothel ? (
               <div className="brothel-active">
+                <div className="brothel-header">
+                  <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800" alt="Brothel" className="brothel-banner" />
+                </div>
                 <div className="brothel-stats">
                   <div className="brothel-stat">
                     <h3>Workers</h3>
-                    <p className="big-number">{brothel.workers}</p>
+                    <p className="big-number">{brothel.workers} 👯</p>
                   </div>
                   <div className="brothel-stat">
                     <h3>Income Per Hour</h3>
@@ -1012,6 +1052,11 @@ export default function TheLife() {
                     <h3>Uncollected</h3>
                     <p className="big-number">${brothel.uncollected_income?.toLocaleString()}</p>
                   </div>
+                </div>
+                <div className="brothel-workers">
+                  {Array.from({ length: brothel.workers }).map((_, i) => (
+                    <div key={i} className="worker-icon">💃</div>
+                  ))}
                 </div>
                 <div className="brothel-actions">
                   <button onClick={hireWorker} disabled={player?.cash < 1000}>
@@ -1024,6 +1069,7 @@ export default function TheLife() {
               </div>
             ) : (
               <div className="brothel-init">
+                <img src="https://images.unsplash.com/photo-1519671845924-1fd18db430b8?w=600" alt="Start Brothel" className="brothel-init-image" />
                 <h3>Start Your Brothel Empire</h3>
                 <p>Initial investment: $5,000</p>
                 <p>Each worker generates $100/hour passive income</p>
