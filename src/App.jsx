@@ -26,6 +26,7 @@ import TwitchChat from './components/TwitchChat/TwitchChat';
 import BlackjackPremium from './components/Blackjack/BlackjackPremium';
 import Mines from './components/Mines/Mines';
 import TheThugas from './components/TheThugas/TheThugas';
+import TheLife from './components/TheLife/TheLife';
 import SlotManagerPage from './components/SlotManager/SlotManagerPage';
 import GiveawayPage from './components/GiveawayPanel/GiveawayPage';
 import ArtAdPage from './components/ArtAdPanel/ArtAdPage';
@@ -610,6 +611,7 @@ function App() {
                 <Route path="/games/blackjack" element={<BlackjackPremium />} />
                 <Route path="/games/mines" element={<Mines />} />
                 <Route path="/games/thethugas" element={<TheThugas />} />
+                <Route path="/games/thelife" element={<TheLife />} />
                 <Route path="/points" element={<StreamElementsPanel />} />
                 <Route path="/streamelements" element={<StreamElementsPanel />} />
                 <Route path="/points-manager" element={<PointsManager />} />

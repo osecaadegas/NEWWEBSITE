@@ -295,6 +295,13 @@ export default function Sidebar() {
                     <span className="subitem-icon">💣</span>
                     <span className="subitem-label">Mines</span>
                   </button>
+                  <button
+                    className={`sidebar-subitem ${isActive('/games/thelife') ? 'active' : ''}`}
+                    onClick={() => handleNavigation('/games/thelife')}
+                  >
+                    <span className="subitem-icon">🔫</span>
+                    <span className="subitem-label">The Life</span>
+                  </button>
                 </div>
               )}
             </div>
