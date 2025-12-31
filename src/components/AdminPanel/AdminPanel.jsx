@@ -44,13 +44,16 @@ export default function AdminPanel() {
   });
 
   // The Life Management State
-  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'drugs', 'items'
+  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'drugs', 'items', 'workers'
   const [crimes, setCrimes] = useState([]);
   const [items, setItems] = useState([]);
+  const [workers, setWorkers] = useState([]);
   const [showCrimeModal, setShowCrimeModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [editingCrime, setEditingCrime] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [editingWorker, setEditingWorker] = useState(null);
   const [crimeFormData, setCrimeFormData] = useState({
     name: '',
     description: '',
@@ -72,6 +75,16 @@ export default function AdminPanel() {
     rarity: 'common',
     tradeable: false
   });
+  const [workerFormData, setWorkerFormData] = useState({
+    name: '',
+    description: '',
+    image_url: '',
+    hire_cost: 1000,
+    income_per_hour: 100,
+    rarity: 'common',
+    min_level_required: 1,
+    is_active: true
+  });
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -84,6 +97,7 @@ export default function AdminPanel() {
     loadOffers();
     loadCrimes();
     loadItems();
+    loadWorkers();
   }, []);
 
   const loadUsers = async () => {
@@ -541,6 +555,124 @@ export default function AdminPanel() {
       loadItems();
     } catch (err) {
       setError('Failed to delete item: ' + err.message);
+    }
+  };
+
+  // === BROTHEL WORKERS MANAGEMENT ===
+  
+  const loadWorkers = async () => {
+    const { data, error } = await supabase
+      .from('the_life_brothel_workers')
+      .select('*')
+      .order('rarity', { ascending: true })
+      .order('hire_cost', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading workers:', error);
+    } else {
+      setWorkers(data || []);
+    }
+  };
+
+  const openWorkerModal = (worker = null) => {
+    if (worker) {
+      setWorkerFormData({
+        name: worker.name,
+        description: worker.description || '',
+        image_url: worker.image_url || '',
+        hire_cost: worker.hire_cost,
+        income_per_hour: worker.income_per_hour,
+        rarity: worker.rarity,
+        min_level_required: worker.min_level_required,
+        is_active: worker.is_active
+      });
+      setEditingWorker(worker);
+    } else {
+      setWorkerFormData({
+        name: '',
+        description: '',
+        image_url: '',
+        hire_cost: 1000,
+        income_per_hour: 100,
+        rarity: 'common',
+        min_level_required: 1,
+        is_active: true
+      });
+      setEditingWorker(null);
+    }
+    setShowWorkerModal(true);
+  };
+
+  const closeWorkerModal = () => {
+    setShowWorkerModal(false);
+    setEditingWorker(null);
+  };
+
+  const saveWorker = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!workerFormData.name) {
+      setError('Worker name is required');
+      return;
+    }
+
+    try {
+      if (editingWorker) {
+        const { error } = await supabase
+          .from('the_life_brothel_workers')
+          .update(workerFormData)
+          .eq('id', editingWorker.id);
+
+        if (error) throw error;
+        setSuccess('Worker updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('the_life_brothel_workers')
+          .insert([workerFormData]);
+
+        if (error) throw error;
+        setSuccess('Worker created successfully!');
+      }
+
+      closeWorkerModal();
+      loadWorkers();
+    } catch (err) {
+      setError('Failed to save worker: ' + err.message);
+    }
+  };
+
+  const deleteWorker = async (workerId) => {
+    if (!confirm('Are you sure you want to delete this worker?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('the_life_brothel_workers')
+        .delete()
+        .eq('id', workerId);
+
+      if (error) throw error;
+      setSuccess('Worker deleted successfully!');
+      loadWorkers();
+    } catch (err) {
+      setError('Failed to delete worker: ' + err.message);
+    }
+  };
+
+  const toggleWorkerActive = async (workerId, currentStatus) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_brothel_workers')
+        .update({ is_active: !currentStatus })
+        .eq('id', workerId);
+
+      if (error) throw error;
+      loadWorkers();
+    } catch (err) {
+      setError('Failed to toggle worker status: ' + err.message);
     }
   };
 
@@ -1191,6 +1323,12 @@ export default function AdminPanel() {
               >
                 🎒 Items
               </button>
+              <button 
+                className={`thelife-tab ${theLifeTab === 'workers' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('workers')}
+              >
+                💃 Brothel Workers
+              </button>
             </div>
 
             {/* Crimes Section */}
@@ -1285,6 +1423,70 @@ export default function AdminPanel() {
                           ✏️ Edit
                         </button>
                         <button onClick={() => deleteItem(item.id)} className="btn-delete">
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Brothel Workers Section */}
+            {theLifeTab === 'workers' && (
+              <div className="workers-management">
+                <div className="section-header">
+                  <h3>💃 Brothel Workers Management</h3>
+                  <button onClick={() => openWorkerModal()} className="btn-primary">
+                    ➕ Add New Worker
+                  </button>
+                </div>
+
+                <div className="workers-grid">
+                  {workers.map(worker => (
+                    <div key={worker.id} className="worker-admin-card">
+                      <div className="worker-preview-image">
+                        {worker.image_url ? (
+                          <img src={worker.image_url} alt={worker.name} />
+                        ) : (
+                          <div className="no-image">No Image</div>
+                        )}
+                        {!worker.is_active && (
+                          <div className="inactive-badge">INACTIVE</div>
+                        )}
+                      </div>
+                      <div className="worker-info">
+                        <h4>{worker.name}</h4>
+                        <p className="worker-desc">{worker.description}</p>
+                        <div className="worker-stats-grid">
+                          <div className="stat">
+                            <span className="label">Hire Cost</span>
+                            <span className="value">${worker.hire_cost.toLocaleString()}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Income/Hour</span>
+                            <span className="value">${worker.income_per_hour}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Min Level</span>
+                            <span className="value">{worker.min_level_required}</span>
+                          </div>
+                          <div className="stat full-width">
+                            <span className={`rarity-badge ${worker.rarity}`}>{worker.rarity}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="worker-actions">
+                        <button 
+                          onClick={() => toggleWorkerActive(worker.id, worker.is_active)} 
+                          className={`btn-toggle ${worker.is_active ? 'active' : 'inactive'}`}
+                        >
+                          {worker.is_active ? '✓ Active' : '✗ Inactive'}
+                        </button>
+                        <button onClick={() => openWorkerModal(worker)} className="btn-edit">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => deleteWorker(worker.id)} className="btn-delete">
                           🗑️ Delete
                         </button>
                       </div>
@@ -1522,6 +1724,120 @@ export default function AdminPanel() {
                     {editingItem ? 'Update Item' : 'Create Item'}
                   </button>
                   <button onClick={closeItemModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Worker Modal */}
+          {showWorkerModal && (
+            <div className="modal-overlay" onClick={closeWorkerModal}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingWorker ? 'Edit Worker' : 'Add New Worker'}</h2>
+                  <button onClick={closeWorkerModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Worker Name *</label>
+                      <input
+                        type="text"
+                        value={workerFormData.name}
+                        onChange={(e) => setWorkerFormData({...workerFormData, name: e.target.value})}
+                        placeholder="e.g., Diamond, Sapphire"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Description</label>
+                      <textarea
+                        value={workerFormData.description}
+                        onChange={(e) => setWorkerFormData({...workerFormData, description: e.target.value})}
+                        placeholder="Describe this worker..."
+                        rows="3"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Image URL</label>
+                      <input
+                        type="text"
+                        value={workerFormData.image_url}
+                        onChange={(e) => setWorkerFormData({...workerFormData, image_url: e.target.value})}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                      {workerFormData.image_url && (
+                        <div className="image-preview">
+                          <img src={workerFormData.image_url} alt="Preview" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Hire Cost ($)</label>
+                      <input
+                        type="number"
+                        value={workerFormData.hire_cost}
+                        onChange={(e) => setWorkerFormData({...workerFormData, hire_cost: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Income Per Hour ($)</label>
+                      <input
+                        type="number"
+                        value={workerFormData.income_per_hour}
+                        onChange={(e) => setWorkerFormData({...workerFormData, income_per_hour: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Min Level Required</label>
+                      <input
+                        type="number"
+                        value={workerFormData.min_level_required}
+                        onChange={(e) => setWorkerFormData({...workerFormData, min_level_required: parseInt(e.target.value)})}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Rarity</label>
+                      <select
+                        value={workerFormData.rarity}
+                        onChange={(e) => setWorkerFormData({...workerFormData, rarity: e.target.value})}
+                      >
+                        <option value="common">Common</option>
+                        <option value="rare">Rare</option>
+                        <option value="epic">Epic</option>
+                        <option value="legendary">Legendary</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group checkbox-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={workerFormData.is_active}
+                          onChange={(e) => setWorkerFormData({...workerFormData, is_active: e.target.checked})}
+                        />
+                        <span>Active (visible to players)</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={saveWorker} className="btn-save">
+                    {editingWorker ? 'Update Worker' : 'Create Worker'}
+                  </button>
+                  <button onClick={closeWorkerModal} className="btn-cancel">
                     Cancel
                   </button>
                 </div>

@@ -13,6 +13,8 @@ export default function TheLife() {
   const [onlinePlayers, setOnlinePlayers] = useState([]);
   const [drugOps, setDrugOps] = useState([]);
   const [brothel, setBrothel] = useState(null);
+  const [availableWorkers, setAvailableWorkers] = useState([]);
+  const [hiredWorkers, setHiredWorkers] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState([]);
@@ -24,6 +26,8 @@ export default function TheLife() {
       loadInventory();
       loadDrugOps();
       loadBrothel();
+      loadAvailableWorkers();
+      loadHiredWorkers();
       loadOnlinePlayers();
       loadLeaderboard();
       startTicketRefill();
@@ -541,6 +545,48 @@ export default function TheLife() {
     }
   };
 
+  // Load available workers
+  const loadAvailableWorkers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('the_life_brothel_workers')
+        .select('*')
+        .eq('is_active', true)
+        .order('hire_cost', { ascending: true });
+
+      if (error) throw error;
+      setAvailableWorkers(data || []);
+    } catch (err) {
+      console.error('Error loading available workers:', err);
+    }
+  };
+
+  // Load hired workers
+  const loadHiredWorkers = async () => {
+    try {
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!playerData) return;
+
+      const { data, error } = await supabase
+        .from('the_life_player_brothel_workers')
+        .select(`
+          *,
+          worker:the_life_brothel_workers(*)
+        `)
+        .eq('player_id', playerData.id);
+
+      if (error) throw error;
+      setHiredWorkers(data || []);
+    } catch (err) {
+      console.error('Error loading hired workers:', err);
+    }
+  };
+
   // Initialize brothel
   const initBrothel = async () => {
     const cost = 5000;
@@ -553,8 +599,8 @@ export default function TheLife() {
     try {
       await supabase.from('the_life_brothels').insert({
         player_id: player.id,
-        workers: 1,
-        income_per_hour: 50
+        workers: 0,
+        income_per_hour: 0
       });
 
       const { data, error } = await supabase
@@ -573,28 +619,54 @@ export default function TheLife() {
     }
   };
 
-  // Hire brothel worker
-  const hireWorker = async () => {
-    const cost = 1000;
-    
-    if (player.cash < cost) {
-      setMessage({ type: 'error', text: 'Need $1,000 to hire a worker!' });
+  // Hire specific worker
+  const hireWorker = async (worker) => {
+    if (!brothel) {
+      setMessage({ type: 'error', text: 'You need to open a brothel first!' });
+      return;
+    }
+
+    if (player.cash < worker.hire_cost) {
+      setMessage({ type: 'error', text: `Need $${worker.hire_cost.toLocaleString()} to hire ${worker.name}!` });
+      return;
+    }
+
+    if (player.level < worker.min_level_required) {
+      setMessage({ type: 'error', text: `Need level ${worker.min_level_required} to hire ${worker.name}!` });
+      return;
+    }
+
+    // Check if already hired
+    if (hiredWorkers.some(hw => hw.worker_id === worker.id)) {
+      setMessage({ type: 'error', text: 'You already hired this worker!' });
       return;
     }
 
     try {
-      const newWorkers = brothel.workers + 1;
+      // Add to player's hired workers
+      await supabase
+        .from('the_life_player_brothel_workers')
+        .insert({
+          player_id: player.id,
+          worker_id: worker.id
+        });
+
+      // Update brothel stats
+      const newTotalIncome = (brothel.income_per_hour || 0) + worker.income_per_hour;
+      const newWorkerCount = (brothel.workers || 0) + 1;
+
       await supabase
         .from('the_life_brothels')
         .update({
-          workers: newWorkers,
-          income_per_hour: newWorkers * 50
+          workers: newWorkerCount,
+          income_per_hour: newTotalIncome
         })
         .eq('id', brothel.id);
 
+      // Deduct cost
       const { data, error } = await supabase
         .from('the_life_players')
-        .update({ cash: player.cash - cost })
+        .update({ cash: player.cash - worker.hire_cost })
         .eq('user_id', user.id)
         .select()
         .single();
@@ -602,14 +674,21 @@ export default function TheLife() {
       if (error) throw error;
       setPlayer(data);
       loadBrothel();
-      setMessage({ type: 'success', text: 'Worker hired!' });
+      loadHiredWorkers();
+      setMessage({ type: 'success', text: `${worker.name} hired successfully!` });
     } catch (err) {
       console.error('Error hiring worker:', err);
+      setMessage({ type: 'error', text: 'Failed to hire worker!' });
     }
   };
 
   // Collect brothel income
   const collectBrothelIncome = async () => {
+    if (!brothel || !brothel.income_per_hour) {
+      setMessage({ type: 'error', text: 'Hire some workers first!' });
+      return;
+    }
+
     const lastCollection = new Date(brothel.last_collection);
     const now = new Date();
     const hoursPassed = (now - lastCollection) / 1000 / 60 / 60;
@@ -1028,7 +1107,7 @@ export default function TheLife() {
         {activeTab === 'brothel' && (
           <div className="brothel-section">
             <h2>💃 Brothel Management</h2>
-            <p>Run your brothel empire! Hire workers for passive income.</p>
+            <p>Run your brothel empire! Hire unique workers for passive income.</p>
             {brothel ? (
               <div className="brothel-active">
                 <div className="brothel-header">
@@ -1036,30 +1115,95 @@ export default function TheLife() {
                 </div>
                 <div className="brothel-stats">
                   <div className="brothel-stat">
-                    <h3>Workers</h3>
+                    <h3>Workers Hired</h3>
                     <p className="big-number">{brothel.workers} 👯</p>
                   </div>
                   <div className="brothel-stat">
                     <h3>Income Per Hour</h3>
-                    <p className="big-number">${(brothel.workers * 100).toLocaleString()}</p>
+                    <p className="big-number">${brothel.income_per_hour?.toLocaleString()}</p>
                   </div>
                   <div className="brothel-stat">
-                    <h3>Uncollected</h3>
-                    <p className="big-number">${brothel.uncollected_income?.toLocaleString()}</p>
+                    <h3>Total Earned</h3>
+                    <p className="big-number">${brothel.total_earned?.toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="brothel-workers">
-                  {Array.from({ length: brothel.workers }).map((_, i) => (
-                    <div key={i} className="worker-icon">💃</div>
-                  ))}
-                </div>
+
+                {hiredWorkers.length > 0 && (
+                  <div className="hired-workers-section">
+                    <h3>💼 Your Workers</h3>
+                    <div className="hired-workers-grid">
+                      {hiredWorkers.map(hw => (
+                        <div key={hw.id} className="hired-worker-card">
+                          <img src={hw.worker.image_url} alt={hw.worker.name} />
+                          <div className="hired-worker-info">
+                            <h4>{hw.worker.name}</h4>
+                            <p className="income-rate">${hw.worker.income_per_hour}/hour</p>
+                            <p className="rarity-badge rarity-{hw.worker.rarity}">{hw.worker.rarity}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="brothel-actions">
-                  <button onClick={hireWorker} disabled={player?.cash < 1000}>
-                    Hire Worker ($1,000)
-                  </button>
-                  <button onClick={collectBrothelIncome} disabled={brothel.uncollected_income <= 0} className="collect-btn">
+                  <button onClick={collectBrothelIncome} className="collect-btn">
                     Collect Income
                   </button>
+                </div>
+
+                <h3>🎯 Available Workers</h3>
+                <div className="workers-grid">
+                  {availableWorkers.map(worker => {
+                    const alreadyHired = hiredWorkers.some(hw => hw.worker_id === worker.id);
+                    const canAfford = player?.cash >= worker.hire_cost;
+                    const meetsLevel = player?.level >= worker.min_level_required;
+
+                    return (
+                      <div key={worker.id} className={`worker-card ${alreadyHired ? 'hired' : ''}`}>
+                        <div className="worker-image-container">
+                          <img src={worker.image_url} alt={worker.name} className="worker-image" />
+                          {alreadyHired && <div className="hired-badge">HIRED</div>}
+                        </div>
+                        <div className="worker-info">
+                          <h4>{worker.name}</h4>
+                          <p className="worker-description">{worker.description}</p>
+                          <div className="worker-stats">
+                            <div className="stat">
+                              <span className="label">Hire Cost:</span>
+                              <span className="value">${worker.hire_cost.toLocaleString()}</span>
+                            </div>
+                            <div className="stat">
+                              <span className="label">Income:</span>
+                              <span className="value">${worker.income_per_hour}/hour</span>
+                            </div>
+                            {worker.min_level_required > 0 && (
+                              <div className="stat">
+                                <span className="label">Min Level:</span>
+                                <span className="value">{worker.min_level_required}</span>
+                              </div>
+                            )}
+                          </div>
+                          <span className={`rarity-badge rarity-${worker.rarity}`}>
+                            {worker.rarity.toUpperCase()}
+                          </span>
+                          {alreadyHired ? (
+                            <button disabled className="hired-btn">Already Hired</button>
+                          ) : !meetsLevel ? (
+                            <button disabled className="locked-btn">🔒 Level {worker.min_level_required} Required</button>
+                          ) : (
+                            <button 
+                              onClick={() => hireWorker(worker)} 
+                              disabled={!canAfford}
+                              className="hire-btn"
+                            >
+                              {canAfford ? `Hire ($${worker.hire_cost.toLocaleString()})` : 'Not Enough Cash'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -1067,7 +1211,7 @@ export default function TheLife() {
                 <img src="https://images.unsplash.com/photo-1519671845924-1fd18db430b8?w=600" alt="Start Brothel" className="brothel-init-image" />
                 <h3>Start Your Brothel Empire</h3>
                 <p>Initial investment: $5,000</p>
-                <p>Each worker generates $100/hour passive income</p>
+                <p>Hire unique workers with different income rates and rarities</p>
                 <button onClick={initBrothel} disabled={player?.cash < 5000}>
                   Open Brothel ($5,000)
                 </button>
