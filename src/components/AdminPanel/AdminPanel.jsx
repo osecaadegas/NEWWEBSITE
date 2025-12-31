@@ -395,6 +395,8 @@ export default function AdminPanel() {
       console.error('Error loading items:', error);
     } else {
       setItems(data || []);
+      // Also set available items for business dropdown (filter tradeable)
+      setAvailableItems(data?.filter(item => item.tradeable) || []);
     }
   };
 
@@ -519,21 +521,6 @@ export default function AdminPanel() {
       setBusinesses(data || []);
     } catch (err) {
       console.error('Error loading businesses:', err);
-    }
-  };
-
-  const loadItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('items')
-        .select('*')
-        .eq('tradeable', true)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      setAvailableItems(data || []);
-    } catch (err) {
-      console.error('Error loading items:', err);
     }
   };
 

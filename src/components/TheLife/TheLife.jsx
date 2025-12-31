@@ -18,12 +18,14 @@ export default function TheLife() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
 
   useEffect(() => {
     if (user) {
       initializePlayer();
       loadRobberies();
       loadInventory();
+      loadBusinesses();
       loadDrugOps();
       loadBrothel();
       loadAvailableWorkers();
@@ -162,6 +164,28 @@ export default function TheLife() {
       setRobberies(data);
     } catch (err) {
       console.error('Error loading robberies:', err);
+    }
+  };
+
+  const loadBusinesses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('the_life_businesses')
+        .select(`
+          *,
+          item:item_reward_id (
+            id,
+            name,
+            icon,
+            rarity
+          )
+        `)
+        .order('min_level_required', { ascending: true });
+
+      if (error) throw error;
+      setBusinesses(data || []);
+    } catch (err) {
+      console.error('Error loading businesses:', err);
     }
   };
 
@@ -478,6 +502,87 @@ export default function TheLife() {
   };
 
   // Start drug production
+  const startBusiness = async (business) => {
+    if (player.cash < business.cost) {
+      setMessage({ type: 'error', text: 'Not enough cash!' });
+      return;
+    }
+
+    try {
+      const completedAt = new Date(Date.now() + business.duration_minutes * 60 * 1000);
+      
+      // Create or update business operation
+      const opData = {
+        [business.id]: true,
+        [`${business.id}_completed_at`]: completedAt.toISOString()
+      };
+
+      setDrugOps(prev => ({ ...prev, ...opData }));
+
+      // Deduct cost from player
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - business.cost })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      setMessage({ type: 'success', text: `Started ${business.name}!` });
+    } catch (err) {
+      console.error('Error starting business:', err);
+      setMessage({ type: 'error', text: 'Failed to start business' });
+    }
+  };
+
+  const collectBusiness = async (business) => {
+    try {
+      // If business gives items, add to inventory
+      if (business.item_reward_id) {
+        // Use the database function to add items
+        const { error: invError } = await supabase.rpc('add_item_to_inventory', {
+          p_user_id: user.id,
+          p_item_id: business.item_reward_id,
+          p_quantity: business.item_quantity
+        });
+
+        if (invError) throw invError;
+
+        setMessage({ 
+          type: 'success', 
+          text: `Collected ${business.item_quantity} ${business.unit_name} of ${business.item?.name || 'items'}!` 
+        });
+
+        // Reload inventory to show new items
+        loadInventory();
+      } else {
+        // Legacy: give cash
+        const { data, error } = await supabase
+          .from('the_life_players')
+          .update({ cash: player.cash + business.profit })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        setPlayer(data);
+        setMessage({ type: 'success', text: `Collected $${business.profit.toLocaleString()}!` });
+      }
+
+      // Reset business operation
+      setDrugOps(prev => {
+        const updated = { ...prev };
+        delete updated[business.id];
+        delete updated[`${business.id}_completed_at`];
+        return updated;
+      });
+    } catch (err) {
+      console.error('Error collecting business:', err);
+      setMessage({ type: 'error', text: 'Failed to collect reward' });
+    }
+  };
+
   const startDrugProduction = async (drugType, hours) => {
     const cost = hours * 100;
     
@@ -1049,91 +1154,64 @@ export default function TheLife() {
         {activeTab === 'businesses' && (
           <div className="businesses-section">
             <h2>💼 Business Operations</h2>
-            <p>Start businesses and earn profits. Higher levels unlock more profitable ventures.</p>
+            <p>Start businesses and earn items. Higher levels unlock more profitable ventures.</p>
             <div className="businesses-grid">
-              <div className="business-card">
-                <div className="business-image-container">
-                  <img src="https://images.unsplash.com/photo-1566890579320-47fad3d2880c?w=400" alt="Weed" className="business-image" />
-                </div>
-                <h3>🌿 Weed Farm</h3>
-                <p>Cost: $500 | Profit: $1,500 | Time: 30m</p>
-                {drugOps?.weed ? (
-                  <>
-                    <p>Status: {new Date(drugOps.weed_completed_at) > new Date() ? 'Producing...' : 'Ready!'}</p>
-                    {new Date(drugOps.weed_completed_at) <= new Date() ? (
-                      <button onClick={() => collectDrugs('weed')} className="collect-btn">Collect $1,500</button>
-                    ) : (
-                      <p className="timer">
-                        {Math.ceil((new Date(drugOps.weed_completed_at) - new Date()) / 60000)} min left
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <button onClick={() => startDrugProduction('weed')} disabled={player?.cash < 500}>
-                    Start Production ($500)
-                  </button>
-                )}
-              </div>
-
-              <div className="business-card">
-                <div className="business-image-container">
-                  <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400" alt="Meth Lab" className="business-image" />
-                </div>
-                <h3>🧪 Meth Lab</h3>
-                <p>Cost: $2,000 | Profit: $7,000 | Time: 1h</p>
-                {player?.level >= 5 ? (
-                  <>
-                    {drugOps?.meth ? (
+              {businesses.filter(b => b.is_active).map(business => {
+                const imageUrl = business.image_url || 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400';
+                const isRunning = drugOps?.[business.id];
+                const completedAt = drugOps?.[`${business.id}_completed_at`];
+                const isReady = completedAt && new Date(completedAt) <= new Date();
+                const meetsLevel = player.level >= business.min_level_required;
+                
+                return (
+                  <div key={business.id} className="business-card">
+                    <div className="business-image-container">
+                      <img src={imageUrl} alt={business.name} className="business-image" />
+                    </div>
+                    <h3>{business.item?.icon || '💼'} {business.name}</h3>
+                    <p>Cost: ${business.cost.toLocaleString()}</p>
+                    <p>
+                      {business.item_reward_id ? 
+                        `Reward: ${business.item_quantity} ${business.unit_name} ${business.item?.icon || ''}` :
+                        `Profit: $${business.profit.toLocaleString()}`
+                      } | Time: {business.duration_minutes}m
+                    </p>
+                    {meetsLevel ? (
                       <>
-                        <p>Status: {new Date(drugOps.meth_completed_at) > new Date() ? 'Producing...' : 'Ready!'}</p>
-                        {new Date(drugOps.meth_completed_at) <= new Date() ? (
-                          <button onClick={() => collectDrugs('meth')} className="collect-btn">Collect $7,000</button>
+                        {isRunning ? (
+                          <>
+                            <p>Status: {isReady ? 'Ready!' : 'Producing...'}</p>
+                            {isReady ? (
+                              <button 
+                                onClick={() => collectBusiness(business)} 
+                                className="collect-btn"
+                              >
+                                {business.item_reward_id ?
+                                  `Collect ${business.item_quantity} ${business.unit_name}` :
+                                  `Collect $${business.profit.toLocaleString()}`
+                                }
+                              </button>
+                            ) : (
+                              <p className="timer">
+                                {Math.ceil((new Date(completedAt) - new Date()) / 60000)} min left
+                              </p>
+                            )}
+                          </>
                         ) : (
-                          <p className="timer">
-                            {Math.ceil((new Date(drugOps.meth_completed_at) - new Date()) / 60000)} min left
-                          </p>
+                          <button 
+                            onClick={() => startBusiness(business)} 
+                            disabled={player?.cash < business.cost}
+                          >
+                            Start Production (${business.cost.toLocaleString()})
+                          </button>
                         )}
                       </>
                     ) : (
-                      <button onClick={() => startDrugProduction('meth')} disabled={player?.cash < 2000}>
-                        Start Production ($2,000)
-                      </button>
+                      <p className="locked">🔒 Level {business.min_level_required} Required</p>
                     )}
-                  </>
-                ) : (
-                  <p className="locked">🔒 Level 5 Required</p>
-                )}
-              </div>
-
-              <div className="business-card">
-                <div className="business-image-container">
-                  <img src="https://images.unsplash.com/photo-1519671845924-1fd18db430b8?w=400" alt="Cocaine" className="business-image" />
-                </div>
-                <h3>❄️ Cocaine Factory</h3>
-                <p>Cost: $5,000 | Profit: $20,000 | Time: 2h</p>
-                {player?.level >= 10 ? (
-                  <>
-                    {drugOps?.cocaine ? (
-                      <>
-                        <p>Status: {new Date(drugOps.cocaine_completed_at) > new Date() ? 'Producing...' : 'Ready!'}</p>
-                        {new Date(drugOps.cocaine_completed_at) <= new Date() ? (
-                          <button onClick={() => collectDrugs('cocaine')} className="collect-btn">Collect $20,000</button>
-                        ) : (
-                          <p className="timer">
-                            {Math.ceil((new Date(drugOps.cocaine_completed_at) - new Date()) / 60000)} min left
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <button onClick={() => startDrugProduction('cocaine')} disabled={player?.cash < 5000}>
-                        Start Production ($5,000)
-                      </button>
-                    )}
-                  </>
-                ) : (
-                  <p className="locked">🔒 Level 10 Required</p>
-                )}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
