@@ -51,8 +51,9 @@ export default function TheLife() {
             max_hp: 100,
             stamina: 100,
             max_stamina: 100,
-            tickets: 20,
-            cash: 1000,
+            tickets: 300,
+            max_tickets: 300,
+            cash: 500,
             bank_balance: 0
           })
           .select()
