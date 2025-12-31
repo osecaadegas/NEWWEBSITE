@@ -1017,9 +1017,9 @@ export default function TheLife() {
             <h2>💼 Business Operations</h2>
             <p>Start businesses and earn profits. Higher levels unlock more profitable ventures.</p>
             <div className="businesses-grid">
-              <div className="drug-card">
-                <div className="drug-image-container">
-                  <img src="https://images.unsplash.com/photo-1566890579320-47fad3d2880c?w=400" alt="Weed" className="drug-image" />
+              <div className="business-card">
+                <div className="business-image-container">
+                  <img src="https://images.unsplash.com/photo-1566890579320-47fad3d2880c?w=400" alt="Weed" className="business-image" />
                 </div>
                 <h3>🌿 Weed Farm</h3>
                 <p>Cost: $500 | Profit: $1,500 | Time: 30m</p>
@@ -1041,9 +1041,9 @@ export default function TheLife() {
                 )}
               </div>
 
-              <div className="drug-card">
-                <div className="drug-image-container">
-                  <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400" alt="Meth Lab" className="drug-image" />
+              <div className="business-card">
+                <div className="business-image-container">
+                  <img src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=400" alt="Meth Lab" className="business-image" />
                 </div>
                 <h3>🧪 Meth Lab</h3>
                 <p>Cost: $2,000 | Profit: $7,000 | Time: 1h</p>
@@ -1071,9 +1071,9 @@ export default function TheLife() {
                 )}
               </div>
 
-              <div className="drug-card">
-                <div className="drug-image-container">
-                  <img src="https://images.unsplash.com/photo-1519671845924-1fd18db430b8?w=400" alt="Cocaine" className="drug-image" />
+              <div className="business-card">
+                <div className="business-image-container">
+                  <img src="https://images.unsplash.com/photo-1519671845924-1fd18db430b8?w=400" alt="Cocaine" className="business-image" />
                 </div>
                 <h3>❄️ Cocaine Factory</h3>
                 <p>Cost: $5,000 | Profit: $20,000 | Time: 2h</p>

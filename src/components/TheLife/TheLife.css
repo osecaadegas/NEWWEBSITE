@@ -246,8 +246,26 @@
 
 .robberies-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1400px) {
+  .robberies-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .robberies-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .robberies-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .crime-card {
@@ -712,8 +730,26 @@
 
 .businesses-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+@media (max-width: 1400px) {
+  .businesses-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .businesses-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .businesses-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .business-card {
@@ -728,6 +764,76 @@
   border-color: rgba(34, 197, 94, 0.6);
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
+}
+
+.business-image-container {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.business-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.8) saturate(1.3);
+  transition: all 0.3s;
+}
+
+.business-card:hover .business-image {
+  transform: scale(1.1);
+  filter: brightness(1) saturate(1.5);
+}
+
+.business-card h3 {
+  color: #22c55e;
+  font-size: 1.5rem;
+  margin: 15px 0 10px;
+  text-align: center;
+}
+
+.business-card > p {
+  color: #cbd5e0;
+  margin: 10px 20px;
+  text-align: center;
+}
+
+.business-card .locked {
+  color: #f59e0b;
+  font-weight: 600;
+  margin: 15px 20px;
+  text-align: center;
+}
+
+.business-card .timer {
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 15px 20px;
+  text-align: center;
+}
+
+.business-card button {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  margin: 15px 20px 20px;
+  width: calc(100% - 40px);
+  transition: all 0.3s;
+}
+
+.business-card button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  transform: scale(1.05);
+}
+
+.business-card button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .business-image-container {
@@ -983,9 +1089,27 @@
 /* Workers Grid */
 .workers-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 25px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
   margin-top: 30px;
+}
+
+@media (max-width: 1400px) {
+  .workers-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .workers-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .workers-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .worker-card {
