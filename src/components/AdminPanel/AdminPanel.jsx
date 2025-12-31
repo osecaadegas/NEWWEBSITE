@@ -1520,7 +1520,7 @@ export default function AdminPanel() {
                             <span className="value">{crime.ticket_cost}</span>
                           </div>
                           <div className="stat">
-                            <span className="label">Success</span>
+                            <span className="label">Base Success</span>
                             <span className="value">{crime.success_rate}%</span>
                           </div>
                           <div className="stat">
@@ -1532,8 +1532,23 @@ export default function AdminPanel() {
                             <span className="value">{crime.xp_reward}</span>
                           </div>
                           <div className="stat">
-                            <span className="label">Jail Time</span>
+                            <span className="label">Base Jail</span>
                             <span className="value">{crime.jail_time_minutes}m</span>
+                          </div>
+                        </div>
+                        <div style={{
+                          marginTop: '10px', 
+                          padding: '8px', 
+                          background: 'rgba(212, 175, 55, 0.1)', 
+                          borderRadius: '6px',
+                          fontSize: '0.85rem',
+                          color: '#d4af37'
+                        }}>
+                          <div style={{fontWeight: '600', marginBottom: '4px'}}>📊 Dynamic Success Rates:</div>
+                          <div style={{fontSize: '0.8rem', color: '#cbd5e0'}}>
+                            Lv{crime.min_level_required}: {crime.success_rate}% | 
+                            Lv{crime.min_level_required + 2}: {Math.min(95, crime.success_rate + 10)}% | 
+                            Lv{Math.max(1, crime.min_level_required - 2)}: {Math.max(5, crime.success_rate - 20)}%
                           </div>
                         </div>
                       </div>
@@ -1811,7 +1826,7 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="form-group">
-                      <label>Success Rate (%)</label>
+                      <label>Success Rate (%) - Base Rate</label>
                       <input
                         type="number"
                         value={crimeFormData.success_rate}
@@ -1819,16 +1834,22 @@ export default function AdminPanel() {
                         min="0"
                         max="100"
                       />
+                      <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                        📊 Dynamic: +5% per level above min, -10% per level below min
+                      </small>
                     </div>
 
                     <div className="form-group">
-                      <label>Jail Time (minutes)</label>
+                      <label>Jail Time (minutes) - Base Time</label>
                       <input
                         type="number"
                         value={crimeFormData.jail_time_minutes}
                         onChange={(e) => setCrimeFormData({...crimeFormData, jail_time_minutes: parseInt(e.target.value)})}
                         min="0"
                       />
+                      <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                        ⏱️ Increases +50% per level below requirement if caught
+                      </small>
                     </div>
 
                     <div className="form-group">
