@@ -230,7 +230,8 @@ export default function StreamElementsPanel() {
             {redemptionItems.length === 0 ? (
               <p className="se-no-items">No redemption items available</p>
             ) : (
-              <div className="se-items-grid">
+              <div className="se-content-wrapper">
+                <div className="se-items-grid">
                 {redemptionItems.map(item => {
                   const canAfford = isConnected && points >= item.point_cost;
                   const isRedeeming = redeeming === item.id;
@@ -285,11 +286,9 @@ export default function StreamElementsPanel() {
                   );
                 })}
               </div>
-            )}
-          </div>
 
-          {isConnected && userRedemptions.length > 0 && (
-            <div className="se-redemption-history-floating">
+              {isConnected && userRedemptions.length > 0 && (
+                <div className="se-redemption-history-sidebar">
               <div className="se-history-card">
                 <div className="se-history-header">
                   <h3>Redemption History</h3>
@@ -338,7 +337,10 @@ export default function StreamElementsPanel() {
                 )}
               </div>
             </div>
-          )}
+              )}
+            </div>
+            )}
+          </div>
         </div>
     </div>
   );

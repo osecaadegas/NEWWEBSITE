@@ -11,15 +11,15 @@ export default function StreamPage() {
         
         <div className="stream-info">
           <div className="info-item">
-            <span className="info-label">Status:</span>
-            <span className="status-badge offline">Offline</span>
+            <span className="info-label">STATUS:</span>
+            <div className="status-dot offline" title="Offline"></div>
           </div>
           <div className="info-item">
-            <span className="info-label">Viewers:</span>
+            <span className="info-label">VIEWERS:</span>
             <span className="info-value">0</span>
           </div>
           <div className="info-item">
-            <span className="info-label">Schedule:</span>
+            <span className="info-label">SCHEDULE:</span>
             <span className="info-value">Daily at 8PM EST</span>
           </div>
         </div>

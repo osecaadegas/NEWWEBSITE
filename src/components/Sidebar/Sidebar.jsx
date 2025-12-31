@@ -22,6 +22,11 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🔍 Sidebar Admin Status:', { isAdmin, isModerator, isSlotModder, user: user?.email });
+  }, [isAdmin, isModerator, isSlotModder, user]);
+
 
 
   // Check overlay access when user changes (unused - can be removed if needed)

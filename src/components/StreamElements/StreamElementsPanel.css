@@ -298,6 +298,13 @@
   padding: 40px;
 }
 
+.se-content-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  align-items: start;
+}
+
 .se-items-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -499,13 +506,13 @@
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Redemption History - Minimalistic Design */
-.se-redemption-history-floating {
-  position: fixed;
+/* Redemption History - Sidebar Design */
+.se-redemption-history-sidebar {
+  position: sticky;
   top: 20px;
-  right: 20px;
-  width: 300px;
-  z-index: 1000;
+  height: fit-content;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 .se-history-card {

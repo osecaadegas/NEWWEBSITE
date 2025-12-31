@@ -15,6 +15,10 @@ export default function AdminPanel() {
   const [success, setSuccess] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
+  
   // Offer Card Builder State
   const [activeTab, setActiveTab] = useState('users'); // 'users' or 'offers'
   const [offers, setOffers] = useState([]);
@@ -398,7 +402,9 @@ export default function AdminPanel() {
             </tr>
           </thead>
           <tbody>
-            {users.map(user => (
+            {users
+              .slice((currentPage - 1) * usersPerPage, currentPage * usersPerPage)
+              .map(user => (
               <tr key={user.id} className={!user.is_active ? 'inactive-user' : ''}>
                 <td>{user.email}</td>
                 <td>
@@ -421,9 +427,9 @@ export default function AdminPanel() {
                   </div>
                 </td>
                 <td>
-                  <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
-                    {user.is_active ? '✓ Active' : '✗ Inactive'}
-                  </span>
+                  <div className={`status-dot ${user.is_active ? 'active' : 'inactive'}`} 
+                       title={user.is_active ? 'Active' : 'Inactive'}>
+                  </div>
                 </td>
                 <td>
                   {user.roles?.some(r => r.access_expires_at) ? (
@@ -471,6 +477,29 @@ export default function AdminPanel() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {users.length > usersPerPage && (
+        <div className="pagination-controls">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            ← Previous
+          </button>
+          <span className="pagination-info">
+            Page {currentPage} of {Math.ceil(users.length / usersPerPage)}
+          </span>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(Math.ceil(users.length / usersPerPage), prev + 1))}
+            disabled={currentPage === Math.ceil(users.length / usersPerPage)}
+            className="pagination-btn"
+          >
+            Next →
+          </button>
+        </div>
+      )}
 
       {/* Edit User Modal */}
       {editingUser && (

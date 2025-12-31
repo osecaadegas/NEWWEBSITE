@@ -38,10 +38,10 @@ export const useAdmin = () => {
           const roleNames = roles.map(r => r.role);
           
           setUserRoles(roles);
-          setIsAdmin(roleNames.includes('admin'));
-          setIsModerator(roleNames.includes('moderator') || roleNames.includes('admin'));
-          setIsSlotModder(roleNames.includes('slot_modder') || roleNames.includes('admin'));
-          setIsPremium(roleNames.includes('premium') || roleNames.includes('admin'));
+          setIsAdmin(roleNames.includes('admin') || roleNames.includes('superadmin'));
+          setIsModerator(roleNames.includes('moderator') || roleNames.includes('admin') || roleNames.includes('superadmin'));
+          setIsSlotModder(roleNames.includes('slot_modder') || roleNames.includes('admin') || roleNames.includes('superadmin'));
+          setIsPremium(roleNames.includes('premium') || roleNames.includes('admin') || roleNames.includes('superadmin'));
         }
       } catch (error) {
         console.error('Error in useAdmin:', error);

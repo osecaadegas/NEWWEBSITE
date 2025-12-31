@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useStreamElements } from '../../context/StreamElementsContext';
 import { supabase } from '../../config/supabaseClient';
-import './Blackjack.css';
+import './Blackjack3D.css';
 
 const CARD_VALUES = {
   '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10,
@@ -88,9 +88,7 @@ export default function Blackjack() {
     }
 
     // Deduct bet from balance
-    const newBalance = balance - betAmount;
-    setBalance(newBalance);
-    await updatePoints(-betAmount);
+    await updateUserPoints(-betAmount);
 
     // Create and shuffle deck
     let newDeck = createDeck();
@@ -159,44 +157,35 @@ export default function Blackjack() {
 
     // Determine winner
     const playerValue = calculateHandValue(finalPlayerHand);
-    let winAmount = 0;
+    let resultAmount = 0; // Net win/loss (excluding original bet)
     let resultMessage = '';
 
     if (dealerValue > 21) {
-      winAmount = betAmount * 2;
+      resultAmount = betAmount; // Won the bet amount
       resultMessage = `Dealer busts! You win ${betAmount} points!`;
     } else if (playerValue > dealerValue) {
-      winAmount = betAmount * 2;
+      resultAmount = betAmount; // Won the bet amount
       resultMessage = `You win ${betAmount} points!`;
     } else if (playerValue === dealerValue) {
-      winAmount = betAmount;
+      resultAmount = betAmount; // Return original bet (push)
       resultMessage = 'Push! Bet returned.';
     } else {
+      resultAmount = 0; // Lost the bet (already deducted)
       resultMessage = 'Dealer wins!';
     }
 
-    if (winAmount > 0) {
-      const newBalance = balance + winAmount;
-      setBalance(newBalance);
-      await updatePoints(winAmount);
+    if (resultAmount > 0) {
+      await updateUserPoints(resultAmount);
     }
 
     // Save game session to database
-    await saveGameSession(winAmount);
+    await saveGameSession(resultAmount - betAmount, finalPlayerHand, newDealerHand);
 
     setMessage(resultMessage);
     setGameState('finished');
   };
 
-  const updatePoints = async (amount) => {
-    try {
-      await updateUserPoints(amount);
-    } catch (err) {
-      console.error('Error updating points:', err);
-    }
-  };
-
-  const saveGameSession = async (resultAmount) => {
+  const saveGameSession = async (netResult, finalPlayerHand, finalDealerHand) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -205,10 +194,10 @@ export default function Blackjack() {
         user_id: user.id,
         game_type: 'blackjack',
         bet_amount: betAmount,
-        result_amount: resultAmount,
+        result_amount: netResult,
         game_data: {
-          player_hand: playerHand,
-          dealer_hand: dealerHand,
+          player_hand: finalPlayerHand,
+          dealer_hand: finalDealerHand,
           side_bets: {
             perfect_pairs: perfectPairsBet,
             twenty_one_plus_three: twentyOnePlusThreeBet

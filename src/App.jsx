@@ -23,7 +23,7 @@ import ModernSidebarLayout from './components/ModernSidebarLayout/ModernSidebarL
 import GiveawayPanel from './components/GiveawayPanel/GiveawayPanel';
 import ArtAdPanel from './components/ArtAdPanel/ArtAdPanel';
 import TwitchChat from './components/TwitchChat/TwitchChat';
-import Blackjack from './components/Blackjack/Blackjack';
+import Blackjack from './components/Blackjack/Blackjack3D';
 import Mines from './components/Mines/Mines';
 import TheThugas from './components/TheThugas/TheThugas';
 import SlotManagerPage from './components/SlotManager/SlotManagerPage';

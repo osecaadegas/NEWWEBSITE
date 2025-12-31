@@ -107,22 +107,81 @@ export default function PointsManager() {
   };
 
   const loadUsers = async () => {
-    // Get all users with SE connections
-    const { data: connections, error: connError } = await supabase
-      .from('streamelements_connections')
-      .select('*');
+    try {
+      console.log('Loading users...');
+      console.log('SE_CHANNEL_ID:', SE_CHANNEL_ID);
+      console.log('SE_JWT_TOKEN exists:', !!SE_JWT_TOKEN);
+      
+      // Get all users with SE connections
+      const { data: connections, error: connError } = await supabase
+        .from('streamelements_connections')
+        .select('*');
 
-    if (connError) {
-      console.error('Error fetching SE connections:', connError);
-    }
+      if (connError) {
+        console.error('Error fetching SE connections:', connError);
+      }
+      console.log('SE Connections:', connections?.length || 0);
 
-    // Get user emails using the getAllUsers RPC function
-    const { data: allUsers } = await supabase.rpc('get_all_user_emails');
-    
-    if (!allUsers) {
-      setUsers([]);
-      return;
-    }
+      // Get all unique user IDs from user_roles table
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id');
+      
+      if (rolesError) {
+        console.error('Error fetching user roles:', rolesError);
+        throw rolesError;
+      }
+      
+      console.log('User roles count:', userRoles?.length || 0);
+      
+      if (!userRoles || userRoles.length === 0) {
+        console.log('No users found in user_roles');
+        setUsers([]);
+        return;
+      }
+      
+      // Get unique user IDs
+      const uniqueUserIds = [...new Set(userRoles.map(r => r.user_id))];
+      console.log('Unique users:', uniqueUserIds.length);
+      
+      // Fetch email and metadata for each user using RPC
+      const allUsers = await Promise.all(
+        uniqueUserIds.map(async (userId) => {
+          const { data: emailData } = await supabase
+            .rpc('get_user_email', { user_id: userId });
+          
+          // Get user metadata to check for Twitch username
+          const { data: metadata } = await supabase
+            .rpc('get_user_metadata', { user_id: userId });
+          
+          let twitchUsername = null;
+          if (metadata) {
+            // Check if user logged in via Twitch
+            if (metadata.identities && metadata.identities.length > 0) {
+              const twitchIdentity = metadata.identities.find(i => i.provider === 'twitch');
+              if (twitchIdentity?.identity_data) {
+                twitchUsername = twitchIdentity.identity_data.preferred_username || 
+                                twitchIdentity.identity_data.user_name ||
+                                twitchIdentity.identity_data.full_name;
+              }
+            }
+            // Fallback to user_metadata
+            if (!twitchUsername && metadata.user_metadata) {
+              twitchUsername = metadata.user_metadata.preferred_username || 
+                              metadata.user_metadata.user_name ||
+                              metadata.user_metadata.full_name;
+            }
+          }
+          
+          return {
+            user_id: userId,
+            email: emailData || 'Unknown',
+            twitch_username: twitchUsername
+          };
+        })
+      );
+      
+      console.log('All users with emails:', allUsers.length);
 
     // Create a map of user_id to SE connection
     const connectionMap = {};
@@ -142,17 +201,24 @@ export default function PointsManager() {
         const userEmail = user.email || 'Unknown';
         const connection = connectionMap[user.user_id];
         
-        // Determine SE username - try connection first, then extract from email
+        // Determine SE username priority: connection > twitch username > email prefix
         let seUsername = connection?.se_username;
         
+        if (!seUsername && user.twitch_username) {
+          // Use Twitch username if available
+          seUsername = user.twitch_username;
+        }
+        
         if (!seUsername) {
-          // Extract username from email (before @)
+          // Fallback: Extract username from email (before @)
           seUsername = userEmail.split('@')[0];
         }
 
         // Use connection credentials if available, otherwise use streamer's credentials
         const channelId = connection?.se_channel_id || streamerChannelId;
         const jwtToken = connection?.se_jwt_token || streamerJwtToken;
+
+        console.log(`Processing user: ${userEmail}, SE Username: ${seUsername}, Has Connection: ${!!connection}`);
 
         try {
           if (channelId && jwtToken && seUsername) {
@@ -168,6 +234,7 @@ export default function PointsManager() {
 
             if (response.ok) {
               const data = await response.json();
+              console.log(`✓ Fetched points for ${seUsername}: ${data.points}`);
               return {
                 user_id: user.user_id,
                 se_username: seUsername,
@@ -175,8 +242,26 @@ export default function PointsManager() {
                 se_jwt_token: jwtToken,
                 current_points: data.points || 0,
                 email: userEmail,
-                has_connection: !!connection
+                has_connection: !!connection,
+                connected_at: connection?.connected_at || new Date().toISOString(),
+                se_status: 'active'
               };
+            } else if (response.status === 404) {
+              // User doesn't exist in SE yet - they'll be created when points are added
+              console.log(`⚠ User ${seUsername} not found in StreamElements (will be created on first points add)`);
+              return {
+                user_id: user.user_id,
+                se_username: seUsername,
+                se_channel_id: channelId,
+                se_jwt_token: jwtToken,
+                current_points: 0,
+                email: userEmail,
+                has_connection: !!connection,
+                connected_at: connection?.connected_at || new Date().toISOString(),
+                se_status: 'not_in_se'
+              };
+            } else {
+              console.error(`✗ Failed to fetch points for ${seUsername}: ${response.status} ${response.statusText}`);
             }
           }
         } catch (err) {
@@ -190,12 +275,19 @@ export default function PointsManager() {
           se_jwt_token: jwtToken,
           current_points: 0,
           email: userEmail,
-          has_connection: !!connection
+          has_connection: !!connection,
+          connected_at: connection?.connected_at || new Date().toISOString(),
+          se_status: 'error'
         };
       })
     );
 
-    setUsers(usersWithPoints);
+      console.log('Users with points:', usersWithPoints.length);
+      setUsers(usersWithPoints);
+    } catch (err) {
+      console.error('Error in loadUsers:', err);
+      setError('Failed to load users: ' + err.message);
+    }
   };
 
   const loadRedemptions = async () => {
@@ -213,24 +305,47 @@ export default function PointsManager() {
 
     console.log('Loaded redemptions with status:', redemptionsData);
 
-    // Get user emails
-    const { data: allUsers } = await supabase.rpc('get_all_user_emails');
+    // Get unique user IDs
+    const userIds = [...new Set(redemptionsData.map(r => r.user_id))];
+    
+    // Fetch emails, Twitch usernames, and SE usernames for users
     const emailMap = {};
-    if (allUsers) {
-      allUsers.forEach(user => {
-        emailMap[user.user_id] = user.email;
-      });
-    }
+    const twitchUsernameMap = {};
+    const seUsernameMap = {};
+    
+    await Promise.all(
+      userIds.map(async (userId) => {
+        const { data: emailData } = await supabase
+          .rpc('get_user_email', { user_id: userId });
+        emailMap[userId] = emailData || 'Unknown';
+        
+        // Get Twitch username from metadata
+        const { data: metadata } = await supabase
+          .rpc('get_user_metadata', { user_id: userId });
+        
+        if (metadata?.identities) {
+          const twitchIdentity = metadata.identities.find(id => id.provider === 'twitch');
+          if (twitchIdentity?.identity_data?.preferred_username) {
+            twitchUsernameMap[userId] = twitchIdentity.identity_data.preferred_username;
+          } else {
+            twitchUsernameMap[userId] = emailData?.split('@')[0] || 'Unknown';
+          }
+        } else {
+          twitchUsernameMap[userId] = emailData?.split('@')[0] || 'Unknown';
+        }
+      })
+    );
 
     // Get SE connections for usernames
     const { data: connections } = await supabase
       .from('streamelements_connections')
       .select('*');
     
-    const usernameMap = {};
     if (connections) {
       connections.forEach(conn => {
-        usernameMap[conn.user_id] = conn.se_username;
+        if (conn.se_username) {
+          seUsernameMap[conn.user_id] = conn.se_username;
+        }
       });
     }
 
@@ -251,7 +366,8 @@ export default function PointsManager() {
       ...redemption,
       user: { 
         email: emailMap[redemption.user_id] || 'Unknown',
-        username: usernameMap[redemption.user_id] || 'Unknown'
+        twitchUsername: twitchUsernameMap[redemption.user_id] || 'Unknown',
+        seUsername: seUsernameMap[redemption.user_id] || null
       },
       item: itemMap[redemption.redemption_id] || { name: 'Deleted Item', point_cost: 0 }
     }));
@@ -278,14 +394,18 @@ export default function PointsManager() {
 
     if (error) throw error;
 
-    // Get user emails (Twitch usernames)
-    const { data: allUsers } = await supabase.rpc('get_all_user_emails');
+    // Get unique user IDs
+    const userIds = [...new Set(sessionsData.map(s => s.user_id))];
+    
+    // Fetch emails for users
     const emailMap = {};
-    if (allUsers) {
-      allUsers.forEach(user => {
-        emailMap[user.user_id] = user.email;
-      });
-    }
+    await Promise.all(
+      userIds.map(async (userId) => {
+        const { data: emailData } = await supabase
+          .rpc('get_user_email', { user_id: userId });
+        emailMap[userId] = emailData || 'Unknown';
+      })
+    );
 
     // Get SE usernames from streamelements_connections table
     const { data: seAccounts } = await supabase
@@ -483,40 +603,75 @@ export default function PointsManager() {
 
     try {
       setLoading(true);
+      setError('');
       
-      // Refund points to user
-      const { data: connections } = await supabase
+      // Get user's SE connection if they have one
+      const { data: connection } = await supabase
         .from('streamelements_connections')
         .select('*')
         .eq('user_id', redemption.user_id)
         .single();
 
-      if (connections) {
-        // Refund via SE API
-        await fetch(
-          `https://api.streamelements.com/kappa/v2/points/${connections.se_channel_id}/${connections.se_username}/${redemption.points_spent}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${connections.se_jwt_token}`,
-              'Accept': 'application/json'
-            }
+      // Determine which credentials to use
+      let channelId, jwtToken, seUsername;
+      
+      if (connection) {
+        // User has their own connection
+        channelId = connection.se_channel_id;
+        jwtToken = connection.se_jwt_token;
+        seUsername = connection.se_username;
+      } else {
+        // Use streamer's credentials
+        channelId = SE_CHANNEL_ID;
+        jwtToken = SE_JWT_TOKEN;
+        
+        // Get user metadata to find their SE username
+        const { data: metadata } = await supabase
+          .rpc('get_user_metadata', { user_id: redemption.user_id });
+        
+        let twitchUsername = null;
+        if (metadata?.identities) {
+          const twitchIdentity = metadata.identities.find(i => i.provider === 'twitch');
+          if (twitchIdentity?.identity_data) {
+            twitchUsername = twitchIdentity.identity_data.preferred_username || 
+                            twitchIdentity.identity_data.user_name;
           }
-        );
-
-        // Restore stock if applicable
-        const { data: item } = await supabase
-          .from('redemption_items')
-          .select('available_units')
-          .eq('id', redemption.redemption_id)
-          .single();
-
-        if (item && item.available_units !== null) {
-          await supabase
-            .from('redemption_items')
-            .update({ available_units: item.available_units + 1 })
-            .eq('id', redemption.redemption_id);
         }
+        
+        seUsername = twitchUsername || redemption.user?.email?.split('@')[0] || 'unknown';
+      }
+
+      console.log(`Refunding ${redemption.points_spent} points to ${seUsername}`);
+
+      // Refund points via SE API
+      const refundResponse = await fetch(
+        `https://api.streamelements.com/kappa/v2/points/${channelId}/${seUsername}/${redemption.points_spent}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      if (!refundResponse.ok) {
+        const errorText = await refundResponse.text();
+        throw new Error(`Failed to refund points: ${errorText}`);
+      }
+
+      // Restore stock if applicable
+      const { data: item } = await supabase
+        .from('redemption_items')
+        .select('available_units')
+        .eq('id', redemption.redemption_id)
+        .single();
+
+      if (item && item.available_units !== null) {
+        await supabase
+          .from('redemption_items')
+          .update({ available_units: item.available_units + 1 })
+          .eq('id', redemption.redemption_id);
       }
 
       // Mark as denied
@@ -604,7 +759,28 @@ export default function PointsManager() {
                         <td>{user.email}</td>
                         <td>{user.se_username}</td>
                         <td className="pm-points">{user.current_points.toLocaleString()}</td>
-                        <td>{new Date(user.connected_at).toLocaleDateString()}</td>
+                        <td>
+                          {user.se_status === 'active' && (
+                            <span className="pm-status-badge approved" title="User exists in StreamElements">
+                              ✅ Active
+                            </span>
+                          )}
+                          {user.se_status === 'not_in_se' && (
+                            <span className="pm-status-badge pending" title="User will be created when you add points">
+                              ⏳ Not in SE
+                            </span>
+                          )}
+                          {user.se_status === 'error' && (
+                            <span className="pm-status-badge denied" title="Error fetching from StreamElements">
+                              ⚠️ Error
+                            </span>
+                          )}
+                          {!user.se_status && (
+                            <span title={new Date(user.connected_at).toLocaleDateString()}>
+                              {new Date(user.connected_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </td>
                         <td>
                           {userRole === 'admin' ? (
                             <button
@@ -778,8 +954,8 @@ export default function PointsManager() {
                       <tr key={redemption.id}>
                         <td>
                           <div className="pm-user-info">
-                            <div className="pm-username">{redemption.user?.username || 'Unknown'}</div>
-                            <div className="pm-email">{redemption.user?.email || 'Unknown'}</div>
+                            <div className="pm-username">{redemption.user?.twitchUsername || 'Unknown'}</div>
+                            <div className="pm-email">{redemption.user?.seUsername || redemption.user?.email || 'Unknown'}</div>
                           </div>
                         </td>
                         <td>{redemption.item?.name || 'Deleted Item'}</td>

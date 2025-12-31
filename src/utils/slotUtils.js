@@ -19,19 +19,35 @@ export async function getAllSlots() {
   }
 
   try {
-    const { data, error } = await supabase
-      .from('slots')
-      .select('*')
-      .order('name', { ascending: true });
+    // Fetch all slots - use range to bypass default 1000 row limit
+    let allSlots = [];
+    let from = 0;
+    const batchSize = 1000;
+    let hasMore = true;
 
-    if (error) {
-      console.error('Error fetching slots:', error);
-      // Return cached data if available, even if expired
-      return slotsCache || [];
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('slots')
+        .select('*')
+        .order('name', { ascending: true })
+        .range(from, from + batchSize - 1);
+
+      if (error) {
+        console.error('Error fetching slots:', error);
+        break;
+      }
+
+      if (data && data.length > 0) {
+        allSlots = [...allSlots, ...data];
+        from += batchSize;
+        hasMore = data.length === batchSize;
+      } else {
+        hasMore = false;
+      }
     }
 
     // Update cache
-    slotsCache = data || [];
+    slotsCache = allSlots;
     cacheTimestamp = Date.now();
 
     return slotsCache;
