@@ -171,19 +171,30 @@ export default function TheLife() {
       return;
     }
 
-    if (player.level < robbery.min_level_required) {
-      setMessage({ type: 'error', text: `Level ${robbery.min_level_required} required!` });
-      return;
-    }
-
     if (player.jail_until && new Date(player.jail_until) > new Date()) {
       setMessage({ type: 'error', text: 'You are in jail!' });
       return;
     }
 
     try {
-      // Calculate success chance
-      const successChance = robbery.success_rate + (player.level * 2);
+      // Calculate success chance based on player level vs crime difficulty
+      // Base success rate starts at crime's base rate
+      // For each level above min requirement, add 5% success
+      // For each level below min requirement, reduce 10% success (high risk)
+      const levelDifference = player.level - robbery.min_level_required;
+      let successChance = robbery.success_rate;
+      
+      if (levelDifference >= 0) {
+        // Player meets or exceeds level requirement
+        successChance += (levelDifference * 5);
+      } else {
+        // Player is below level requirement - risky!
+        successChance += (levelDifference * 10); // This will subtract
+      }
+      
+      // Cap success chance between 5% and 95%
+      successChance = Math.max(5, Math.min(95, successChance));
+      
       const roll = Math.random() * 100;
       const success = roll < successChance;
 
@@ -202,16 +213,26 @@ export default function TheLife() {
         updates.successful_robberies = player.successful_robberies + 1;
         setMessage({ 
           type: 'success', 
-          text: `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP!` 
+          text: `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP! (${Math.round(successChance)}% chance)` 
         });
       } else {
+        // Failed - jail time increases if you're underleveled
+        const levelDifference = player.level - robbery.min_level_required;
+        let jailMultiplier = 1;
+        
+        if (levelDifference < 0) {
+          // Underleveled? Jail time increases by 50% per level below requirement
+          jailMultiplier = 1 + (Math.abs(levelDifference) * 0.5);
+        }
+        
+        const jailTime = Math.floor(robbery.jail_time_minutes * jailMultiplier);
         const jailUntil = new Date();
-        jailUntil.setMinutes(jailUntil.getMinutes() + robbery.jail_time_minutes);
+        jailUntil.setMinutes(jailUntil.getMinutes() + jailTime);
         updates.jail_until = jailUntil.toISOString();
         updates.hp = Math.max(0, player.hp - robbery.hp_loss_on_fail);
         setMessage({ 
           type: 'error', 
-          text: `Failed! You're in jail for ${robbery.jail_time_minutes} minutes and lost ${robbery.hp_loss_on_fail} HP` 
+          text: `Failed! You're in jail for ${jailTime} minutes and lost ${robbery.hp_loss_on_fail} HP (${Math.round(successChance)}% chance)` 
         });
       }
 
@@ -235,14 +256,18 @@ export default function TheLife() {
 
       if (error) throw error;
 
-      // Log robbery
+      // Log robbery with actual jail time
+      const levelDifference = player.level - robbery.min_level_required;
+      let jailMultiplier = levelDifference < 0 ? 1 + (Math.abs(levelDifference) * 0.5) : 1;
+      const actualJailTime = success ? 0 : Math.floor(robbery.jail_time_minutes * jailMultiplier);
+      
       await supabase.from('the_life_robbery_history').insert({
         player_id: player.id,
         robbery_id: robbery.id,
         success,
         reward,
         xp_gained: success ? robbery.xp_reward : Math.floor(robbery.xp_reward / 2),
-        jail_time_minutes: success ? 0 : robbery.jail_time_minutes
+        jail_time_minutes: actualJailTime
       });
 
       setPlayer(data);
@@ -907,6 +932,16 @@ export default function TheLife() {
                 const defaultImage = 'https://images.unsplash.com/photo-1509099836639-18ba1795216d?w=500';
                 const imageUrl = robbery.image_url || defaultImage;
                 
+                // Calculate actual success chance for display
+                const levelDifference = player.level - robbery.min_level_required;
+                let displaySuccessChance = robbery.success_rate;
+                if (levelDifference >= 0) {
+                  displaySuccessChance += (levelDifference * 5);
+                } else {
+                  displaySuccessChance += (levelDifference * 10);
+                }
+                displaySuccessChance = Math.max(5, Math.min(95, displaySuccessChance));
+                
                 return (
                   <div 
                     key={robbery.id} 
@@ -930,7 +965,7 @@ export default function TheLife() {
                         </div>
                         <div className="stat-item">
                           <span className="stat-icon">✅</span>
-                          <span>{robbery.success_rate}%</span>
+                          <span>{Math.round(displaySuccessChance)}%</span>
                         </div>
                         <div className="stat-item">
                           <span className="stat-icon">⭐</span>
