@@ -305,6 +305,13 @@
   text-transform: capitalize;
 }
 
+.item-quantity {
+  font-size: 0.9rem;
+  color: #d4af37;
+  font-weight: 700;
+  margin-top: 5px;
+}
+
 .item-rarity {
   padding: 4px 10px;
   border-radius: 6px;

@@ -55,16 +55,47 @@ export default function ProfilePage() {
 
   const loadInventory = async () => {
     try {
-      // Placeholder for inventory loading - you'll need to create this table
-      // For now, we'll show some mock data
-      setInventory([
-        { id: 1, name: 'Golden Trophy', type: 'achievement', icon: '🏆', rarity: 'legendary' },
-        { id: 2, name: 'Silver Medal', type: 'achievement', icon: '🥈', rarity: 'rare' },
-        { id: 3, name: 'Lucky Charm', type: 'item', icon: '🍀', rarity: 'common' },
-        { id: 4, name: 'Diamond Ring', type: 'item', icon: '💎', rarity: 'epic' },
-      ]);
+      const { data, error } = await supabase
+        .from('user_inventory')
+        .select(`
+          id,
+          quantity,
+          acquired_at,
+          equipped,
+          items (
+            id,
+            name,
+            description,
+            type,
+            icon,
+            rarity,
+            tradeable
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('acquired_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transform data to flat structure
+      const formattedInventory = data?.map(item => ({
+        inventoryId: item.id,
+        id: item.items.id,
+        name: item.items.name,
+        description: item.items.description,
+        type: item.items.type,
+        icon: item.items.icon,
+        rarity: item.items.rarity,
+        tradeable: item.items.tradeable,
+        quantity: item.quantity,
+        equipped: item.equipped,
+        acquiredAt: item.acquired_at
+      })) || [];
+
+      setInventory(formattedInventory);
     } catch (err) {
       console.error('Error loading inventory:', err);
+      setInventory([]);
     }
   };
 
@@ -209,11 +240,14 @@ export default function ProfilePage() {
             <div className="inventory-grid">
               {inventory.length > 0 ? (
                 inventory.map(item => (
-                  <div key={item.id} className={`inventory-item rarity-${item.rarity}`}>
+                  <div key={item.inventoryId} className={`inventory-item rarity-${item.rarity}`}>
                     <div className="item-icon">{item.icon}</div>
                     <div className="item-info">
                       <div className="item-name">{item.name}</div>
                       <div className="item-type">{item.type}</div>
+                      {item.quantity > 1 && (
+                        <div className="item-quantity">x{item.quantity}</div>
+                      )}
                     </div>
                     <div className={`item-rarity ${item.rarity}`}>
                       {item.rarity}
