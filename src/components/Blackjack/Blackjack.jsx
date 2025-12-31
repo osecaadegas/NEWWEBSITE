@@ -245,30 +245,30 @@ export default function Blackjack() {
           
           {/* Main Bet */}
           <div className="bet-section">
-            <label>Bet Amount (Max 150)</label>
+            <label>Bet Amount (Max 200)</label>
             <div className="bet-input-group">
               <button onClick={() => setBetAmount(Math.max(10, betAmount - 10))}>-</button>
               <input
                 type="number"
                 value={betAmount}
-                onChange={(e) => setBetAmount(Math.min(150, Math.max(10, parseInt(e.target.value) || 10)))}
+                onChange={(e) => setBetAmount(Math.min(200, Math.max(10, parseInt(e.target.value) || 10)))}
                 min="10"
-                max="150"
+                max="200"
               />
-              <button onClick={() => setBetAmount(Math.min(150, betAmount + 10))}>+</button>
+              <button onClick={() => setBetAmount(Math.min(200, betAmount + 10))}>+</button>
             </div>
             <div className="quick-bet-chips">
               <button onClick={() => setBetAmount(10)}>10</button>
               <button onClick={() => setBetAmount(25)}>25</button>
               <button onClick={() => setBetAmount(50)}>50</button>
               <button onClick={() => setBetAmount(100)}>100</button>
-              <button onClick={() => setBetAmount(150)}>150</button>
+              <button onClick={() => setBetAmount(200)}>200</button>
             </div>
           </div>
 
           {/* Side Bets */}
           <div className="side-bets-section">
-            <h3>Side Bets (Max 15 each)</h3>
+            <h3>Side Bets (Max 10 each)</h3>
             
             <div className="side-bet">
               <label>Perfect Pairs</label>
@@ -277,11 +277,11 @@ export default function Blackjack() {
                 <input
                   type="number"
                   value={perfectPairsBet}
-                  onChange={(e) => setPerfectPairsBet(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
+                  onChange={(e) => setPerfectPairsBet(Math.min(10, Math.max(0, parseInt(e.target.value) || 0)))}
                   min="0"
-                  max="15"
+                  max="10"
                 />
-                <button onClick={() => setPerfectPairsBet(Math.min(15, perfectPairsBet + 5))}>+</button>
+                <button onClick={() => setPerfectPairsBet(Math.min(10, perfectPairsBet + 5))}>+</button>
               </div>
             </div>
 
@@ -292,11 +292,11 @@ export default function Blackjack() {
                 <input
                   type="number"
                   value={twentyOnePlusThreeBet}
-                  onChange={(e) => setTwentyOnePlusThreeBet(Math.min(15, Math.max(0, parseInt(e.target.value) || 0)))}
+                  onChange={(e) => setTwentyOnePlusThreeBet(Math.min(10, Math.max(0, parseInt(e.target.value) || 0)))}
                   min="0"
-                  max="15"
+                  max="10"
                 />
-                <button onClick={() => setTwentyOnePlusThreeBet(Math.min(15, twentyOnePlusThreeBet + 5))}>+</button>
+                <button onClick={() => setTwentyOnePlusThreeBet(Math.min(10, twentyOnePlusThreeBet + 5))}>+</button>
               </div>
             </div>
           </div>
