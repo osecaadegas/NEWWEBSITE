@@ -256,10 +256,9 @@ export default function TheLife() {
 
       if (error) throw error;
 
-      // Log robbery with actual jail time
-      const levelDifference = player.level - robbery.min_level_required;
-      let jailMultiplier = levelDifference < 0 ? 1 + (Math.abs(levelDifference) * 0.5) : 1;
-      const actualJailTime = success ? 0 : Math.floor(robbery.jail_time_minutes * jailMultiplier);
+      // Log robbery with actual jail time (reuse levelDifference from above)
+      let jailMultiplierForLog = levelDifference < 0 ? 1 + (Math.abs(levelDifference) * 0.5) : 1;
+      const actualJailTime = success ? 0 : Math.floor(robbery.jail_time_minutes * jailMultiplierForLog);
       
       await supabase.from('the_life_robbery_history').insert({
         player_id: player.id,
