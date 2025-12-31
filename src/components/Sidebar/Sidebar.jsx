@@ -172,7 +172,7 @@ export default function Sidebar() {
     <aside className="sidebar">
         {user ? (
           <div className="sidebar-avatar-section">
-            <div className="avatar-container" onClick={() => setShowAvatarPicker(!showAvatarPicker)}>
+            <div className="avatar-container" onClick={() => handleNavigation('/profile')}>
               <img src={selectedAvatar} alt="Avatar" className="avatar-image" />
             </div>
             <div className="points-display">
