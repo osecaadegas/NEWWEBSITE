@@ -689,34 +689,34 @@
   cursor: not-allowed;
 }
 
-/* Drugs Section */
-.drugs-section {
+/* Businesses Section */
+.businesses-section {
   background: rgba(26, 31, 46, 0.8);
   border-radius: 15px;
   padding: 40px;
   border: 2px solid rgba(34, 197, 94, 0.3);
 }
 
-.drugs-section h2 {
+.businesses-section h2 {
   color: #22c55e;
   font-size: 2rem;
   margin-bottom: 15px;
   text-align: center;
 }
 
-.drugs-section > p {
+.businesses-section > p {
   text-align: center;
   color: #cbd5e0;
   margin-bottom: 30px;
 }
 
-.drugs-grid {
+.businesses-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 25px;
 }
 
-.drug-card {
+.business-card {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.25));
   border: 2px solid rgba(34, 197, 94, 0.3);
   border-radius: 15px;
@@ -724,19 +724,19 @@
   transition: all 0.3s;
 }
 
-.drug-card:hover {
+.business-card:hover {
   border-color: rgba(34, 197, 94, 0.6);
   transform: translateY(-5px);
   box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
 }
 
-.drug-image-container {
+.business-image-container {
   width: 100%;
   height: 180px;
   overflow: hidden;
 }
 
-.drug-image {
+.business-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -744,32 +744,32 @@
   transition: all 0.3s;
 }
 
-.drug-card:hover .drug-image {
+.business-card:hover .business-image {
   transform: scale(1.1);
   filter: brightness(1) saturate(1.5);
 }
 
-.drug-card h3 {
+.business-card h3 {
   color: #22c55e;
   font-size: 1.5rem;
   margin: 15px 0 10px;
   text-align: center;
 }
 
-.drug-card > p {
+.business-card > p {
   color: #cbd5e0;
   margin: 10px 20px;
   text-align: center;
 }
 
-.drug-card .locked {
+.business-card .locked {
   color: #f59e0b;
   font-weight: 600;
   margin: 15px 20px;
   text-align: center;
 }
 
-.drug-card .timer {
+.business-card .timer {
   color: #fbbf24;
   font-weight: 600;
   font-size: 1.1rem;
@@ -777,7 +777,7 @@
   text-align: center;
 }
 
-.drug-card button {
+.business-card button {
   background: linear-gradient(135deg, #22c55e, #16a34a);
   color: white;
   border: none;
@@ -790,12 +790,12 @@
   transition: all 0.3s;
 }
 
-.drug-card button:hover:not(:disabled) {
+.business-card button:hover:not(:disabled) {
   background: linear-gradient(135deg, #16a34a, #15803d);
   transform: scale(1.05);
 }
 
-.drug-card button:disabled {
+.business-card button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -1447,7 +1447,7 @@
     grid-template-columns: 1fr;
   }
 
-  .drugs-grid {
+  .businesses-grid {
     grid-template-columns: 1fr;
   }
 

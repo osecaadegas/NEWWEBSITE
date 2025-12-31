@@ -865,11 +865,11 @@ export default function TheLife() {
         >
           🥊 PvP
         </button>
-        <button 
-          className={`tab ${activeTab === 'drugs' ? 'active' : ''}`}
-          onClick={() => setActiveTab('drugs')}
+        <button
+          className={`tab ${activeTab === 'businesses' ? 'active' : ''}`}
+          onClick={() => setActiveTab('businesses')}
         >
-          💊 Drugs
+          💼 Businesses
         </button>
         <button 
           className={`tab ${activeTab === 'brothel' ? 'active' : ''}`}
@@ -1012,11 +1012,11 @@ export default function TheLife() {
           </div>
         )}
 
-        {activeTab === 'drugs' && (
-          <div className="drugs-section">
-            <h2>💊 Drug Operations</h2>
-            <p>Produce drugs and sell them for profit. Higher levels unlock more profitable operations.</p>
-            <div className="drugs-grid">
+        {activeTab === 'businesses' && (
+          <div className="businesses-section">
+            <h2>💼 Business Operations</h2>
+            <p>Start businesses and earn profits. Higher levels unlock more profitable ventures.</p>
+            <div className="businesses-grid">
               <div className="drug-card">
                 <div className="drug-image-container">
                   <img src="https://images.unsplash.com/photo-1566890579320-47fad3d2880c?w=400" alt="Weed" className="drug-image" />

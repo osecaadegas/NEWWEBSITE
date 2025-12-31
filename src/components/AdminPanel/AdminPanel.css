@@ -1539,6 +1539,112 @@
   transform: translateY(-2px);
 }
 
+/* Business Cards */
+.businesses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 25px;
+}
+
+.business-admin-card {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  transition: all 0.3s;
+  position: relative;
+}
+
+.business-admin-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(34, 197, 94, 0.6);
+  box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
+}
+
+.business-preview-image {
+  width: 100%;
+  height: 220px;
+  position: relative;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.business-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.85);
+  transition: all 0.3s;
+}
+
+.business-admin-card:hover .business-preview-image img {
+  filter: brightness(1);
+  transform: scale(1.05);
+}
+
+.business-info {
+  padding: 20px;
+}
+
+.business-info h4 {
+  color: #22c55e;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.business-desc {
+  color: #a0aec0;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.business-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.business-stats-grid .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.business-stats-grid .label {
+  color: #cbd5e0;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.business-stats-grid .value {
+  color: #22c55e;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.business-actions {
+  display: flex;
+  gap: 10px;
+  padding: 15px 20px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.business-actions button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
 /* Item Cards */
 .items-grid {
   display: grid;

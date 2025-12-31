@@ -44,14 +44,17 @@ export default function AdminPanel() {
   });
 
   // The Life Management State
-  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'drugs', 'items', 'workers'
+  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'businesses', 'items', 'workers'
   const [crimes, setCrimes] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
   const [items, setItems] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [showCrimeModal, setShowCrimeModal] = useState(false);
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [editingCrime, setEditingCrime] = useState(null);
+  const [editingBusiness, setEditingBusiness] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [editingWorker, setEditingWorker] = useState(null);
   const [crimeFormData, setCrimeFormData] = useState({
@@ -75,6 +78,16 @@ export default function AdminPanel() {
     rarity: 'common',
     tradeable: false
   });
+  const [businessFormData, setBusinessFormData] = useState({
+    name: '',
+    description: '',
+    image_url: '',
+    cost: 500,
+    profit: 1500,
+    duration_minutes: 30,
+    min_level_required: 1,
+    is_active: true
+  });
   const [workerFormData, setWorkerFormData] = useState({
     name: '',
     description: '',
@@ -96,6 +109,7 @@ export default function AdminPanel() {
     loadUsers();
     loadOffers();
     loadCrimes();
+    loadBusinesses();
     loadItems();
     loadWorkers();
   }, []);
@@ -471,6 +485,124 @@ export default function AdminPanel() {
       loadCrimes();
     } catch (err) {
       setError('Failed to delete crime: ' + err.message);
+    }
+  };
+
+  // Business Management Functions
+  const loadBusinesses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('the_life_businesses')
+        .select('*')
+        .order('min_level_required', { ascending: true });
+
+      if (error) throw error;
+      setBusinesses(data || []);
+    } catch (err) {
+      console.error('Error loading businesses:', err);
+    }
+  };
+
+  const openBusinessModal = (business = null) => {
+    if (business) {
+      setBusinessFormData({
+        name: business.name,
+        description: business.description || '',
+        image_url: business.image_url || '',
+        cost: business.cost,
+        profit: business.profit,
+        duration_minutes: business.duration_minutes,
+        min_level_required: business.min_level_required,
+        is_active: business.is_active
+      });
+      setEditingBusiness(business);
+    } else {
+      setBusinessFormData({
+        name: '',
+        description: '',
+        image_url: '',
+        cost: 500,
+        profit: 1500,
+        duration_minutes: 30,
+        min_level_required: 1,
+        is_active: true
+      });
+      setEditingBusiness(null);
+    }
+    setShowBusinessModal(true);
+  };
+
+  const closeBusinessModal = () => {
+    setShowBusinessModal(false);
+    setEditingBusiness(null);
+  };
+
+  const saveBusiness = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!businessFormData.name) {
+      setError('Business name is required');
+      return;
+    }
+
+    try {
+      if (editingBusiness) {
+        const { error } = await supabase
+          .from('the_life_businesses')
+          .update(businessFormData)
+          .eq('id', editingBusiness.id);
+
+        if (error) throw error;
+        setSuccess('Business updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('the_life_businesses')
+          .insert([businessFormData]);
+
+        if (error) throw error;
+        setSuccess('Business created successfully!');
+      }
+
+      closeBusinessModal();
+      loadBusinesses();
+    } catch (err) {
+      setError('Failed to save business: ' + err.message);
+    }
+  };
+
+  const deleteBusiness = async (businessId) => {
+    if (!confirm('Are you sure you want to delete this business?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('the_life_businesses')
+        .delete()
+        .eq('id', businessId);
+
+      if (error) throw error;
+      setSuccess('Business deleted successfully!');
+      loadBusinesses();
+    } catch (err) {
+      setError('Failed to delete business: ' + err.message);
+    }
+  };
+
+  const toggleBusinessActive = async (business) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_businesses')
+        .update({ is_active: !business.is_active })
+        .eq('id', business.id);
+
+      if (error) throw error;
+      setSuccess(`Business ${!business.is_active ? 'activated' : 'deactivated'} successfully!`);
+      loadBusinesses();
+    } catch (err) {
+      setError('Failed to toggle business: ' + err.message);
     }
   };
 
@@ -1306,7 +1438,7 @@ export default function AdminPanel() {
           <div className="thelife-management">
             <div className="thelife-header">
               <h2>🔫 The Life Game Management</h2>
-              <p>Manage crimes, drugs, items, and brothel content for The Life RPG</p>
+              <p>Manage crimes, businesses, items, and brothel content for The Life RPG</p>
             </div>
 
             {/* Sub-tabs for The Life */}
@@ -1316,6 +1448,12 @@ export default function AdminPanel() {
                 onClick={() => setTheLifeTab('crimes')}
               >
                 💰 Crimes
+              </button>
+              <button 
+                className={`thelife-tab ${theLifeTab === 'businesses' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('businesses')}
+              >
+                💼 Businesses
               </button>
               <button 
                 className={`thelife-tab ${theLifeTab === 'items' ? 'active' : ''}`}
@@ -1386,6 +1524,71 @@ export default function AdminPanel() {
                           ✏️ Edit
                         </button>
                         <button onClick={() => deleteCrime(crime.id)} className="btn-delete">
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Businesses Section */}
+            {theLifeTab === 'businesses' && (
+              <div className="businesses-management">
+                <div className="section-header">
+                  <h3>💼 Business Management</h3>
+                  <button onClick={() => openBusinessModal()} className="btn-primary">
+                    ➕ Add New Business
+                  </button>
+                </div>
+
+                <div className="businesses-grid">
+                  {businesses.map(business => (
+                    <div key={business.id} className="business-admin-card">
+                      <div className="business-preview-image">
+                        {business.image_url ? (
+                          <img src={business.image_url} alt={business.name} />
+                        ) : (
+                          <div className="no-image">No Image</div>
+                        )}
+                        {!business.is_active && (
+                          <div className="inactive-badge">INACTIVE</div>
+                        )}
+                      </div>
+                      <div className="business-info">
+                        <h4>{business.name}</h4>
+                        <p className="business-desc">{business.description}</p>
+                        <div className="business-stats-grid">
+                          <div className="stat">
+                            <span className="label">Cost</span>
+                            <span className="value">${business.cost.toLocaleString()}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Profit</span>
+                            <span className="value">${business.profit.toLocaleString()}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Duration</span>
+                            <span className="value">{business.duration_minutes}m</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Min Level</span>
+                            <span className="value">{business.min_level_required}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="business-actions">
+                        <button 
+                          onClick={() => toggleBusinessActive(business)} 
+                          className={`btn-toggle ${business.is_active ? 'active' : 'inactive'}`}
+                        >
+                          {business.is_active ? '✓ Active' : '✗ Inactive'}
+                        </button>
+                        <button onClick={() => openBusinessModal(business)} className="btn-edit">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => deleteBusiness(business.id)} className="btn-delete">
                           🗑️ Delete
                         </button>
                       </div>
@@ -1631,6 +1834,117 @@ export default function AdminPanel() {
                     {editingCrime ? 'Update Crime' : 'Create Crime'}
                   </button>
                   <button onClick={closeCrimeModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Business Modal */}
+          {showBusinessModal && (
+            <div className="modal-overlay" onClick={closeBusinessModal}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingBusiness ? 'Edit Business' : 'Add New Business'}</h2>
+                  <button onClick={closeBusinessModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Business Name *</label>
+                      <input
+                        type="text"
+                        value={businessFormData.name}
+                        onChange={(e) => setBusinessFormData({...businessFormData, name: e.target.value})}
+                        placeholder="e.g., Weed Farm"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Description</label>
+                      <textarea
+                        value={businessFormData.description}
+                        onChange={(e) => setBusinessFormData({...businessFormData, description: e.target.value})}
+                        placeholder="Describe the business..."
+                        rows="3"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Image URL</label>
+                      <input
+                        type="text"
+                        value={businessFormData.image_url}
+                        onChange={(e) => setBusinessFormData({...businessFormData, image_url: e.target.value})}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                      {businessFormData.image_url && (
+                        <div className="image-preview">
+                          <img src={businessFormData.image_url} alt="Preview" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Cost ($)</label>
+                      <input
+                        type="number"
+                        value={businessFormData.cost}
+                        onChange={(e) => setBusinessFormData({...businessFormData, cost: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Profit ($)</label>
+                      <input
+                        type="number"
+                        value={businessFormData.profit}
+                        onChange={(e) => setBusinessFormData({...businessFormData, profit: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Duration (minutes)</label>
+                      <input
+                        type="number"
+                        value={businessFormData.duration_minutes}
+                        onChange={(e) => setBusinessFormData({...businessFormData, duration_minutes: parseInt(e.target.value)})}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Min Level Required</label>
+                      <input
+                        type="number"
+                        value={businessFormData.min_level_required}
+                        onChange={(e) => setBusinessFormData({...businessFormData, min_level_required: parseInt(e.target.value)})}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={businessFormData.is_active}
+                          onChange={(e) => setBusinessFormData({...businessFormData, is_active: e.target.checked})}
+                        />
+                        Is Active
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={saveBusiness} className="btn-save">
+                    {editingBusiness ? 'Update Business' : 'Create Business'}
+                  </button>
+                  <button onClick={closeBusinessModal} className="btn-cancel">
                     Cancel
                   </button>
                 </div>
