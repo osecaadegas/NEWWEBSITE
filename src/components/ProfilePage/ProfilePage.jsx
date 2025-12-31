@@ -115,11 +115,14 @@ export default function ProfilePage() {
           user_id: user.id,
           avatar_url: avatar,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       setMessage({ type: 'success', text: 'Avatar updated successfully!' });
       setShowAvatarPicker(false);
     } catch (error) {
+      console.error('Error updating avatar:', error);
       setMessage({ type: 'error', text: 'Failed to update avatar' });
     }
   };
@@ -157,6 +160,8 @@ export default function ProfilePage() {
           user_id: user.id,
           avatar_url: publicUrl,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       if (updateError) throw updateError;
