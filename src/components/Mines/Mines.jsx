@@ -5,6 +5,7 @@ import './Mines.css';
 
 const GRID_SIZE = 25; // 5x5 grid
 const MINE_COUNTS = [1, 3, 5, 10, 15]; // Different difficulty levels
+const MAX_BET = 200; // Maximum bet amount
 
 export default function Mines() {
   const { points, isConnected, updateUserPoints } = useStreamElements();
@@ -38,6 +39,11 @@ export default function Mines() {
 
     if (betAmount > balance || betAmount <= 0) {
       alert('Invalid bet amount!');
+      return;
+    }
+
+    if (betAmount > MAX_BET) {
+      alert(`Maximum bet is ${MAX_BET} points!`);
       return;
     }
 
@@ -182,21 +188,20 @@ export default function Mines() {
               <div className="control-section">
                 <label>Bet Amount</label>
                 <div className="bet-controls">
-                  <button onClick={() => setBetAmount(Math.max(10, betAmount / 2))}>½</button>
+                  <button onClick={() => setBetAmount(Math.min(MAX_BET, Math.max(10, betAmount / 2)))}>½</button>
                   <input
                     type="number"
                     value={betAmount}
-                    onChange={(e) => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
+                    onChange={(e) => setBetAmount(Math.min(MAX_BET, Math.max(10, parseInt(e.target.value) || 10)))}
                     min="10"
-                    max={balance}
+                    max={MAX_BET}
                   />
-                  <button onClick={() => setBetAmount(Math.min(balance, betAmount * 2))}>2×</button>
+                  <button onClick={() => setBetAmount(Math.min(MAX_BET, Math.min(balance, betAmount * 2)))}>2×</button>
                 </div>
                 <div className="quick-bets">
                   <button onClick={() => setBetAmount(50)}>50</button>
                   <button onClick={() => setBetAmount(100)}>100</button>
-                  <button onClick={() => setBetAmount(250)}>250</button>
-                  <button onClick={() => setBetAmount(500)}>500</button>
+                  <button onClick={() => setBetAmount(200)}>200</button>
                 </div>
               </div>
 
