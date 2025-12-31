@@ -488,6 +488,21 @@ export default function AdminPanel() {
     }
   };
 
+  const toggleCrimeActive = async (crime) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_robberies')
+        .update({ is_active: !crime.is_active })
+        .eq('id', crime.id);
+
+      if (error) throw error;
+      setSuccess(`Crime ${!crime.is_active ? 'activated' : 'deactivated'} successfully!`);
+      loadCrimes();
+    } catch (err) {
+      setError('Failed to toggle crime: ' + err.message);
+    }
+  };
+
   // Business Management Functions
   const loadBusinesses = async () => {
     try {
@@ -1488,6 +1503,9 @@ export default function AdminPanel() {
                         ) : (
                           <div className="no-image">No Image</div>
                         )}
+                        {!crime.is_active && (
+                          <div className="inactive-badge">INACTIVE</div>
+                        )}
                       </div>
                       <div className="crime-info">
                         <h4>{crime.name}</h4>
@@ -1520,6 +1538,12 @@ export default function AdminPanel() {
                         </div>
                       </div>
                       <div className="crime-actions">
+                        <button 
+                          onClick={() => toggleCrimeActive(crime)} 
+                          className={`btn-toggle ${crime.is_active ? 'active' : 'inactive'}`}
+                        >
+                          {crime.is_active ? '✓ Active' : '✗ Inactive'}
+                        </button>
                         <button onClick={() => openCrimeModal(crime)} className="btn-edit">
                           ✏️ Edit
                         </button>
