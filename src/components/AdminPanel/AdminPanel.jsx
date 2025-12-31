@@ -86,7 +86,10 @@ export default function AdminPanel() {
     profit: 1500,
     duration_minutes: 30,
     min_level_required: 1,
-    is_active: true
+    is_active: true,
+    item_reward_id: null,
+    item_quantity: 10,
+    unit_name: 'grams'
   });
   const [workerFormData, setWorkerFormData] = useState({
     name: '',
@@ -98,6 +101,7 @@ export default function AdminPanel() {
     min_level_required: 1,
     is_active: true
   });
+  const [availableItems, setAvailableItems] = useState([]);
 
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
@@ -518,6 +522,21 @@ export default function AdminPanel() {
     }
   };
 
+  const loadItems = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('items')
+        .select('*')
+        .eq('tradeable', true)
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setAvailableItems(data || []);
+    } catch (err) {
+      console.error('Error loading items:', err);
+    }
+  };
+
   const openBusinessModal = (business = null) => {
     if (business) {
       setBusinessFormData({
@@ -528,7 +547,10 @@ export default function AdminPanel() {
         profit: business.profit,
         duration_minutes: business.duration_minutes,
         min_level_required: business.min_level_required,
-        is_active: business.is_active
+        is_active: business.is_active,
+        item_reward_id: business.item_reward_id || null,
+        item_quantity: business.item_quantity || 10,
+        unit_name: business.unit_name || 'grams'
       });
       setEditingBusiness(business);
     } else {
@@ -540,7 +562,10 @@ export default function AdminPanel() {
         profit: 1500,
         duration_minutes: 30,
         min_level_required: 1,
-        is_active: true
+        is_active: true,
+        item_reward_id: null,
+        item_quantity: 10,
+        unit_name: 'grams'
       });
       setEditingBusiness(null);
     }
@@ -1604,8 +1629,12 @@ export default function AdminPanel() {
                             <span className="value">${business.cost.toLocaleString()}</span>
                           </div>
                           <div className="stat">
-                            <span className="label">Profit</span>
-                            <span className="value">${business.profit.toLocaleString()}</span>
+                            <span className="label">Reward</span>
+                            <span className="value">
+                              {business.item_reward_id ? 
+                                `${business.item_quantity} ${business.unit_name}` : 
+                                `$${business.profit.toLocaleString()}`}
+                            </span>
                           </div>
                           <div className="stat">
                             <span className="label">Duration</span>
@@ -1943,12 +1972,50 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="form-group">
-                      <label>Profit ($)</label>
+                      <label>Profit ($) - Legacy</label>
                       <input
                         type="number"
                         value={businessFormData.profit}
                         onChange={(e) => setBusinessFormData({...businessFormData, profit: parseInt(e.target.value)})}
                         min="0"
+                      />
+                      <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                        ⚠️ Will be replaced by item rewards
+                      </small>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Item Reward</label>
+                      <select
+                        value={businessFormData.item_reward_id || ''}
+                        onChange={(e) => setBusinessFormData({...businessFormData, item_reward_id: e.target.value || null})}
+                      >
+                        <option value="">None (Cash Only)</option>
+                        {availableItems.map(item => (
+                          <option key={item.id} value={item.id}>
+                            {item.icon} {item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Item Quantity</label>
+                      <input
+                        type="number"
+                        value={businessFormData.item_quantity}
+                        onChange={(e) => setBusinessFormData({...businessFormData, item_quantity: parseInt(e.target.value)})}
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Unit Name</label>
+                      <input
+                        type="text"
+                        value={businessFormData.unit_name}
+                        onChange={(e) => setBusinessFormData({...businessFormData, unit_name: e.target.value})}
+                        placeholder="e.g., grams, pills, bags"
                       />
                     </div>
 
