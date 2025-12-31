@@ -17,7 +17,9 @@ const SUITS = {
 };
 
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-const CHIP_VALUES = [10, 25, 50, 100, 500];
+const CHIP_VALUES = [10, 25, 50, 100, 200];
+const MAX_BET = 200;
+const MAX_SIDE_BET = 10;
 
 export default function BlackjackPremium() {
   const { points, isConnected, seAccount, updateUserPoints, refreshPoints } = useStreamElements();
@@ -178,6 +180,7 @@ export default function BlackjackPremium() {
   const addChipToBet = (value) => {
     if (gamePhase !== 'betting') return;
     if (currentBet + value > points) return;
+    if (currentBet + value > MAX_BET) return;
     setCurrentBet(prev => prev + value);
     
     // Add chip animation
@@ -208,6 +211,7 @@ export default function BlackjackPremium() {
   // Place side bet
   const placeSideBet = (type, amount) => {
     if (gamePhase !== 'betting') return;
+    if (amount > MAX_SIDE_BET) return;
     const totalBet = currentBet + sideBets.perfectPair + sideBets.twentyOneThree + amount;
     if (totalBet > points) return;
     
@@ -795,7 +799,7 @@ export default function BlackjackPremium() {
                     <input
                       type="number"
                       min="0"
-                      max="1000"
+                      max="10"
                       value={sideBets.perfectPair}
                       onChange={(e) => placeSideBet('perfectPair', parseInt(e.target.value) || 0)}
                       disabled={gamePhase !== 'betting'}
@@ -821,7 +825,7 @@ export default function BlackjackPremium() {
                     <input
                       type="number"
                       min="0"
-                      max="1000"
+                      max="10"
                       value={sideBets.twentyOneThree}
                       onChange={(e) => placeSideBet('twentyOneThree', parseInt(e.target.value) || 0)}
                       disabled={gamePhase !== 'betting'}

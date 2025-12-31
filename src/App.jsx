@@ -23,8 +23,6 @@ import ModernSidebarLayout from './components/ModernSidebarLayout/ModernSidebarL
 import GiveawayPanel from './components/GiveawayPanel/GiveawayPanel';
 import ArtAdPanel from './components/ArtAdPanel/ArtAdPanel';
 import TwitchChat from './components/TwitchChat/TwitchChat';
-import Blackjack from './components/Blackjack/Blackjack3D';
-import BlackjackEnhanced from './components/Blackjack/BlackjackEnhanced';
 import BlackjackPremium from './components/Blackjack/BlackjackPremium';
 import Mines from './components/Mines/Mines';
 import TheThugas from './components/TheThugas/TheThugas';
@@ -610,8 +608,6 @@ function App() {
                 <Route path="/games/dice" element={<GamesPage gameType="dice" />} />
                 <Route path="/games/roulette" element={<GamesPage gameType="roulette" />} />
                 <Route path="/games/blackjack" element={<BlackjackPremium />} />
-                <Route path="/games/blackjack-enhanced" element={<BlackjackEnhanced />} />
-                <Route path="/games/blackjack-old" element={<Blackjack />} />
                 <Route path="/games/mines" element={<Mines />} />
                 <Route path="/games/thethugas" element={<TheThugas />} />
                 <Route path="/points" element={<StreamElementsPanel />} />
