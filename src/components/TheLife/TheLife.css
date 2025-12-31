@@ -270,17 +270,17 @@
 
 .crime-card {
   background: rgba(26, 31, 46, 0.95);
-  border-radius: 20px;
+  border-radius: 12px;
   overflow: hidden;
   border: 2px solid rgba(212, 175, 55, 0.3);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.3s;
   position: relative;
 }
 
 .crime-card:hover {
-  transform: translateY(-10px) scale(1.02);
+  transform: translateY(-5px);
   border-color: rgba(212, 175, 55, 0.8);
-  box-shadow: 0 15px 40px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
 }
 
 .crime-card.locked {
@@ -290,7 +290,7 @@
 .crime-image-container {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 140px;
   overflow: hidden;
 }
 
@@ -298,13 +298,13 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.7) saturate(1.2);
-  transition: all 0.4s;
+  filter: brightness(0.8);
+  transition: all 0.3s;
 }
 
 .crime-card:hover .crime-image {
-  transform: scale(1.1);
-  filter: brightness(0.9) saturate(1.4);
+  transform: scale(1.05);
+  filter: brightness(0.95);
 }
 
 .locked-overlay {
@@ -755,7 +755,7 @@
 .business-card {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.25));
   border: 2px solid rgba(34, 197, 94, 0.3);
-  border-radius: 15px;
+  border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s;
 }
@@ -763,12 +763,12 @@
 .business-card:hover {
   border-color: rgba(34, 197, 94, 0.6);
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
+  box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
 }
 
 .business-image-container {
   width: 100%;
-  height: 180px;
+  height: 140px;
   overflow: hidden;
 }
 
@@ -776,40 +776,42 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.8) saturate(1.3);
+  filter: brightness(0.8);
   transition: all 0.3s;
 }
 
 .business-card:hover .business-image {
-  transform: scale(1.1);
-  filter: brightness(1) saturate(1.5);
+  transform: scale(1.05);
+  filter: brightness(0.95);
 }
 
 .business-card h3 {
   color: #22c55e;
-  font-size: 1.5rem;
-  margin: 15px 0 10px;
+  font-size: 1.1rem;
+  margin: 12px 0 8px;
   text-align: center;
 }
 
 .business-card > p {
   color: #cbd5e0;
-  margin: 10px 20px;
+  margin: 5px 12px;
+  font-size: 0.85rem;
   text-align: center;
 }
 
 .business-card .locked {
   color: #f59e0b;
   font-weight: 600;
-  margin: 15px 20px;
+  margin: 8px 12px;
+  font-size: 0.85rem;
   text-align: center;
 }
 
 .business-card .timer {
   color: #fbbf24;
   font-weight: 600;
-  font-size: 1.1rem;
-  margin: 15px 20px;
+  font-size: 0.9rem;
+  margin: 8px 12px;
   text-align: center;
 }
 
@@ -817,18 +819,19 @@
   background: linear-gradient(135deg, #22c55e, #16a34a);
   color: white;
   border: none;
-  padding: 12px 24px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-  margin: 15px 20px 20px;
-  width: calc(100% - 40px);
+  font-size: 0.9rem;
+  margin: 10px 12px 12px;
+  width: calc(100% - 24px);
   transition: all 0.3s;
 }
 
 .business-card button:hover:not(:disabled) {
   background: linear-gradient(135deg, #16a34a, #15803d);
-  transform: scale(1.05);
+  transform: translateY(-2px);
 }
 
 .business-card button:disabled {
@@ -1115,7 +1118,7 @@
 .worker-card {
   background: rgba(30, 30, 45, 0.9);
   border: 2px solid rgba(236, 72, 153, 0.3);
-  border-radius: 15px;
+  border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s;
   position: relative;
@@ -1124,7 +1127,7 @@
 .worker-card:hover {
   border-color: rgba(236, 72, 153, 0.6);
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);
+  box-shadow: 0 10px 25px rgba(236, 72, 153, 0.3);
 }
 
 .worker-card.hired {
@@ -1135,7 +1138,7 @@
 .worker-image-container {
   position: relative;
   width: 100%;
-  height: 280px;
+  height: 100px;
   overflow: hidden;
 }
 
@@ -1143,12 +1146,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.85);
+  filter: brightness(0.8);
   transition: all 0.3s;
 }
 
 .worker-card:hover .worker-image {
-  filter: brightness(1);
+  filter: brightness(0.95);
   transform: scale(1.05);
 }
 
@@ -1167,30 +1170,30 @@
 }
 
 .worker-info {
-  padding: 20px;
+  padding: 12px;
 }
 
 .worker-info h4 {
   color: #ec4899;
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+  font-size: 1.1rem;
+  margin-bottom: 6px;
 }
 
 .worker-description {
   color: #a0aec0;
-  font-size: 0.9rem;
-  margin-bottom: 15px;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  margin-bottom: 10px;
+  line-height: 1.3;
 }
 
 .worker-stats {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 6px;
+  margin-bottom: 10px;
   background: rgba(20, 20, 35, 0.6);
-  padding: 15px;
-  border-radius: 10px;
+  padding: 10px;
+  border-radius: 8px;
 }
 
 .worker-stats .stat {
@@ -1201,13 +1204,13 @@
 
 .worker-stats .label {
   color: #cbd5e0;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
 }
 
 .worker-stats .value {
   color: #d4af37;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.85rem;
 }
 
 .rarity-badge {
@@ -1248,10 +1251,10 @@
 .hired-btn,
 .locked-btn {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
@@ -1264,7 +1267,7 @@
 
 .hire-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #db2777, #be185d);
-  transform: scale(1.02);
+  transform: translateY(-2px);
   box-shadow: 0 5px 20px rgba(236, 72, 153, 0.4);
 }
 

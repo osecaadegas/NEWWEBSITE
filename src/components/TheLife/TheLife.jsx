@@ -1170,19 +1170,9 @@ export default function TheLife() {
                           <p className="worker-description">{worker.description}</p>
                           <div className="worker-stats">
                             <div className="stat">
-                              <span className="label">Hire Cost:</span>
-                              <span className="value">${worker.hire_cost.toLocaleString()}</span>
-                            </div>
-                            <div className="stat">
                               <span className="label">Income:</span>
                               <span className="value">${worker.income_per_hour}/hour</span>
                             </div>
-                            {worker.min_level_required > 0 && (
-                              <div className="stat">
-                                <span className="label">Min Level:</span>
-                                <span className="value">{worker.min_level_required}</span>
-                              </div>
-                            )}
                           </div>
                           <span className={`rarity-badge rarity-${worker.rarity}`}>
                             {worker.rarity.toUpperCase()}
