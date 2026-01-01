@@ -29,11 +29,24 @@ export default function StreamElementsPanel() {
   const [allRedemptions, setAllRedemptions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  const [isTwitchUser, setIsTwitchUser] = useState(false);
 
   useEffect(() => {
+    checkIfTwitchUser();
     loadRedemptionItems();
     loadAllRedemptions();
   }, []);
+
+  const checkIfTwitchUser = async () => {
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser?.app_metadata?.provider === 'twitch') {
+        setIsTwitchUser(true);
+      }
+    } catch (err) {
+      console.error('Error checking user provider:', err);
+    }
+  };
 
   const loadRedemptionItems = async () => {
     try {
@@ -230,7 +243,7 @@ export default function StreamElementsPanel() {
 
       {/* Show redemption items to everyone */}
       <div className="se-connected">
-        {!isConnected && (
+        {!isConnected && !isTwitchUser && (
           <div className="se-info-box" style={{ marginBottom: '20px' }}>
             <h3>🔒 Connect to Redeem</h3>
             <p>Link your StreamElements account to view your points balance and redeem rewards!</p>
@@ -240,6 +253,14 @@ export default function StreamElementsPanel() {
             >
               Connect StreamElements
             </button>
+          </div>
+        )}
+
+        {!isConnected && isTwitchUser && (
+          <div className="se-info-box" style={{ marginBottom: '20px', background: 'rgba(147, 51, 234, 0.1)', borderColor: 'rgba(147, 51, 234, 0.3)' }}>
+            <h3>✨ Twitch User Detected</h3>
+            <p>Your StreamElements loyalty points are automatically synced! You can redeem rewards below once connected.</p>
+            <p style={{color: '#9333ea', fontSize: '0.9rem', marginTop: '10px'}}>💡 Points sync may take a moment after first login</p>
           </div>
         )}
         
