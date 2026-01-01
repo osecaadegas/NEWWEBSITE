@@ -140,7 +140,12 @@ export default function DailyWheel() {
 
   const drawWheel = () => {
     const canvas = canvasRef.current;
-    if (!canvas || prizes.length === 0) return;
+    console.log('Drawing wheel:', { canvas: !!canvas, prizesLength: prizes.length });
+    
+    if (!canvas || prizes.length === 0) {
+      console.warn('Cannot draw wheel - missing canvas or prizes');
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
     const centerX = canvas.width / 2;
@@ -189,6 +194,8 @@ export default function DailyWheel() {
     ctx.strokeStyle = '#444';
     ctx.lineWidth = 8;
     ctx.stroke();
+    
+    console.log('Wheel drawn successfully with', prizes.length, 'segments');
   };
 
   const playSpinSound = () => {
@@ -278,13 +285,34 @@ export default function DailyWheel() {
   };
 
   const spin = async () => {
-    console.log('Spin clicked:', { isSpinning, canSpin, hasUser: !!user, prizesCount: prizes.length });
+    console.log('=== SPIN FUNCTION CALLED ===');
+    console.log('Spin state:', { 
+      isSpinning, 
+      canSpin, 
+      hasUser: !!user, 
+      userId: user?.id,
+      prizesCount: prizes.length,
+      canvasExists: !!canvasRef.current
+    });
     
-    if (isSpinning || !canSpin || !user || prizes.length === 0) {
-      console.log('Spin blocked');
+    if (isSpinning) {
+      console.log('BLOCKED: Already spinning');
+      return;
+    }
+    if (!canSpin) {
+      console.log('BLOCKED: Cannot spin (cooldown)');
+      return;
+    }
+    if (!user) {
+      console.log('BLOCKED: No user logged in');
+      return;
+    }
+    if (prizes.length === 0) {
+      console.log('BLOCKED: No prizes loaded');
       return;
     }
 
+    console.log('✅ All checks passed - starting spin!');
     setIsSpinning(true);
     playSpinSound();
 
@@ -306,6 +334,13 @@ export default function DailyWheel() {
     };
 
     lastSegmentIndexRef.current = -1;
+
+    console.log('Starting animation:', {
+      startRotation,
+      targetRotation,
+      winningIndex,
+      duration
+    });
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
