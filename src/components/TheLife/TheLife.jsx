@@ -834,15 +834,8 @@ export default function TheLife() {
       setMessage({ type: 'error', text: 'Failed to collect!' });
     }
   };
-        const updated = { ...prev };
-        delete updated[business.id];
-        delete updated[`${business.id}_completed_at`];
-        return updated;
-      });
-    } catch (err) {
-      console.error('Error collecting business:', err);
-      setMessage({ type: 'error', text: 'Failed to collect reward' });
-    }
+
+  // Load online players for PvP
   };
 
   const startDrugProduction = async (drugType, hours) => {
