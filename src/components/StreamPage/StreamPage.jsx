@@ -1,4 +1,5 @@
 import './StreamPage.css';
+import StreamHighlights from '../StreamHighlights/StreamHighlights';
 
 export default function StreamPage() {
   const twitchChannel = 'osecaadegas95';
@@ -46,6 +47,9 @@ export default function StreamPage() {
             />
           </div>
         </div>
+
+        {/* Stream Highlights Section */}
+        <StreamHighlights />
       </div>
     </div>
   );
