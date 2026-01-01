@@ -960,7 +960,7 @@
 
 .brothel-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   margin-bottom: 30px;
 }
@@ -984,6 +984,21 @@
   color: #f9a8d4;
   font-size: 2.5rem;
   font-weight: 700;
+}
+
+.collectible-amount {
+  color: #22c55e !important;
+  text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 .brothel-workers {
@@ -1579,7 +1594,7 @@
   }
 
   .brothel-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .brothel-actions {

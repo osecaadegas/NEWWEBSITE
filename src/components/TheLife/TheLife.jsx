@@ -1308,6 +1308,19 @@ export default function TheLife() {
                     <p className="big-number">${brothel.income_per_hour?.toLocaleString()}</p>
                   </div>
                   <div className="brothel-stat">
+                    <h3>Available to Collect</h3>
+                    <p className="big-number collectible-amount">
+                      ${(() => {
+                        if (!brothel.last_collection) return 0;
+                        const lastCollection = new Date(brothel.last_collection);
+                        const now = new Date();
+                        const hoursPassed = (now - lastCollection) / 1000 / 60 / 60;
+                        const income = Math.floor(hoursPassed * brothel.income_per_hour);
+                        return income.toLocaleString();
+                      })()}
+                    </p>
+                  </div>
+                  <div className="brothel-stat">
                     <h3>Total Earned</h3>
                     <p className="big-number">${brothel.total_earned?.toLocaleString()}</p>
                   </div>
