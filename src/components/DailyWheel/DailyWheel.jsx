@@ -44,14 +44,24 @@ export default function DailyWheel() {
   };
 
   const checkSpinAvailability = async () => {
-    if (!user) return;
+    if (!user) {
+      setCanSpin(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.rpc('can_user_spin_today', {
         p_user_id: user.id
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('RPC error:', error);
+        // If function doesn't exist, allow spin
+        setCanSpin(true);
+        return;
+      }
+      
+      console.log('Can spin today:', data);
       setCanSpin(data);
 
       if (!data) {
@@ -59,6 +69,8 @@ export default function DailyWheel() {
       }
     } catch (error) {
       console.error('Error checking spin availability:', error);
+      // On error, allow spin
+      setCanSpin(true);
     }
   };
 
@@ -244,7 +256,12 @@ export default function DailyWheel() {
   };
 
   const spin = async () => {
-    if (isSpinning || !canSpin || !user) return;
+    console.log('Spin clicked:', { isSpinning, canSpin, hasUser: !!user, prizesCount: prizes.length });
+    
+    if (isSpinning || !canSpin || !user || prizes.length === 0) {
+      console.log('Spin blocked');
+      return;
+    }
 
     setIsSpinning(true);
     playSpinSound();
@@ -468,10 +485,10 @@ export default function DailyWheel() {
         <div className="wheel-controls">
           <button 
             onClick={spin}
-            disabled={!canSpin || isSpinning}
+            disabled={!canSpin || isSpinning || prizes.length === 0 || loading}
             className="spin-btn"
           >
-            {isSpinning ? 'SPINNING...' : 'SPIN NOW'}
+            {loading ? 'LOADING...' : isSpinning ? 'SPINNING...' : 'SPIN NOW'}
           </button>
           
           {!canSpin && countdown && (
@@ -513,20 +530,6 @@ export default function DailyWheel() {
         </div>
       )}
 
-      {/* Prize List */}
-      <section className="prizes-section">
-        <h3 className="text-center text-gray-500 uppercase tracking-widest text-xs mb-6">
-          Possible Rewards
-        </h3>
-        <div className="prizes-grid">
-          {prizes.map((prize) => (
-            <div key={prize.id} className="prize-card">
-              <div className="text-xl">{prize.icon}</div>
-              <div className="text-xs font-bold text-gray-300">{prize.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
