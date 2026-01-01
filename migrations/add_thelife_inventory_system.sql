@@ -29,6 +29,11 @@ CREATE TABLE IF NOT EXISTS the_life_player_inventory (
 ALTER TABLE the_life_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE the_life_player_inventory ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Anyone can view TheLife items" ON the_life_items;
+DROP POLICY IF EXISTS "Players can view own inventory" ON the_life_player_inventory;
+DROP POLICY IF EXISTS "Players can manage own inventory" ON the_life_player_inventory;
+
 -- Policies for items (everyone can view)
 CREATE POLICY "Anyone can view TheLife items"
   ON the_life_items FOR SELECT
