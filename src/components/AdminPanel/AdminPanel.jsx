@@ -387,15 +387,22 @@ export default function AdminPanel() {
   // === THE LIFE MANAGEMENT FUNCTIONS ===
   
   const loadCrimes = async () => {
-    const { data, error } = await supabase
-      .from('the_life_robberies')
-      .select('*')
-      .order('min_level_required', { ascending: true });
-    
-    if (error) {
-      console.error('Error loading crimes:', error);
-    } else {
-      setCrimes(data || []);
+    try {
+      const { data, error } = await supabase
+        .from('the_life_robberies')
+        .select('*')
+        .order('min_level_required', { ascending: true });
+      
+      if (error) {
+        console.error('Error loading crimes:', error);
+        setError('Failed to load crimes: ' + error.message);
+      } else {
+        console.log('Loaded crimes:', data);
+        setCrimes(data || []);
+      }
+    } catch (err) {
+      console.error('Exception loading crimes:', err);
+      setError('Failed to load crimes: ' + err.message);
     }
   };
 
@@ -465,31 +472,71 @@ export default function AdminPanel() {
 
     try {
       if (editingCrime) {
-        const { error } = await supabase
+        // Update existing crime
+        const { data, error } = await supabase
           .from('the_life_robberies')
-          .update(crimeFormData)
-          .eq('id', editingCrime.id);
+          .update({
+            name: crimeFormData.name,
+            description: crimeFormData.description,
+            image_url: crimeFormData.image_url,
+            min_level_required: parseInt(crimeFormData.min_level_required),
+            ticket_cost: parseInt(crimeFormData.ticket_cost),
+            base_reward: parseInt(crimeFormData.base_reward),
+            max_reward: parseInt(crimeFormData.max_reward),
+            success_rate: parseInt(crimeFormData.success_rate),
+            jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
+            hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
+            xp_reward: parseInt(crimeFormData.xp_reward)
+          })
+          .eq('id', editingCrime.id)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
+        
+        console.log('Crime updated:', data);
         setSuccess('Crime updated successfully!');
       } else {
-        const { error } = await supabase
+        // Create new crime
+        const { data, error } = await supabase
           .from('the_life_robberies')
-          .insert([crimeFormData]);
+          .insert([{
+            name: crimeFormData.name,
+            description: crimeFormData.description,
+            image_url: crimeFormData.image_url,
+            min_level_required: parseInt(crimeFormData.min_level_required),
+            ticket_cost: parseInt(crimeFormData.ticket_cost),
+            base_reward: parseInt(crimeFormData.base_reward),
+            max_reward: parseInt(crimeFormData.max_reward),
+            success_rate: parseInt(crimeFormData.success_rate),
+            jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
+            hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
+            xp_reward: parseInt(crimeFormData.xp_reward),
+            is_active: true
+          }])
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
+
+        console.log('Crime created:', data);
         setSuccess('Crime created successfully!');
       }
 
       closeCrimeModal();
-      loadCrimes();
+      await loadCrimes();
     } catch (err) {
+      console.error('Save crime error:', err);
       setError('Failed to save crime: ' + err.message);
     }
   };
 
   const deleteCrime = async (crimeId) => {
-    if (!confirm('Are you sure you want to delete this crime?')) return;
+    if (!confirm('Are you sure you want to delete this crime? This cannot be undone.')) return;
 
     setError('');
     setSuccess('');
@@ -500,24 +547,40 @@ export default function AdminPanel() {
         .delete()
         .eq('id', crimeId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
+      
+      console.log('Crime deleted:', crimeId);
       setSuccess('Crime deleted successfully!');
-      loadCrimes();
+      await loadCrimes();
     } catch (err) {
+      console.error('Delete crime error:', err);
       setError('Failed to delete crime: ' + err.message);
     }
   };
 
   const toggleCrimeActive = async (crime) => {
+    setError('');
+    
     try {
-      const { error } = await supabase
+      const newActiveState = !crime.is_active;
+      
+      const { data, error } = await supabase
         .from('the_life_robberies')
-        .update({ is_active: !crime.is_active })
-        .eq('id', crime.id);
+        .update({ is_active: newActiveState })
+        .eq('id', crime.id)
+        .select();
 
-      if (error) throw error;
-      setSuccess(`Crime ${!crime.is_active ? 'activated' : 'deactivated'} successfully!`);
-      loadCrimes();
+      if (error) {
+        console.error('Toggle error:', error);
+        throw error;
+      }
+
+      console.log('Crime toggled:', data);
+      setSuccess(`Crime ${newActiveState ? 'activated' : 'deactivated'} successfully!`);
+      await loadCrimes();
     } catch (err) {
       setError('Failed to toggle crime: ' + err.message);
     }
