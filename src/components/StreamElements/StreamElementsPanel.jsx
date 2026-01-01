@@ -14,7 +14,8 @@ export default function StreamElementsPanel() {
     unlinkAccount,
     redeemPoints,
     refreshPoints,
-    isConnected
+    isConnected,
+    autoConnecting
   } = useStreamElements();
 
   const { user } = useAuth();
@@ -264,15 +265,14 @@ export default function StreamElementsPanel() {
           </div>
         )}
 
-        {!isConnected && isTwitchUser && seCredentialsConfigured && (
+        {autoConnecting && isTwitchUser && (
           <div className="se-info-box" style={{ marginBottom: '20px', background: 'rgba(147, 51, 234, 0.1)', borderColor: 'rgba(147, 51, 234, 0.3)' }}>
-            <h3>✨ Syncing Your Points...</h3>
-            <p>Your StreamElements loyalty points are being synced automatically!</p>
-            <p style={{color: '#9333ea', fontSize: '0.9rem', marginTop: '10px'}}>💡 This may take a moment. Refresh if points don't appear.</p>
+            <h3>🔄 Connecting...</h3>
+            <p>Syncing your StreamElements points...</p>
           </div>
         )}
 
-        {!isConnected && isTwitchUser && !seCredentialsConfigured && (
+        {!isConnected && !autoConnecting && isTwitchUser && !seCredentialsConfigured && (
           <div className="se-info-box" style={{ marginBottom: '20px', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
             <h3>⚙️ Setup Required</h3>
             <p style={{color: '#ef4444'}}>StreamElements auto-sync is not configured yet. Contact the streamer!</p>

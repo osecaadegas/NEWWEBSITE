@@ -20,12 +20,16 @@ export function StreamElementsProvider({ children }) {
   const [error, setError] = useState(null);
   const [redemptions, setRedemptions] = useState([]);
   const [latestRedemption, setLatestRedemption] = useState(null);
+  const [autoConnecting, setAutoConnecting] = useState(false);
 
   // Load user's StreamElements connection from database
   useEffect(() => {
     if (user) {
-      loadStreamElementsConnection();
-      autoConnectTwitchUser();
+      const init = async () => {
+        await loadStreamElementsConnection();
+        await autoConnectTwitchUser();
+      };
+      init();
     } else {
       setSeAccount(null);
       setPoints(0);
@@ -34,11 +38,13 @@ export function StreamElementsProvider({ children }) {
 
   // Auto-connect Twitch users to StreamElements
   const autoConnectTwitchUser = async () => {
+    setAutoConnecting(true);
     try {
       // Check if user logged in via Twitch
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
       if (!authUser?.app_metadata?.provider || authUser.app_metadata.provider !== 'twitch') {
+        setAutoConnecting(false);
         return; // Not a Twitch user
       }
 
@@ -49,7 +55,10 @@ export function StreamElementsProvider({ children }) {
         .eq('user_id', user.id)
         .single();
 
-      if (existing) return; // Already connected
+      if (existing) {
+        setAutoConnecting(false);
+        return; // Already connected
+      }
 
       // Get Twitch username from user metadata
       const twitchUsername = authUser.user_metadata?.preferred_username || 
@@ -66,6 +75,7 @@ export function StreamElementsProvider({ children }) {
       if (!streamerChannelId || !streamerJwtToken) {
         console.warn('⚠️ StreamElements credentials not configured. Set VITE_SE_CHANNEL_ID and VITE_SE_JWT_TOKEN environment variables.');
         console.warn('Auto-connect disabled for Twitch users.');
+        setAutoConnecting(false);
         return;
       }
 
@@ -108,6 +118,8 @@ export function StreamElementsProvider({ children }) {
     } catch (err) {
       console.error('Auto-connect failed:', err);
       // Silently fail - user can manually connect if needed
+    } finally {
+      setAutoConnecting(false);
     }
   };
 
@@ -461,7 +473,8 @@ export function StreamElementsProvider({ children }) {
     redeemPoints,
     refreshPoints,
     updateUserPoints,
-    isConnected: !!seAccount
+    isConnected: !!seAccount,
+    autoConnecting
   };
 
   return (
