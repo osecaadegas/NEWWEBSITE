@@ -17,6 +17,7 @@ export default function TheLife() {
   const [hiredWorkers, setHiredWorkers] = useState([]);
   const [showHiredWorkers, setShowHiredWorkers] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [ownedBusinesses, setOwnedBusinesses] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -32,6 +33,7 @@ export default function TheLife() {
       loadBrothel();
       loadAvailableWorkers();
       loadHiredWorkers();
+      loadOwnedBusinesses();
       loadOnlinePlayers();
       loadLeaderboard();
       startTicketRefill();
@@ -550,9 +552,82 @@ export default function TheLife() {
     }
   };
 
+  // Load owned businesses
+  const loadOwnedBusinesses = async () => {
+    try {
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!playerData) return;
+
+      const { data, error } = await supabase
+        .from('the_life_player_businesses')
+        .select(`
+          *,
+          business:the_life_businesses(*)
+        `)
+        .eq('player_id', playerData.id);
+
+      if (error) throw error;
+      setOwnedBusinesses(data || []);
+    } catch (err) {
+      console.error('Error loading owned businesses:', err);
+    }
+  };
+
+  // Buy a business
+  const buyBusiness = async (business) => {
+    if (player.cash < business.purchase_price) {
+      setMessage({ type: 'error', text: `Need $${business.purchase_price.toLocaleString()} to buy ${business.name}!` });
+      return;
+    }
+
+    if (player.level < business.min_level_required) {
+      setMessage({ type: 'error', text: `Need level ${business.min_level_required} to buy ${business.name}!` });
+      return;
+    }
+
+    try {
+      // Add to owned businesses
+      await supabase
+        .from('the_life_player_businesses')
+        .insert({
+          player_id: player.id,
+          business_id: business.id
+        });
+
+      // Deduct purchase price
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - business.purchase_price })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadOwnedBusinesses();
+      setMessage({ type: 'success', text: `Purchased ${business.name}!` });
+    } catch (err) {
+      console.error('Error buying business:', err);
+      setMessage({ type: 'error', text: 'Failed to buy business!' });
+    }
+  };
+
   // Start drug production
   const startBusiness = async (business) => {
-    if (player.cash < business.cost) {
+    // Check if player owns this business
+    const ownsIt = ownedBusinesses.some(ob => ob.business_id === business.id);
+    if (!ownsIt) {
+      setMessage({ type: 'error', text: 'You need to buy this business first!' });
+      return;
+    }
+
+    const productionCost = business.production_cost || business.cost;
+    if (player.cash < productionCost) {
       setMessage({ type: 'error', text: 'Not enough cash!' });
       return;
     }
@@ -571,7 +646,7 @@ export default function TheLife() {
       // Deduct cost from player
       const { data, error } = await supabase
         .from('the_life_players')
-        .update({ cash: player.cash - business.cost })
+        .update({ cash: player.cash - productionCost })
         .eq('user_id', user.id)
         .select()
         .single();
@@ -1424,14 +1499,38 @@ export default function TheLife() {
                 const completedAt = drugOps?.[`${business.id}_completed_at`];
                 const isReady = completedAt && new Date(completedAt) <= new Date();
                 const meetsLevel = player.level >= business.min_level_required;
+                const ownsIt = ownedBusinesses.some(ob => ob.business_id === business.id);
+                const productionCost = business.production_cost || business.cost;
                 
                 return (
                   <div key={business.id} className="business-card">
                     <div className="business-image-container">
                       <img src={imageUrl} alt={business.name} className="business-image" />
+                      {ownsIt && <div className="hired-badge">OWNED</div>}
                     </div>
                     <h3>{business.item?.icon || '💼'} {business.name}</h3>
-                    <p>Cost: ${business.cost.toLocaleString()}</p>
+                    {!ownsIt ? (
+                      <>
+                        <p>Purchase Price: ${business.purchase_price?.toLocaleString() || '5,000'}</p>
+                        <p className="description">{business.description}</p>
+                        {meetsLevel ? (
+                          <button 
+                            onClick={() => buyBusiness(business)} 
+                            disabled={player?.cash < (business.purchase_price || 5000)}
+                            className="hire-btn"
+                          >
+                            {player?.cash >= (business.purchase_price || 5000) ? 
+                              `Buy Business ($${(business.purchase_price || 5000).toLocaleString()})` : 
+                              'Not Enough Cash'
+                            }
+                          </button>
+                        ) : (
+                          <p className="locked">🔒 Level {business.min_level_required} Required</p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p>Production Cost: ${productionCost.toLocaleString()}</p>
                     <p>
                       {business.item_reward_id ? 
                         `Reward: ${business.item_quantity} ${business.unit_name} ${business.item?.icon || ''}` :
@@ -1462,14 +1561,16 @@ export default function TheLife() {
                         ) : (
                           <button 
                             onClick={() => startBusiness(business)} 
-                            disabled={player?.cash < business.cost}
+                            disabled={player?.cash < productionCost}
                           >
-                            Start Production (${business.cost.toLocaleString()})
+                            Start Production (${productionCost.toLocaleString()})
                           </button>
                         )}
                       </>
                     ) : (
                       <p className="locked">🔒 Level {business.min_level_required} Required</p>
+                    )}
+                      </>
                     )}
                   </div>
                 );
