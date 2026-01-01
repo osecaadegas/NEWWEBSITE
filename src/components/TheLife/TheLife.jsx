@@ -1508,9 +1508,9 @@ export default function TheLife() {
                             </div>
                           </div>
                           <span className={`rarity-badge rarity-${worker.rarity}`}>
-                           eadyHired ? (
-                            <button disabled className="hired-btn">Already Hired</button>
-                          ) : slotsFull ? (
+                            {worker.rarity.toUpperCase()}
+                          </span>
+                          {slotsFull ? (
                             <button disabled className="locked-btn">🚫 No Slots Available</button>
                           ) : !meetsLevel ? (
                             <button disabled className="locked-btn">🔒 Level {worker.min_level_required} Required</button>
