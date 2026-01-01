@@ -761,17 +761,21 @@ export default function AdminPanel() {
         type: item.type,
         icon: item.icon,
         rarity: item.rarity,
-        tradeable: item.tradeable || false
+        tradeable: item.tradeable || false,
+        usable: item.usable ?? true,
+        effect: item.effect || ''
       });
       setEditingItem(item);
     } else {
       setItemFormData({
         name: '',
         description: '',
-        type: 'item',
-        icon: '📦',
+        type: 'consumable',
+        icon: 'https://images.unsplash.com/photo-1606400082777-ef05f3c5cde9?w=400',
         rarity: 'common',
-        tradeable: false
+        tradeable: false,
+        usable: true,
+        effect: ''
       });
       setEditingItem(null);
     }
@@ -795,7 +799,7 @@ export default function AdminPanel() {
     try {
       if (editingItem) {
         const { error } = await supabase
-          .from('items')
+          .from('the_life_items')
           .update(itemFormData)
           .eq('id', editingItem.id);
 
@@ -803,7 +807,7 @@ export default function AdminPanel() {
         setSuccess('Item updated successfully!');
       } else {
         const { error } = await supabase
-          .from('items')
+          .from('the_life_items')
           .insert([itemFormData]);
 
         if (error) throw error;
@@ -825,7 +829,7 @@ export default function AdminPanel() {
 
     try {
       const { error } = await supabase
-        .from('items')
+        .from('the_life_items')
         .delete()
         .eq('id', itemId);
 
@@ -2031,7 +2035,9 @@ export default function AdminPanel() {
                 <div className="items-grid">
                   {items.map(item => (
                     <div key={item.id} className="item-admin-card">
-                      <div className="item-icon-large">{item.icon}</div>
+                      <div className="item-image-preview">
+                        <img src={item.icon} alt={item.name} style={{width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px'}} />
+                      </div>
                       <div className="item-info">
                         <h4>{item.name}</h4>
                         <p className="item-desc">{item.description}</p>
@@ -2490,14 +2496,18 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="form-group">
-                    <label>Icon (Emoji) *</label>
+                    <label>Image URL *</label>
                     <input
                       type="text"
                       value={itemFormData.icon}
                       onChange={(e) => setItemFormData({...itemFormData, icon: e.target.value})}
-                      placeholder="🏆"
-                      maxLength="4"
+                      placeholder="https://images.unsplash.com/..."
                     />
+                    {itemFormData.icon && (
+                      <div style={{marginTop: '10px'}}>
+                        <img src={itemFormData.icon} alt="Preview" style={{width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px'}} />
+                      </div>
+                    )}
                   </div>
 
                   <div className="form-group">
@@ -2506,12 +2516,11 @@ export default function AdminPanel() {
                       value={itemFormData.type}
                       onChange={(e) => setItemFormData({...itemFormData, type: e.target.value})}
                     >
-                      <option value="item">Item</option>
-                      <option value="achievement">Achievement</option>
-                      <option value="badge">Badge</option>
-                      <option value="skin">Skin</option>
-                      <option value="weapon">Weapon</option>
-                      <option value="armor">Armor</option>
+                      <option value="consumable">Consumable</option>
+                      <option value="special">Special</option>
+                      <option value="business_reward">Business Reward</option>
+                      <option value="equipment">Equipment</option>
+                      <option value="collectible">Collectible</option>
                     </select>
                   </div>
 
@@ -2537,6 +2546,28 @@ export default function AdminPanel() {
                       />
                       <span>Tradeable</span>
                     </label>
+                  </div>
+
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={itemFormData.usable}
+                        onChange={(e) => setItemFormData({...itemFormData, usable: e.target.checked})}
+                      />
+                      <span>Usable</span>
+                    </label>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Effect (JSON)</label>
+                    <textarea
+                      value={itemFormData.effect}
+                      onChange={(e) => setItemFormData({...itemFormData, effect: e.target.value})}
+                      placeholder='{"type": "heal", "value": 50}'
+                      rows="3"
+                    />
+                    <small style={{color: '#888', fontSize: '0.85rem'}}>Optional JSON string describing the item's effect</small>
                   </div>
                 </div>
 
