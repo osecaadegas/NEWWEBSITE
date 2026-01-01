@@ -1188,9 +1188,14 @@ export default function TheLife() {
         const enrichedData = await Promise.all(
           data.map(async (playerData) => {
             // Get user metadata to extract Twitch username
-            const { data: metadata } = await supabase
-              .rpc('get_user_metadata', { user_id: playerData.user_id })
-              .catch(() => ({ data: null }));
+            let metadata = null;
+            try {
+              const result = await supabase
+                .rpc('get_user_metadata', { user_id: playerData.user_id });
+              metadata = result.data;
+            } catch (err) {
+              console.error('Error fetching metadata:', err);
+            }
             
             let twitchUsername = 'Player';
             
