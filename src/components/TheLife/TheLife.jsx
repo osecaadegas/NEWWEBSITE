@@ -2088,8 +2088,6 @@ export default function TheLife() {
             </div>
           </div>
         )}
-          </>
-        )}
       </div>
     </div>
   );
