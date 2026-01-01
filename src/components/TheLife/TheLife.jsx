@@ -204,6 +204,7 @@ export default function TheLife() {
       const { data, error } = await supabase
         .from('the_life_robberies')
         .select('*')
+        .eq('is_active', true)
         .order('min_level_required', { ascending: true });
 
       if (error) throw error;
@@ -226,6 +227,7 @@ export default function TheLife() {
             rarity
           )
         `)
+        .eq('is_active', true)
         .order('min_level_required', { ascending: true });
 
       if (error) throw error;

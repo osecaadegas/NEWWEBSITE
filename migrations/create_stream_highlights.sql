@@ -26,8 +26,11 @@ CREATE POLICY "Admins can manage highlights"
   ON stream_highlights
   FOR ALL
   USING (
-    auth.uid() IN (
-      SELECT user_id FROM user_profiles WHERE role IN ('admin', 'owner')
+    EXISTS (
+      SELECT 1 FROM user_roles
+      WHERE user_roles.user_id = auth.uid()
+      AND user_roles.role IN ('admin', 'owner')
+      AND user_roles.is_active = true
     )
   );
 
