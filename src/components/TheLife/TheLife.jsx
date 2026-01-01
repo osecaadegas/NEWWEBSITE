@@ -1423,7 +1423,17 @@ export default function TheLife() {
 
                 {hiredWorkers.length > 0 && (
                   <div className="hired-workers-section">
-                    <h3>💼 Your Workers</h3>
+                    <h3>
+                      💼 Your Workers 
+                      <span style={{
+                        marginLeft: '15px',
+                        color: '#d4af37',
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold'
+                      }}>
+                        ({brothel.workers || 0}/{((brothel.worker_slots || 3) + (brothel.additional_slots || 0))} Slots)
+                      </span>
+                    </h3>
                     <div className="hired-workers-grid">
                       {hiredWorkers.map(hw => (
                         <div key={hw.id} className="hired-worker-card">
