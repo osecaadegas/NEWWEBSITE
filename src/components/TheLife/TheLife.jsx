@@ -18,8 +18,7 @@ export default function TheLife() {
   const [showHiredWorkers, setShowHiredWorkers] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
   const [ownedBusinesses, setOwnedBusinesses] = useState([]);
-  const [inventory, setInventory] = useState([]);
-  const [equippedItems, setEquippedItems] = useState([]);
+  const [theLifeInventory, setTheLifeInventory] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [jailTimeRemaining, setJailTimeRemaining] = useState(null);
 
@@ -27,7 +26,7 @@ export default function TheLife() {
     if (user) {
       initializePlayer();
       loadRobberies();
-      loadInventory();
+      loadTheLifeInventory();
       loadBusinesses();
       loadDrugOps();
       loadBrothel();
@@ -401,28 +400,27 @@ export default function TheLife() {
     }
   };
 
-  // Load player inventory
-  const loadInventory = async () => {
+  // Load TheLife player inventory
+  const loadTheLifeInventory = async () => {
     try {
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!playerData) return;
+
       const { data, error } = await supabase
-        .from('user_inventory')
+        .from('the_life_player_inventory')
         .select(`
-          id,
-          quantity,
-          equipped,
-          items (
-            id,
-            name,
-            type,
-            icon,
-            rarity
-          )
+          *,
+          item:the_life_items(*)
         `)
-        .eq('user_id', user.id);
+        .eq('player_id', playerData.id);
 
       if (error) throw error;
-      setInventory(data || []);
-      setEquippedItems(data?.filter(item => item.equipped) || []);
+      setTheLifeInventory(data || []);
     } catch (err) {
       console.error('Error loading inventory:', err);
     }
@@ -617,7 +615,7 @@ export default function TheLife() {
     }
   };
 
-  // Start drug production
+  // Run business to produce items
   const startBusiness = async (business) => {
     // Check if player owns this business
     const ownsIt = ownedBusinesses.some(ob => ob.business_id === business.id);
@@ -633,30 +631,106 @@ export default function TheLife() {
     }
 
     try {
-      const completedAt = new Date(Date.now() + business.duration_minutes * 60 * 1000);
-      
-      // Create or update business operation
-      const opData = {
-        [business.id]: true,
-        [`${business.id}_completed_at`]: completedAt.toISOString()
-      };
-
-      setDrugOps(prev => ({ ...prev, ...opData }));
-
-      // Deduct cost from player
-      const { data, error } = await supabase
+      // Deduct production cost
+      const { data: playerData, error: costError } = await supabase
         .from('the_life_players')
         .update({ cash: player.cash - productionCost })
         .eq('user_id', user.id)
         .select()
         .single();
 
+      if (costError) throw costError;
+      setPlayer(playerData);
+
+      // Add items to inventory if business gives items
+      if (business.reward_item_id && business.reward_item_quantity) {
+        const { data: existing } = await supabase
+          .from('the_life_player_inventory')
+          .select('*')
+          .eq('player_id', playerData.id)
+          .eq('item_id', business.reward_item_id)
+          .single();
+
+        if (existing) {
+          // Update quantity
+          await supabase
+            .from('the_life_player_inventory')
+            .update({ quantity: existing.quantity + business.reward_item_quantity })
+            .eq('id', existing.id);
+        } else {
+          // Insert new item
+          await supabase
+            .from('the_life_player_inventory')
+            .insert({
+              player_id: playerData.id,
+              item_id: business.reward_item_id,
+              quantity: business.reward_item_quantity
+            });
+        }
+
+        await loadTheLifeInventory();
+        setMessage({ 
+          type: 'success', 
+          text: `Produced! Received ${business.reward_item_quantity}x items!` 
+        });
+      } else {
+        setMessage({ type: 'success', text: `Ran ${business.name}!` });
+      }
+    } catch (err) {
+      console.error('Error running business:', err);
+      setMessage({ type: 'error', text: 'Failed to run business' });
+    }
+  };
+
+  // Use Jail Free Card to escape jail
+  const useJailFreeCard = async () => {
+    try {
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!playerData) return;
+
+      // Find Jail Free Card in inventory
+      const jailCard = theLifeInventory.find(inv => 
+        inv.item?.name === 'Jail Free Card' && inv.quantity > 0
+      );
+
+      if (!jailCard) {
+        setMessage({ type: 'error', text: 'You don\'t have a Jail Free Card!' });
+        return;
+      }
+
+      // Remove one card from inventory
+      if (jailCard.quantity === 1) {
+        await supabase
+          .from('the_life_player_inventory')
+          .delete()
+          .eq('id', jailCard.id);
+      } else {
+        await supabase
+          .from('the_life_player_inventory')
+          .update({ quantity: jailCard.quantity - 1 })
+          .eq('id', jailCard.id);
+      }
+
+      // Free player from jail
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ jail_until: null })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
       if (error) throw error;
       setPlayer(data);
-      setMessage({ type: 'success', text: `Started ${business.name}!` });
+      await loadTheLifeInventory();
+      setMessage({ type: 'success', text: '🔓 You escaped jail using a Jail Free Card!' });
     } catch (err) {
-      console.error('Error starting business:', err);
-      setMessage({ type: 'error', text: 'Failed to start business' });
+      console.error('Error using jail free card:', err);
+      setMessage({ type: 'error', text: 'Failed to use card!' });
     }
   };
 
@@ -1319,6 +1393,12 @@ export default function TheLife() {
           🏆 Leaderboard
         </button>
         <button 
+          className={`tab ${activeTab === 'jail' ? 'active' : ''}`}
+          onClick={() => setActiveTab('jail')}
+        >
+          🔒 Jail
+        </button>
+        <button 
           className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
           onClick={() => setActiveTab('stats')}
         >
@@ -1795,31 +1875,84 @@ export default function TheLife() {
 
         {activeTab === 'inventory' && (
           <div className="inventory-section">
-            <h2>🎒 Equipment</h2>
-            <p>Equip items from your inventory to boost your stats!</p>
-            {inventory.length === 0 ? (
-              <p className="no-items">No items in your inventory. Complete games to earn items!</p>
+            <h2>🎒 Your Inventory</h2>
+            <p>Items you've collected from businesses and activities</p>
+            {theLifeInventory.length === 0 ? (
+              <p className="no-items">No items yet. Run businesses to earn items!</p>
             ) : (
               <div className="equipment-grid">
-                {inventory.map(item => {
-                  const isEquipped = equippedItems.some(e => e.item_id === item.item_id);
-                  return (
-                    <div key={item.item_id} className={`equipment-card ${isEquipped ? 'equipped' : ''}`}>
-                      <div className="item-icon">{item.icon || '📦'}</div>
-                      <h4>{item.name}</h4>
-                      <p className="item-description">{item.description}</p>
-                      {item.attack_bonus > 0 && <p className="bonus">⚔️ +{item.attack_bonus} Attack</p>}
-                      {item.defense_bonus > 0 && <p className="bonus">🛡️ +{item.defense_bonus} Defense</p>}
-                      {item.luck_bonus > 0 && <p className="bonus">🍀 +{item.luck_bonus}% Luck</p>}
-                      <button 
-                        onClick={() => toggleEquipItem(item.item_id)}
-                        className={isEquipped ? 'unequip-btn' : 'equip-btn'}
-                      >
-                        {isEquipped ? 'Unequip' : 'Equip'}
-                      </button>
+                {theLifeInventory.map(inv => (
+                  <div key={inv.id} className="equipment-card">
+                    <div className="item-rarity-badge" style={{
+                      backgroundColor: inv.item.rarity === 'legendary' ? '#FFD700' :
+                                     inv.item.rarity === 'epic' ? '#9C27B0' :
+                                     inv.item.rarity === 'rare' ? '#2196F3' : '#666'
+                    }}>
+                      {inv.item.rarity}
                     </div>
-                  );
-                })}
+                    <div className="item-icon" style={{fontSize: '48px'}}>{inv.item.icon || '📦'}</div>
+                    <h4>{inv.item.name}</h4>
+                    <p className="item-description">{inv.item.description}</p>
+                    <p className="item-quantity">Quantity: {inv.quantity}</p>
+                    {inv.item.type === 'special' && inv.item.usable && (
+                      <button 
+                        onClick={() => {
+                          if (inv.item.name === 'Jail Free Card') {
+                            useJailFreeCard();
+                          }
+                        }}
+                        className="use-item-btn"
+                      >
+                        Use Item
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'jail' && (
+          <div className="jail-info-section">
+            <h2>🔒 Jail System</h2>
+            <p>When you fail a crime, you might get sent to jail.</p>
+            
+            {isInJail ? (
+              <div className="jail-active">
+                <div className="jail-status">
+                  <h3>⚠️ YOU ARE IN JAIL</h3>
+                  <p>Time Remaining: {jailTimeRemaining ? `${jailTimeRemaining.minutes}m ${jailTimeRemaining.seconds}s` : 'Loading...'}</p>
+                </div>
+                
+                {theLifeInventory.some(inv => inv.item?.name === 'Jail Free Card' && inv.quantity > 0) && (
+                  <div className="jail-escape-option">
+                    <h4>🔓 Escape Option Available!</h4>
+                    <p>You have a Jail Free Card in your inventory</p>
+                    <button onClick={useJailFreeCard} className="escape-jail-btn">
+                      Use Jail Free Card
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="jail-info">
+                <div className="info-card">
+                  <h3>How Jail Works</h3>
+                  <ul>
+                    <li>🎲 Failing crimes can send you to jail</li>
+                    <li>⏰ Jail time varies by crime severity</li>
+                    <li>🚫 You can't do anything while in jail</li>
+                    <li>🔓 Wait for timer or use Jail Free Card</li>
+                  </ul>
+                </div>
+
+                <div className="info-card">
+                  <h3>💳 Jail Free Card</h3>
+                  <p>This legendary item instantly releases you from jail!</p>
+                  <p>You currently have: {theLifeInventory.find(inv => inv.item?.name === 'Jail Free Card')?.quantity || 0} cards</p>
+                  <p className="hint">💡 These are rare - use them wisely!</p>
+                </div>
               </div>
             )}
           </div>
