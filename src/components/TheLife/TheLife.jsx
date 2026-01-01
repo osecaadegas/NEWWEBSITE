@@ -15,6 +15,7 @@ export default function TheLife() {
   const [brothel, setBrothel] = useState(null);
   const [availableWorkers, setAvailableWorkers] = useState([]);
   const [hiredWorkers, setHiredWorkers] = useState([]);
+  const [showHiredWorkers, setShowHiredWorkers] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState([]);
@@ -783,7 +784,7 @@ export default function TheLife() {
         income_per_hour: 0,
         worker_slots: initialSlots,
         additional_slots: 0,
-        slots_upgrade_cost: 10000
+        slots_upgrade_cost: 50000
       });
 
       const { data, error } = await supabase
@@ -881,7 +882,14 @@ export default function TheLife() {
       return;
     }
 
-    const upgradeCost = brothel.slots_upgrade_cost || 10000;
+    // Check max slots (50 total)
+    const currentTotalSlots = (brothel.worker_slots || 3) + (brothel.additional_slots || 0);
+    if (currentTotalSlots >= 50) {
+      setMessage({ type: 'error', text: 'Maximum 50 worker slots reached!' });
+      return;
+    }
+
+    const upgradeCost = brothel.slots_upgrade_cost || 50000;
 
     if (player.cash < upgradeCost) {
       setMessage({ type: 'error', text: `Need $${upgradeCost.toLocaleString()} to upgrade slots!` });
@@ -889,9 +897,9 @@ export default function TheLife() {
     }
 
     try {
-      // Add 2 additional slots and increase next upgrade cost
+      // Add 2 additional slots and double upgrade cost
       const newAdditionalSlots = (brothel.additional_slots || 0) + 2;
-      const newUpgradeCost = Math.floor(upgradeCost * 1.5);
+      const newUpgradeCost = upgradeCost * 2;
 
       await supabase
         .from('the_life_brothels')
@@ -916,6 +924,51 @@ export default function TheLife() {
     } catch (err) {
       console.error('Error upgrading brothel:', err);
       setMessage({ type: 'error', text: 'Failed to upgrade brothel!' });
+    }
+  };
+
+  // Sell worker for 1/3 of hire cost
+  const sellWorker = async (hiredWorker) => {
+    if (!confirm(`Sell ${hiredWorker.worker.name} for $${Math.floor(hiredWorker.worker.hire_cost / 3).toLocaleString()}?`)) {
+      return;
+    }
+
+    try {
+      // Remove from hired workers
+      await supabase
+        .from('the_life_player_brothel_workers')
+        .delete()
+        .eq('id', hiredWorker.id);
+
+      // Update brothel stats
+      const newTotalIncome = (brothel.income_per_hour || 0) - hiredWorker.worker.income_per_hour;
+      const newWorkerCount = (brothel.workers || 0) - 1;
+
+      await supabase
+        .from('the_life_brothels')
+        .update({
+          workers: Math.max(0, newWorkerCount),
+          income_per_hour: Math.max(0, newTotalIncome)
+        })
+        .eq('id', brothel.id);
+
+      // Add sell price (1/3 of hire cost)
+      const sellPrice = Math.floor(hiredWorker.worker.hire_cost / 3);
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash + sellPrice })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadBrothel();
+      loadHiredWorkers();
+      setMessage({ type: 'success', text: `Sold ${hiredWorker.worker.name} for $${sellPrice.toLocaleString()}!` });
+    } catch (err) {
+      console.error('Error selling worker:', err);
+      setMessage({ type: 'error', text: 'Failed to sell worker!' });
     }
   };
 
@@ -1417,31 +1470,71 @@ export default function TheLife() {
 
                 {hiredWorkers.length > 0 && (
                   <div className="hired-workers-section">
-                    <h3>
-                      💼 Your Workers 
-                      <span style={{
-                        marginLeft: '15px',
-                        color: '#d4af37',
-                        fontSize: '1.2rem',
-                        fontWeight: 'bold'
-                      }}>
-                        ({brothel.workers || 0}/{((brothel.worker_slots || 3) + (brothel.additional_slots || 0))} Slots)
+                    <h3 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <span>
+                        💼 Your Workers 
+                        <span style={{
+                          marginLeft: '15px',
+                          color: '#d4af37',
+                          fontSize: '1.2rem',
+                          fontWeight: 'bold'
+                        }}>
+                          ({brothel.workers || 0}/{((brothel.worker_slots || 3) + (brothel.additional_slots || 0))} Slots)
+                        </span>
                       </span>
+                      <button 
+                        onClick={() => setShowHiredWorkers(!showHiredWorkers)}
+                        style={{
+                          background: 'rgba(139, 92, 246, 0.2)',
+                          border: '2px solid rgba(139, 92, 246, 0.5)',
+                          color: '#c4b5fd',
+                          padding: '8px 20px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          transition: 'all 0.3s'
+                        }}
+                      >
+                        {showHiredWorkers ? '👁️ Hide Workers' : '👁️ Show Workers'}
+                      </button>
                     </h3>
-                    <div className="hired-workers-grid">
-                      {hiredWorkers.map(hw => (
-                        <div key={hw.id} className="hired-worker-card">
-                          <div className="hired-worker-image">
-                            <img src={hw.worker.image_url} alt={hw.worker.name} />
+                    {showHiredWorkers && (
+                      <div className="hired-workers-grid">
+                        {hiredWorkers.map(hw => (
+                          <div key={hw.id} className="hired-worker-card">
+                            <div className="hired-worker-image">
+                              <img src={hw.worker.image_url} alt={hw.worker.name} />
+                            </div>
+                            <div className="hired-worker-info">
+                              <h4>{hw.worker.name}</h4>
+                              <p className="income-rate">${hw.worker.income_per_hour}/hour</p>
+                              <p className="rarity-badge rarity-{hw.worker.rarity}">{hw.worker.rarity}</p>
+                              <button 
+                                onClick={() => sellWorker(hw)}
+                                style={{
+                                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '8px 15px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: 'bold',
+                                  marginTop: '10px',
+                                  width: '100%',
+                                  transition: 'all 0.3s'
+                                }}
+                                onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                              >
+                                💰 Sell (${Math.floor(hw.worker.hire_cost / 3).toLocaleString()})
+                              </button>
+                            </div>
                           </div>
-                          <div className="hired-worker-info">
-                            <h4>{hw.worker.name}</h4>
-                            <p className="income-rate">${hw.worker.income_per_hour}/hour</p>
-                            <p className="rarity-badge rarity-{hw.worker.rarity}">{hw.worker.rarity}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1449,15 +1542,19 @@ export default function TheLife() {
                   <button onClick={collectBrothelIncome} className="collect-btn">
                     💰 Collect Income
                   </button>
-                  {player?.level >= 5 && (
-                    <button 
-                      onClick={upgradeBrothelSlots} 
-                      className="upgrade-slots-btn"
-                      disabled={player.cash < (brothel.slots_upgrade_cost || 10000)}
-                    >
-                      ⬆️ Upgrade Slots (+2) - ${(brothel.slots_upgrade_cost || 10000).toLocaleString()}
-                    </button>
-                  )}
+                  {player?.level >= 5 && (() => {
+                    const currentTotal = (brothel.worker_slots || 3) + (brothel.additional_slots || 0);
+                    const maxReached = currentTotal >= 50;
+                    return (
+                      <button 
+                        onClick={upgradeBrothelSlots} 
+                        className="upgrade-slots-btn"
+                        disabled={maxReached || player.cash < (brothel.slots_upgrade_cost || 50000)}
+                      >
+                        {maxReached ? '✅ Max Slots Reached (50)' : `⬆️ Upgrade Slots (+2) - $${(brothel.slots_upgrade_cost || 50000).toLocaleString()}`}
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 <h3>🎯 Available Workers</h3>
