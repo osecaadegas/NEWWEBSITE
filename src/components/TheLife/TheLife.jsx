@@ -829,25 +829,11 @@ export default function TheLife() {
         delete newOps[`${business.id}_reward_item_quantity`];
         return newOps;
       });
-
-        // Reload inventory to show new items
-        loadInventory();
-      } else {
-        // Legacy: give cash
-        const { data, error } = await supabase
-          .from('the_life_players')
-          .update({ cash: player.cash + business.profit })
-          .eq('user_id', user.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-        setPlayer(data);
-        setMessage({ type: 'success', text: `Collected $${business.profit.toLocaleString()}!` });
-      }
-
-      // Reset business operation
-      setDrugOps(prev => {
+    } catch (err) {
+      console.error('Error collecting business:', err);
+      setMessage({ type: 'error', text: 'Failed to collect!' });
+    }
+  };
         const updated = { ...prev };
         delete updated[business.id];
         delete updated[`${business.id}_completed_at`];
