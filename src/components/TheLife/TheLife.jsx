@@ -774,10 +774,16 @@ export default function TheLife() {
     }
 
     try {
+      // Calculate initial slots based on level (level + 2)
+      const initialSlots = player.level + 2;
+
       await supabase.from('the_life_brothels').insert({
         player_id: player.id,
         workers: 0,
-        income_per_hour: 0
+        income_per_hour: 0,
+        worker_slots: initialSlots,
+        additional_slots: 0,
+        slots_upgrade_cost: 10000
       });
 
       const { data, error } = await supabase
@@ -800,6 +806,16 @@ export default function TheLife() {
   const hireWorker = async (worker) => {
     if (!brothel) {
       setMessage({ type: 'error', text: 'You need to open a brothel first!' });
+      return;
+    }
+
+    // Calculate total available slots
+    const totalSlots = (brothel.worker_slots || 3) + (brothel.additional_slots || 0);
+    const usedSlots = brothel.workers || 0;
+
+    // Check if slots are full
+    if (usedSlots >= totalSlots) {
+      setMessage({ type: 'error', text: `No worker slots available! (${usedSlots}/${totalSlots} used)` });
       return;
     }
 
@@ -856,6 +872,56 @@ export default function TheLife() {
     } catch (err) {
       console.error('Error hiring worker:', err);
       setMessage({ type: 'error', text: 'Failed to hire worker!' });
+    }
+  };
+
+  // Upgrade brothel slots
+  const upgradeBrothelSlots = async () => {
+    if (!brothel) {
+      setMessage({ type: 'error', text: 'You need to open a brothel first!' });
+      return;
+    }
+
+    if (player.level < 5) {
+      setMessage({ type: 'error', text: 'Need level 5 to upgrade worker slots!' });
+      return;
+    }
+
+    const upgradeCost = brothel.slots_upgrade_cost || 10000;
+
+    if (player.cash < upgradeCost) {
+      setMessage({ type: 'error', text: `Need $${upgradeCost.toLocaleString()} to upgrade slots!` });
+      return;
+    }
+
+    try {
+      // Add 2 additional slots and increase next upgrade cost
+      const newAdditionalSlots = (brothel.additional_slots || 0) + 2;
+      const newUpgradeCost = Math.floor(upgradeCost * 1.5);
+
+      await supabase
+        .from('the_life_brothels')
+        .update({
+          additional_slots: newAdditionalSlots,
+          slots_upgrade_cost: newUpgradeCost
+        })
+        .eq('id', brothel.id);
+
+      // Deduct cost
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - upgradeCost })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      loadBrothel();
+      setMessage({ type: 'success', text: `Brothel upgraded! +2 worker slots` });
+    } catch (err) {
+      console.error('Error upgrading brothel:', err);
+      setMessage({ type: 'error', text: 'Failed to upgrade brothel!' });
     }
   };
 
@@ -1324,8 +1390,13 @@ export default function TheLife() {
                 </div>
                 <div className="brothel-stats">
                   <div className="brothel-stat">
-                    <h3>Workers Hired</h3>
-                    <p className="big-number">{brothel.workers} 👯</p>
+                    <h3>Worker Slots</h3>
+                    <p className="big-number">
+                      {brothel.workers || 0}/{((brothel.worker_slots || 3) + (brothel.additional_slots || 0))} 👯
+                    </p>
+                    <small style={{color: '#a0aec0', fontSize: '0.75rem'}}>
+                      Base: {brothel.worker_slots || 3} + Upgrades: {brothel.additional_slots || 0}
+                    </small>
                   </div>
                   <div className="brothel-stat">
                     <h3>Income Per Hour</h3>
@@ -1372,16 +1443,48 @@ export default function TheLife() {
 
                 <div className="brothel-actions">
                   <button onClick={collectBrothelIncome} className="collect-btn">
-                    Collect Income
+                    💰 Collect Income
                   </button>
+                  {player?.level >= 5 && (
+                    <button 
+                      onClick={upgradeBrothelSlots} 
+                      className="upgrade-slots-btn"
+                      disabled={player.cash < (brothel.slots_upgrade_cost || 10000)}
+                    >
+                      ⬆️ Upgrade Slots (+2) - ${(brothel.slots_upgrade_cost || 10000).toLocaleString()}
+                    </button>
+                  )}
                 </div>
 
                 <h3>🎯 Available Workers</h3>
+                {(() => {
+                  const totalSlots = (brothel?.worker_slots || 3) + (brothel?.additional_slots || 0);
+                  const usedSlots = brothel?.workers || 0;
+                  const slotsFull = usedSlots >= totalSlots;
+                  
+                  return slotsFull && (
+                    <div style={{
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      border: '2px solid rgba(239, 68, 68, 0.5)',
+                      borderRadius: '8px',
+                      padding: '15px',
+                      marginBottom: '20px',
+                      textAlign: 'center'
+                    }}>
+                      <p style={{ color: '#fca5a5', margin: 0, fontWeight: 'bold' }}>
+                        ⚠️ All worker slots full! {player?.level >= 5 ? 'Upgrade your brothel to hire more workers.' : 'Level up or upgrade your brothel to get more slots.'}
+                      </p>
+                    </div>
+                  );
+                })()}
                 <div className="workers-grid">
                   {availableWorkers.map(worker => {
                     const alreadyHired = hiredWorkers.some(hw => hw.worker_id === worker.id);
                     const canAfford = player?.cash >= worker.hire_cost;
                     const meetsLevel = player?.level >= worker.min_level_required;
+                    const totalSlots = (brothel?.worker_slots || 3) + (brothel?.additional_slots || 0);
+                    const usedSlots = brothel?.workers || 0;
+                    const slotsFull = usedSlots >= totalSlots;
 
                     return (
                       <div key={worker.id} className={`worker-card ${alreadyHired ? 'hired' : ''}`}>
@@ -1403,6 +1506,8 @@ export default function TheLife() {
                           </span>
                           {alreadyHired ? (
                             <button disabled className="hired-btn">Already Hired</button>
+                          ) : slotsFull ? (
+                            <button disabled className="locked-btn">🚫 No Slots Available</button>
                           ) : !meetsLevel ? (
                             <button disabled className="locked-btn">🔒 Level {worker.min_level_required} Required</button>
                           ) : (

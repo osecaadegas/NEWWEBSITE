@@ -1026,6 +1026,7 @@
   display: flex;
   gap: 20px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .brothel-actions button {
@@ -1038,6 +1039,14 @@
   font-weight: 600;
   font-size: 1.1rem;
   transition: all 0.3s;
+}
+
+.brothel-actions .upgrade-slots-btn {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.brothel-actions .upgrade-slots-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
 }
 
 .brothel-actions button:hover:not(:disabled) {
