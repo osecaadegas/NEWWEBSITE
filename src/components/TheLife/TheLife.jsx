@@ -23,8 +23,6 @@ export default function TheLife() {
   const [jailTimeRemaining, setJailTimeRemaining] = useState(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [depositAmount, setDepositAmount] = useState('');
-  const [withdrawAmount, setWithdrawAmount] = useState('');
 
   useEffect(() => {
     if (user) {
