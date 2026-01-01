@@ -4,6 +4,8 @@
   padding: 2rem 1rem;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+  z-index: 1;
 }
 
 .goldman {
@@ -123,6 +125,11 @@
   border: none;
   cursor: pointer;
   width: 100%;
+  position: relative;
+  z-index: 10;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .spin-btn:hover:not(:disabled) {
