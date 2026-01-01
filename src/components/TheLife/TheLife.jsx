@@ -530,13 +530,26 @@ export default function TheLife() {
 
       if (!playerData) return;
 
+      // Load active productions from database
       const { data, error } = await supabase
-        .from('the_life_drug_ops')
+        .from('the_life_business_productions')
         .select('*')
-        .eq('player_id', playerData.id);
+        .eq('player_id', playerData.id)
+        .eq('collected', false);
 
       if (error && error.code !== 'PGRST116') throw error;
-      setDrugOps(data || []);
+      
+      // Convert to old format for UI compatibility
+      const opsData = {};
+      if (data) {
+        data.forEach(prod => {
+          opsData[prod.business_id] = true;
+          opsData[`${prod.business_id}_completed_at`] = prod.completed_at;
+          opsData[`${prod.business_id}_reward_item_id`] = prod.reward_item_id;
+          opsData[`${prod.business_id}_reward_item_quantity`] = prod.reward_item_quantity;
+        });
+      }
+      setDrugOps(opsData);
     } catch (err) {
       console.error('Error loading drug ops:', err);
     }
@@ -625,6 +638,29 @@ export default function TheLife() {
     try {
       const completedAt = new Date(Date.now() + business.duration_minutes * 60 * 1000);
       
+      // Get player ID
+      const { data: playerData, error: playerError } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (playerError) throw playerError;
+
+      // Save production to database
+      const { error: prodError } = await supabase
+        .from('the_life_business_productions')
+        .insert({
+          player_id: playerData.id,
+          business_id: business.id,
+          reward_item_id: business.reward_item_id,
+          reward_item_quantity: business.reward_item_quantity,
+          completed_at: completedAt.toISOString(),
+          collected: false
+        });
+
+      if (prodError) throw prodError;
+
       // Set timer in state
       const opData = {
         [business.id]: true,
@@ -636,7 +672,7 @@ export default function TheLife() {
       setDrugOps(prev => ({ ...prev, ...opData }));
 
       // Deduct production cost
-      const { data: playerData, error: costError } = await supabase
+      const { data: updatedPlayer, error: costError } = await supabase
         .from('the_life_players')
         .update({ cash: player.cash - productionCost })
         .eq('user_id', user.id)
@@ -644,7 +680,7 @@ export default function TheLife() {
         .single();
 
       if (costError) throw costError;
-      setPlayer(playerData);
+      setPlayer(updatedPlayer);
       setMessage({ type: 'success', text: `Started ${business.name}! Wait ${business.duration_minutes} minutes.` });
     } catch (err) {
       console.error('Error running business:', err);
@@ -749,6 +785,26 @@ export default function TheLife() {
           
           if (insertError) throw insertError;
         }
+
+        // Mark production as collected in database
+        const { error: collectError } = await supabase
+          .from('the_life_business_productions')
+          .update({ collected: true })
+          .eq('player_id', playerData.id)
+          .eq('business_id', business.id)
+          .eq('collected', false);
+
+        if (collectError) throw collectError;
+
+        // Remove from state
+        setDrugOps(prev => {
+          const newOps = { ...prev };
+          delete newOps[business.id];
+          delete newOps[`${business.id}_completed_at`];
+          delete newOps[`${business.id}_reward_item_id`];
+          delete newOps[`${business.id}_reward_item_quantity`];
+          return newOps;
+        });
 
         await loadTheLifeInventory();
         setMessage({ 
