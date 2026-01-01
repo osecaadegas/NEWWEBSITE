@@ -829,12 +829,6 @@ export default function TheLife() {
       return;
     }
 
-    // Check if already hired
-    if (hiredWorkers.some(hw => hw.worker_id === worker.id)) {
-      setMessage({ type: 'error', text: 'You already hired this worker!' });
-      return;
-    }
-
     try {
       // Add to player's hired workers
       await supabase
@@ -1489,7 +1483,7 @@ export default function TheLife() {
                 })()}
                 <div className="workers-grid">
                   {availableWorkers.map(worker => {
-                    const alreadyHired = hiredWorkers.some(hw => hw.worker_id === worker.id);
+                    const hiredCount = hiredWorkers.filter(hw => hw.worker_id === worker.id).length;
                     const canAfford = player?.cash >= worker.hire_cost;
                     const meetsLevel = player?.level >= worker.min_level_required;
                     const totalSlots = (brothel?.worker_slots || 3) + (brothel?.additional_slots || 0);
@@ -1497,10 +1491,12 @@ export default function TheLife() {
                     const slotsFull = usedSlots >= totalSlots;
 
                     return (
-                      <div key={worker.id} className={`worker-card ${alreadyHired ? 'hired' : ''}`}>
+                      <div key={worker.id} className="worker-card">
                         <div className="worker-image-container">
                           <img src={worker.image_url} alt={worker.name} className="worker-image" />
-                          {alreadyHired && <div className="hired-badge">HIRED</div>}
+                          {hiredCount > 0 && (
+                            <div className="hired-badge">HIRED x{hiredCount}</div>
+                          )}
                         </div>
                         <div className="worker-info">
                           <h4>{worker.name}</h4>
@@ -1512,9 +1508,7 @@ export default function TheLife() {
                             </div>
                           </div>
                           <span className={`rarity-badge rarity-${worker.rarity}`}>
-                            {worker.rarity.toUpperCase()}
-                          </span>
-                          {alreadyHired ? (
+                           eadyHired ? (
                             <button disabled className="hired-btn">Already Hired</button>
                           ) : slotsFull ? (
                             <button disabled className="locked-btn">🚫 No Slots Available</button>

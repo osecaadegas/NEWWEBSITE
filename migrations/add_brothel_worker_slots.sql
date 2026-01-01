@@ -15,3 +15,7 @@ SET worker_slots = COALESCE(
   3
 )
 WHERE worker_slots = 3;
+
+-- Remove unique constraint to allow multiple hires of same worker
+ALTER TABLE the_life_player_brothel_workers 
+DROP CONSTRAINT IF EXISTS the_life_player_brothel_workers_player_id_worker_id_key;
