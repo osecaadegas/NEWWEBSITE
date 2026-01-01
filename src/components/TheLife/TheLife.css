@@ -542,6 +542,80 @@
   margin-bottom: 15px;
 }
 
+.amount-input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.amount-input {
+  flex: 1;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.amount-input:focus {
+  outline: none;
+  border-color: #d4af37;
+}
+
+.amount-input::placeholder {
+  color: #666;
+}
+
+.deposit-btn, .withdraw-btn {
+  padding: 12px 20px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.withdraw-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.deposit-btn:disabled, .withdraw-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deposit-btn:hover:not(:disabled), .withdraw-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(34, 197, 94, 0.5);
+}
+
+.withdraw-btn:hover:not(:disabled) {
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.5);
+}
+
+.deposit-all-btn, .withdraw-all-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+}
+
+.deposit-all-btn:hover, .withdraw-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(107, 114, 128, 0.5);
+}
+
 .bank-action button {
   width: 100%;
   padding: 12px;

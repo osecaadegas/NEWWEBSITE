@@ -21,6 +21,10 @@ export default function TheLife() {
   const [theLifeInventory, setTheLifeInventory] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [jailTimeRemaining, setJailTimeRemaining] = useState(null);
+  const [depositAmount, setDepositAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [depositAmount, setDepositAmount] = useState('');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -1598,12 +1602,66 @@ export default function TheLife() {
               <div className="bank-action">
                 <h3>Deposit</h3>
                 <p>Cash on hand: ${player?.cash?.toLocaleString()}</p>
-                <button onClick={() => depositToBank(player.cash)}>Deposit All</button>
+                <div className="amount-input-group">
+                  <input
+                    type="number"
+                    value={depositAmount}
+                    onChange={(e) => setDepositAmount(e.target.value)}
+                    placeholder="Enter amount..."
+                    min="0"
+                    max={player?.cash || 0}
+                    className="amount-input"
+                  />
+                  <button 
+                    onClick={() => {
+                      const amount = parseInt(depositAmount);
+                      if (amount > 0) {
+                        depositToBank(amount);
+                        setDepositAmount('');
+                      }
+                    }}
+                    disabled={!depositAmount || parseInt(depositAmount) <= 0 || parseInt(depositAmount) > player?.cash}
+                    className="deposit-btn"
+                  >
+                    Deposit
+                  </button>
+                </div>
+                <button onClick={() => {
+                  depositToBank(player.cash);
+                  setDepositAmount('');
+                }} className="deposit-all-btn">Deposit All</button>
               </div>
               <div className="bank-action">
                 <h3>Withdraw</h3>
                 <p>Bank balance: ${player?.bank_balance?.toLocaleString()}</p>
-                <button onClick={() => withdrawFromBank(player.bank_balance)}>Withdraw All</button>
+                <div className="amount-input-group">
+                  <input
+                    type="number"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder="Enter amount..."
+                    min="0"
+                    max={player?.bank_balance || 0}
+                    className="amount-input"
+                  />
+                  <button 
+                    onClick={() => {
+                      const amount = parseInt(withdrawAmount);
+                      if (amount > 0) {
+                        withdrawFromBank(amount);
+                        setWithdrawAmount('');
+                      }
+                    }}
+                    disabled={!withdrawAmount || parseInt(withdrawAmount) <= 0 || parseInt(withdrawAmount) > player?.bank_balance}
+                    className="withdraw-btn"
+                  >
+                    Withdraw
+                  </button>
+                </div>
+                <button onClick={() => {
+                  withdrawFromBank(player.bank_balance);
+                  setWithdrawAmount('');
+                }} className="withdraw-all-btn">Withdraw All</button>
               </div>
             </div>
           </div>
