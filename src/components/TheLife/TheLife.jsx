@@ -19,6 +19,7 @@ export default function TheLife() {
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState([]);
   const [businesses, setBusinesses] = useState([]);
+  const [jailTimeRemaining, setJailTimeRemaining] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -35,6 +36,29 @@ export default function TheLife() {
       startTicketRefill();
     }
   }, [user]);
+
+  // Jail countdown timer
+  useEffect(() => {
+    if (!player?.jail_until) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const jailEnd = new Date(player.jail_until);
+      const diff = jailEnd - now;
+
+      if (diff <= 0) {
+        setJailTimeRemaining(null);
+        // Reload player to clear jail status
+        initializePlayer();
+      } else {
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setJailTimeRemaining({ minutes, seconds });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [player?.jail_until]);
 
   const initializePlayer = async () => {
     try {
@@ -978,37 +1002,49 @@ export default function TheLife() {
       <div className="game-tabs">
         <button 
           className={`tab ${activeTab === 'crimes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('crimes')}
+          onClick={() => !isInJail && setActiveTab('crimes')}
+          disabled={isInJail}
+          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
           💰 Crimes
         </button>
         <button 
           className={`tab ${activeTab === 'bank' ? 'active' : ''}`}
-          onClick={() => setActiveTab('bank')}
+          onClick={() => !isInJail && setActiveTab('bank')}
+          disabled={isInJail}
+          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
           🏦 Bank
         </button>
         <button 
           className={`tab ${activeTab === 'pvp' ? 'active' : ''}`}
-          onClick={() => setActiveTab('pvp')}
+          onClick={() => !isInJail && setActiveTab('pvp')}
+          disabled={isInJail}
+          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
           🥊 PvP
         </button>
         <button
           className={`tab ${activeTab === 'businesses' ? 'active' : ''}`}
-          onClick={() => setActiveTab('businesses')}
+          onClick={() => !isInJail && setActiveTab('businesses')}
+          disabled={isInJail}
+          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
           💼 Businesses
         </button>
         <button 
           className={`tab ${activeTab === 'brothel' ? 'active' : ''}`}
-          onClick={() => setActiveTab('brothel')}
+          onClick={() => !isInJail && setActiveTab('brothel')}
+          disabled={isInJail}
+          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
           💃 Brothel
         </button>
         <button 
           className={`tab ${activeTab === 'inventory' ? 'active' : ''}`}
-          onClick={() => setActiveTab('inventory')}
+          onClick={() => !isInJail && setActiveTab('inventory')}
+          disabled={isInJail}
+          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
           🎒 Inventory
         </button>
@@ -1028,6 +1064,43 @@ export default function TheLife() {
 
       {/* Tab Content */}
       <div className="tab-content">
+        {/* Jail Screen - Overrides all tabs when player is in jail */}
+        {isInJail ? (
+          <div className="jail-section">
+            <div className="jail-container">
+              <div className="jail-icon">🔒</div>
+              <h1 className="jail-title">YOU ARE IN JAIL</h1>
+              <p className="jail-message">You were caught committing a crime and must serve your time.</p>
+              
+              <div className="jail-timer">
+                <div className="timer-label">Time Remaining:</div>
+                <div className="timer-display">
+                  {jailTimeRemaining ? (
+                    <>
+                      <span className="timer-number">{String(jailTimeRemaining.minutes).padStart(2, '0')}</span>
+                      <span className="timer-separator">:</span>
+                      <span className="timer-number">{String(jailTimeRemaining.seconds).padStart(2, '0')}</span>
+                    </>
+                  ) : (
+                    <span className="timer-number">Loading...</span>
+                  )}
+                </div>
+                <div className="timer-units">minutes : seconds</div>
+              </div>
+
+              <div className="jail-info">
+                <p>⚠️ You cannot access any game features while in jail.</p>
+                <p>💡 Wait for the timer to reach zero to continue playing.</p>
+                <p>🎯 Be more careful next time!</p>
+              </div>
+
+              <div className="jail-release-time">
+                Release time: {new Date(player.jail_until).toLocaleString()}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
         {activeTab === 'crimes' && (
           <div className="crimes-section">
             <div className="robberies-grid">
@@ -1421,6 +1494,8 @@ export default function TheLife() {
               </div>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>
