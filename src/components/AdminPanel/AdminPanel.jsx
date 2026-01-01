@@ -497,23 +497,27 @@ export default function AdminPanel() {
     try {
       if (editingCrime) {
         // Update existing crime
+        const updateData = {
+          name: crimeFormData.name,
+          description: crimeFormData.description,
+          image_url: crimeFormData.image_url,
+          min_level_required: parseInt(crimeFormData.min_level_required),
+          ticket_cost: parseInt(crimeFormData.ticket_cost),
+          base_reward: parseInt(crimeFormData.base_reward),
+          max_reward: parseInt(crimeFormData.max_reward),
+          success_rate: parseInt(crimeFormData.success_rate),
+          jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
+          hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
+          xp_reward: parseInt(crimeFormData.xp_reward)
+        };
+
+        // Only include message fields if they have values
+        if (crimeFormData.success_message) updateData.success_message = crimeFormData.success_message;
+        if (crimeFormData.fail_message) updateData.fail_message = crimeFormData.fail_message;
+
         const { data, error } = await supabase
           .from('the_life_robberies')
-          .update({
-            name: crimeFormData.name,
-            description: crimeFormData.description,
-            image_url: crimeFormData.image_url,
-            min_level_required: parseInt(crimeFormData.min_level_required),
-            ticket_cost: parseInt(crimeFormData.ticket_cost),
-            base_reward: parseInt(crimeFormData.base_reward),
-            max_reward: parseInt(crimeFormData.max_reward),
-            success_rate: parseInt(crimeFormData.success_rate),
-            jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
-            hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
-            xp_reward: parseInt(crimeFormData.xp_reward),
-            success_message: crimeFormData.success_message,
-            fail_message: crimeFormData.fail_message
-          })
+          .update(updateData)
           .eq('id', editingCrime.id)
           .select();
 
@@ -526,24 +530,28 @@ export default function AdminPanel() {
         setSuccess('Crime updated successfully!');
       } else {
         // Create new crime
+        const insertData = {
+          name: crimeFormData.name,
+          description: crimeFormData.description,
+          image_url: crimeFormData.image_url,
+          min_level_required: parseInt(crimeFormData.min_level_required),
+          ticket_cost: parseInt(crimeFormData.ticket_cost),
+          base_reward: parseInt(crimeFormData.base_reward),
+          max_reward: parseInt(crimeFormData.max_reward),
+          success_rate: parseInt(crimeFormData.success_rate),
+          jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
+          hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
+          xp_reward: parseInt(crimeFormData.xp_reward),
+          is_active: true
+        };
+
+        // Only include message fields if they have values
+        if (crimeFormData.success_message) insertData.success_message = crimeFormData.success_message;
+        if (crimeFormData.fail_message) insertData.fail_message = crimeFormData.fail_message;
+
         const { data, error} = await supabase
           .from('the_life_robberies')
-          .insert([{
-            name: crimeFormData.name,
-            description: crimeFormData.description,
-            image_url: crimeFormData.image_url,
-            min_level_required: parseInt(crimeFormData.min_level_required),
-            ticket_cost: parseInt(crimeFormData.ticket_cost),
-            base_reward: parseInt(crimeFormData.base_reward),
-            max_reward: parseInt(crimeFormData.max_reward),
-            success_rate: parseInt(crimeFormData.success_rate),
-            jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
-            hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
-            xp_reward: parseInt(crimeFormData.xp_reward),
-            success_message: crimeFormData.success_message,
-            fail_message: crimeFormData.fail_message,
-            is_active: true
-          }])
+          .insert([insertData])
           .select();
 
         if (error) {
