@@ -285,11 +285,13 @@ export default function TheLife() {
         updates.successful_robberies = player.successful_robberies + 1;
         
         // Use custom success message or default
-        let successMessage = robbery.success_message || 'Success! You earned $${reward} and ${xp} XP! (${chance}% chance)';
-        successMessage = successMessage
-          .replace('${reward}', reward.toLocaleString())
-          .replace('${xp}', robbery.xp_reward)
-          .replace('${chance}', Math.round(successChance));
+        let successMessage = robbery.success_message || `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP! (${Math.round(successChance)}% chance)`;
+        if (robbery.success_message) {
+          successMessage = successMessage
+            .replace(/\$\{reward\}/g, reward.toLocaleString())
+            .replace(/\$\{xp\}/g, robbery.xp_reward)
+            .replace(/\$\{chance\}/g, Math.round(successChance));
+        }
         
         setMessage({ 
           type: 'success', 
@@ -312,11 +314,13 @@ export default function TheLife() {
         updates.hp = Math.max(0, player.hp - robbery.hp_loss_on_fail);
         
         // Use custom fail message or default
-        let failMessage = robbery.fail_message || 'You failed! Lost ${hp} HP and going to jail for ${jailTime} minutes.';
-        failMessage = failMessage
-          .replace('${hp}', robbery.hp_loss_on_fail)
-          .replace('${jailTime}', jailTime)
-          .replace('${chance}', Math.round(successChance));
+        let failMessage = robbery.fail_message || `Failed! You're in jail for ${jailTime} minutes and lost ${robbery.hp_loss_on_fail} HP (${Math.round(successChance)}% chance)`;
+        if (robbery.fail_message) {
+          failMessage = failMessage
+            .replace(/\$\{hp\}/g, robbery.hp_loss_on_fail)
+            .replace(/\$\{jailTime\}/g, jailTime)
+            .replace(/\$\{chance\}/g, Math.round(successChance));
+        }
         
         setMessage({ 
           type: 'error', 
@@ -614,11 +618,13 @@ export default function TheLife() {
         if (invError) throw invError;
 
         // Use custom message or default
-        let message = business.success_message || 'Collected ${reward} ${unit} of ${item}!';
-        message = message
-          .replace('${reward}', business.item_quantity)
-          .replace('${unit}', business.unit_name)
-          .replace('${item}', business.item?.name || 'items');
+        let message = business.success_message || `Collected ${business.item_quantity} ${business.unit_name} of ${business.item?.name || 'items'}!`;
+        if (business.success_message) {
+          message = message
+            .replace(/\$\{reward\}/g, business.item_quantity)
+            .replace(/\$\{unit\}/g, business.unit_name)
+            .replace(/\$\{item\}/g, business.item?.name || 'items');
+        }
 
         setMessage({ 
           type: 'success', 
@@ -640,8 +646,10 @@ export default function TheLife() {
         setPlayer(data);
         
         // Use custom message or default
-        let message = business.success_message || 'Collected $${reward}!';
-        message = message.replace('${reward}', business.profit.toLocaleString());
+        let message = business.success_message || `Collected $${business.profit.toLocaleString()}!`;
+        if (business.success_message) {
+          message = message.replace(/\$\{reward\}/g, business.profit.toLocaleString());
+        }
         
         setMessage({ type: 'success', text: message });
       }
@@ -882,10 +890,12 @@ export default function TheLife() {
       loadHiredWorkers();
       
       // Use custom message or default
-      let message = worker.success_message || '${name} hired successfully! Generates $${reward} per hour.';
-      message = message
-        .replace('${name}', worker.name)
-        .replace('${reward}', worker.income_per_hour.toLocaleString());
+      let message = worker.success_message || `${worker.name} hired successfully! Generates $${worker.income_per_hour.toLocaleString()} per hour.`;
+      if (worker.success_message) {
+        message = message
+          .replace(/\$\{name\}/g, worker.name)
+          .replace(/\$\{reward\}/g, worker.income_per_hour.toLocaleString());
+      }
       
       setMessage({ type: 'success', text: message });
     } catch (err) {
