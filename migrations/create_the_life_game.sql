@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS the_life_robberies (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
+  image_url TEXT,
   min_xp_required INTEGER DEFAULT 0,
   min_level_required INTEGER DEFAULT 1,
   ticket_cost INTEGER DEFAULT 1,
@@ -41,6 +42,7 @@ CREATE TABLE IF NOT EXISTS the_life_robberies (
   jail_time_minutes INTEGER DEFAULT 30,
   hp_loss_on_fail INTEGER DEFAULT 10,
   xp_reward INTEGER DEFAULT 10,
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -212,13 +214,13 @@ CREATE INDEX IF NOT EXISTS idx_the_life_pvp_logs_attacker ON the_life_pvp_logs(a
 CREATE INDEX IF NOT EXISTS idx_the_life_pvp_logs_defender ON the_life_pvp_logs(defender_id);
 
 -- Insert default robbery types
-INSERT INTO the_life_robberies (name, description, min_level_required, ticket_cost, base_reward, max_reward, success_rate, jail_time_minutes, hp_loss_on_fail, xp_reward) VALUES
-  ('Pickpocket', 'Steal from unsuspecting pedestrians', 1, 1, 50, 200, 80, 15, 5, 5),
-  ('Car Theft', 'Steal a parked car and sell it', 3, 2, 200, 800, 65, 30, 10, 15),
-  ('House Burglary', 'Break into a residential home', 5, 3, 500, 2000, 55, 45, 15, 30),
-  ('Convenience Store', 'Rob a local store', 8, 3, 800, 3000, 50, 60, 20, 50),
-  ('Bank Heist', 'The big score - rob a bank', 15, 5, 5000, 20000, 30, 120, 30, 200),
-  ('Casino Vault', 'Break into the casino vault', 25, 8, 15000, 50000, 20, 180, 40, 500)
+INSERT INTO the_life_robberies (name, description, image_url, min_level_required, ticket_cost, base_reward, max_reward, success_rate, jail_time_minutes, hp_loss_on_fail, xp_reward) VALUES
+  ('Pickpocket', 'Steal from unsuspecting pedestrians', 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=400', 1, 1, 50, 200, 80, 15, 5, 5),
+  ('Car Theft', 'Steal a parked car and sell it', 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400', 3, 2, 200, 800, 65, 30, 10, 15),
+  ('House Burglary', 'Break into a residential home', 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400', 5, 3, 500, 2000, 55, 45, 15, 30),
+  ('Convenience Store', 'Rob a local store', 'https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400', 8, 3, 800, 3000, 50, 60, 20, 50),
+  ('Bank Heist', 'The big score - rob a bank', 'https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=400', 15, 5, 5000, 20000, 30, 120, 30, 200),
+  ('Casino Vault', 'Break into the casino vault', 'https://images.unsplash.com/photo-1596838132731-3301c3fd4317?w=400', 25, 8, 15000, 50000, 20, 180, 40, 500)
 ON CONFLICT DO NOTHING;
 
 -- Function to auto-initialize player on first game access
