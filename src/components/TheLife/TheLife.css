@@ -725,7 +725,41 @@
 .businesses-section > p {
   text-align: center;
   color: #cbd5e0;
+  margin-bottom: 20px;
+}
+
+.business-slots-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 15px 20px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 10px;
   margin-bottom: 30px;
+}
+
+.slots-label {
+  color: #22c55e;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.slots-count {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 1.3rem;
+  padding: 5px 15px;
+  background: rgba(212, 175, 55, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.slots-hint {
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
 }
 
 .businesses-grid {

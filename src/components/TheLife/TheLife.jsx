@@ -581,6 +581,14 @@ export default function TheLife() {
     }
   };
 
+  // Calculate max business slots based on level
+  const getMaxBusinessSlots = (level) => {
+    // Start with 1 slot, gain 1 slot every 5 levels, max 7
+    const baseSlots = 1;
+    const bonusSlots = Math.floor(level / 5);
+    return Math.min(baseSlots + bonusSlots, 7);
+  };
+
   // Buy a business
   const buyBusiness = async (business) => {
     if (player.cash < business.purchase_price) {
@@ -590,6 +598,16 @@ export default function TheLife() {
 
     if (player.level < business.min_level_required) {
       setMessage({ type: 'error', text: `Need level ${business.min_level_required} to buy ${business.name}!` });
+      return;
+    }
+
+    // Check business slot limit
+    const maxSlots = getMaxBusinessSlots(player.level);
+    if (ownedBusinesses.length >= maxSlots) {
+      setMessage({ 
+        type: 'error', 
+        text: `Business limit reached! You can own ${maxSlots} businesses. Level up for more slots (max 7).` 
+      });
       return;
     }
 
@@ -647,16 +665,18 @@ export default function TheLife() {
 
       if (playerError) throw playerError;
 
-      // Save production to database
+      // Save production to database (upsert to handle restarts)
       const { error: prodError } = await supabase
         .from('the_life_business_productions')
-        .insert({
+        .upsert({
           player_id: playerData.id,
           business_id: business.id,
           reward_item_id: business.reward_item_id,
           reward_item_quantity: business.reward_item_quantity,
           completed_at: completedAt.toISOString(),
           collected: false
+        }, {
+          onConflict: 'player_id,business_id'
         });
 
       if (prodError) throw prodError;
@@ -1631,6 +1651,13 @@ export default function TheLife() {
           <div className="businesses-section">
             <h2>💼 Business Operations</h2>
             <p>Start businesses and earn items. Higher levels unlock more profitable ventures.</p>
+            <div className="business-slots-info">
+              <span className="slots-label">Business Slots:</span>
+              <span className="slots-count">{ownedBusinesses.length} / {getMaxBusinessSlots(player?.level || 1)}</span>
+              {getMaxBusinessSlots(player?.level || 1) < 7 && (
+                <span className="slots-hint">💡 Gain 1 slot every 5 levels (max 7)</span>
+              )}
+            </div>
             <div className="businesses-grid">
               {businesses.filter(b => b.is_active).map(business => {
                 const imageUrl = business.image_url || 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400';
