@@ -2285,7 +2285,7 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                <div className="modal-actions"
+                <div className="modal-actions">
                   <button onClick={saveCrime} className="btn-save">
                     {editingCrime ? 'Update Crime' : 'Create Crime'}
                   </button>
