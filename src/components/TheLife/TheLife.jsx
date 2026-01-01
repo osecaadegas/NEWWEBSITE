@@ -1356,7 +1356,9 @@ export default function TheLife() {
                     <div className="hired-workers-grid">
                       {hiredWorkers.map(hw => (
                         <div key={hw.id} className="hired-worker-card">
-                          <img src={hw.worker.image_url} alt={hw.worker.name} />
+                          <div className="hired-worker-image">
+                            <img src={hw.worker.image_url} alt={hw.worker.name} />
+                          </div>
                           <div className="hired-worker-info">
                             <h4>{hw.worker.name}</h4>
                             <p className="income-rate">${hw.worker.income_per_hour}/hour</p>
