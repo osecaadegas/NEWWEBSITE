@@ -835,9 +835,6 @@ export default function TheLife() {
     }
   };
 
-  // Load online players for PvP
-  };
-
   const startDrugProduction = async (drugType, hours) => {
     const cost = hours * 100;
     
@@ -2087,6 +2084,8 @@ export default function TheLife() {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>
