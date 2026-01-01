@@ -40,46 +40,70 @@ export function StreamElementsProvider({ children }) {
   const autoConnectTwitchUser = async () => {
     setAutoConnecting(true);
     try {
+      console.log('🔍 Checking auto-connect for Twitch user...');
+      
       // Check if user logged in via Twitch
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
+      console.log('User provider:', authUser?.app_metadata?.provider);
+      console.log('User metadata:', authUser?.user_metadata);
+      
       if (!authUser?.app_metadata?.provider || authUser.app_metadata.provider !== 'twitch') {
+        console.log('❌ Not a Twitch user, skipping auto-connect');
         setAutoConnecting(false);
-        return; // Not a Twitch user
+        return;
       }
 
+      console.log('✅ Twitch user detected!');
+
       // Check if already connected
-      const { data: existing } = await supabase
+      const { data: existing, error: checkError } = await supabase
         .from('streamelements_connections')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
-      if (existing) {
-        setAutoConnecting(false);
-        return; // Already connected
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error('Error checking existing connection:', checkError);
       }
+
+      if (existing) {
+        console.log('✅ Already connected to StreamElements');
+        setSeAccount(existing);
+        await fetchPoints(existing.se_channel_id, existing.se_jwt_token, existing.se_username);
+        setAutoConnecting(false);
+        return;
+      }
+
+      console.log('📝 No existing connection, creating new one...');
 
       // Get Twitch username from user metadata
       const twitchUsername = authUser.user_metadata?.preferred_username || 
                             authUser.user_metadata?.name ||
                             authUser.user_metadata?.user_name;
 
-      if (!twitchUsername) return;
+      console.log('Twitch username:', twitchUsername);
 
-      // Auto-connect using streamer's credentials
-      // These should be stored in environment variables or Supabase config
-      const streamerChannelId = import.meta.env.VITE_SE_CHANNEL_ID;
-      const streamerJwtToken = import.meta.env.VITE_SE_JWT_TOKEN;
-
-      if (!streamerChannelId || !streamerJwtToken) {
-        console.warn('⚠️ StreamElements credentials not configured. Set VITE_SE_CHANNEL_ID and VITE_SE_JWT_TOKEN environment variables.');
-        console.warn('Auto-connect disabled for Twitch users.');
+      if (!twitchUsername) {
+        console.error('❌ Could not extract Twitch username from metadata');
         setAutoConnecting(false);
         return;
       }
 
-      console.log('🔄 Auto-connecting Twitch user:', twitchUsername);
+      // Auto-connect using streamer's credentials
+      const streamerChannelId = import.meta.env.VITE_SE_CHANNEL_ID;
+      const streamerJwtToken = import.meta.env.VITE_SE_JWT_TOKEN;
+
+      console.log('SE Channel ID configured:', !!streamerChannelId);
+      console.log('SE JWT Token configured:', !!streamerJwtToken);
+
+      if (!streamerChannelId || !streamerJwtToken) {
+        console.warn('⚠️ StreamElements credentials not configured. Set VITE_SE_CHANNEL_ID and VITE_SE_JWT_TOKEN environment variables.');
+        setAutoConnecting(false);
+        return;
+      }
+
+      console.log('🔄 Attempting to fetch SE points for:', twitchUsername);
 
       // Try to fetch points using Twitch username
       const response = await fetch(
