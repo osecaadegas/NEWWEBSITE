@@ -542,6 +542,8 @@ export default function AdminPanel() {
     setSuccess('');
 
     try {
+      console.log('Deleting crime:', crimeId);
+      
       const { error } = await supabase
         .from('the_life_robberies')
         .delete()
@@ -552,9 +554,15 @@ export default function AdminPanel() {
         throw error;
       }
       
-      console.log('Crime deleted:', crimeId);
+      console.log('Crime deleted successfully:', crimeId);
+      
+      // Immediately remove from state
+      setCrimes(prevCrimes => prevCrimes.filter(c => c.id !== crimeId));
+      
       setSuccess('Crime deleted successfully!');
-      await loadCrimes();
+      
+      // Also reload to ensure consistency
+      setTimeout(() => loadCrimes(), 100);
     } catch (err) {
       console.error('Delete crime error:', err);
       setError('Failed to delete crime: ' + err.message);
@@ -567,6 +575,8 @@ export default function AdminPanel() {
     try {
       const newActiveState = !crime.is_active;
       
+      console.log('Toggling crime:', crime.id, 'to', newActiveState);
+      
       const { data, error } = await supabase
         .from('the_life_robberies')
         .update({ is_active: newActiveState })
@@ -578,9 +588,19 @@ export default function AdminPanel() {
         throw error;
       }
 
-      console.log('Crime toggled:', data);
+      console.log('Crime toggled successfully:', data);
+      
+      // Immediately update state
+      setCrimes(prevCrimes => 
+        prevCrimes.map(c => 
+          c.id === crime.id ? { ...c, is_active: newActiveState } : c
+        )
+      );
+      
       setSuccess(`Crime ${newActiveState ? 'activated' : 'deactivated'} successfully!`);
-      await loadCrimes();
+      
+      // Also reload to ensure consistency
+      setTimeout(() => loadCrimes(), 100);
     } catch (err) {
       setError('Failed to toggle crime: ' + err.message);
     }
