@@ -27,6 +27,7 @@ export default function DailyWheel() {
   }, [user]);
 
   const loadPrizes = async () => {
+    console.log('Loading prizes...');
     try {
       const { data, error } = await supabase
         .from('daily_wheel_prizes')
@@ -34,7 +35,24 @@ export default function DailyWheel() {
         .eq('is_active', true)
         .order('display_order');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error - using default prizes:', error);
+        // Use default prizes if table doesn't exist
+        setPrizes([
+          { id: '1', label: '500 Points', icon: '💰', color: '#1a1a1a', text_color: '#ffffff', se_points: 500, probability: 15, display_order: 1 },
+          { id: '2', label: 'FREE SPIN', icon: '🔄', color: '#e63946', text_color: '#ffffff', se_points: 0, probability: 5, display_order: 2 },
+          { id: '3', label: '100 Points', icon: '🔥', color: '#1a1a1a', text_color: '#ffffff', se_points: 100, probability: 20, display_order: 3 },
+          { id: '4', label: '1,000 Points', icon: '💵', color: '#ffcf40', text_color: '#000000', se_points: 1000, probability: 10, display_order: 4 },
+          { id: '5', label: 'NOTHING', icon: '💀', color: '#1a1a1a', text_color: '#ffffff', se_points: 0, probability: 25, display_order: 5 },
+          { id: '6', label: 'JACKPOT', icon: '👑', color: '#8e44ad', text_color: '#ffffff', se_points: 5000, probability: 2, display_order: 6 },
+          { id: '7', label: 'TRY AGAIN', icon: '❌', color: '#1a1a1a', text_color: '#ffffff', se_points: 0, probability: 18, display_order: 7 },
+          { id: '8', label: '250 Points', icon: '💎', color: '#3498db', text_color: '#ffffff', se_points: 250, probability: 5, display_order: 8 },
+        ]);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Loaded prizes from database:', data?.length);
       setPrizes(data || []);
       setLoading(false);
     } catch (error) {
@@ -44,7 +62,10 @@ export default function DailyWheel() {
   };
 
   const checkSpinAvailability = async () => {
+    console.log('Checking spin availability for user:', user?.id);
+    
     if (!user) {
+      console.log('No user logged in');
       setCanSpin(false);
       return;
     }
@@ -55,7 +76,7 @@ export default function DailyWheel() {
       });
 
       if (error) {
-        console.error('RPC error:', error);
+        console.warn('Database function not found - allowing spin for demo:', error.message);
         // If function doesn't exist, allow spin
         setCanSpin(true);
         return;
@@ -69,7 +90,8 @@ export default function DailyWheel() {
       }
     } catch (error) {
       console.error('Error checking spin availability:', error);
-      // On error, allow spin
+      // On error, allow spin for demo
+      console.log('Allowing spin due to error');
       setCanSpin(true);
     }
   };
@@ -484,7 +506,10 @@ export default function DailyWheel() {
         {/* Controls */}
         <div className="wheel-controls">
           <button 
-            onClick={spin}
+            onClick={() => {
+              console.log('Button clicked!');
+              spin();
+            }}
             disabled={!canSpin || isSpinning || prizes.length === 0 || loading}
             className="spin-btn"
           >
