@@ -754,8 +754,9 @@ export default function TheLife() {
       const rewardItemId = drugOps[`${business.id}_reward_item_id`];
       const rewardQuantity = drugOps[`${business.id}_reward_item_quantity`];
 
-      // Add items to inventory if business gives items
-      if (rewardItemId && rewardQuantity) {
+      // Check reward type: items or cash
+      if (business.reward_type === 'items' && rewardItemId && rewardQuantity) {
+        // Add items to inventory
         const { data: existing, error: checkError } = await supabase
           .from('the_life_player_inventory')
           .select('*')
@@ -786,31 +787,48 @@ export default function TheLife() {
           if (insertError) throw insertError;
         }
 
-        // Mark production as collected in database
-        const { error: collectError } = await supabase
-          .from('the_life_business_productions')
-          .update({ collected: true })
-          .eq('player_id', playerData.id)
-          .eq('business_id', business.id)
-          .eq('collected', false);
-
-        if (collectError) throw collectError;
-
-        // Remove from state
-        setDrugOps(prev => {
-          const newOps = { ...prev };
-          delete newOps[business.id];
-          delete newOps[`${business.id}_completed_at`];
-          delete newOps[`${business.id}_reward_item_id`];
-          delete newOps[`${business.id}_reward_item_quantity`];
-          return newOps;
-        });
-
         await loadTheLifeInventory();
         setMessage({ 
           type: 'success', 
           text: `Collected ${rewardQuantity}x items!` 
         });
+      } else {
+        // Give cash reward
+        const cashProfit = business.profit || 0;
+        const { data: updatedPlayer, error: cashError } = await supabase
+          .from('the_life_players')
+          .update({ cash: player.cash + cashProfit })
+          .eq('user_id', user.id)
+          .select()
+          .single();
+
+        if (cashError) throw cashError;
+        setPlayer(updatedPlayer);
+        setMessage({ 
+          type: 'success', 
+          text: `Collected $${cashProfit.toLocaleString()}!` 
+        });
+      }
+
+      // Mark production as collected in database
+      const { error: collectError } = await supabase
+        .from('the_life_business_productions')
+        .update({ collected: true })
+        .eq('player_id', playerData.id)
+        .eq('business_id', business.id)
+        .eq('collected', false);
+
+      if (collectError) throw collectError;
+
+      // Remove from state
+      setDrugOps(prev => {
+        const newOps = { ...prev };
+        delete newOps[business.id];
+        delete newOps[`${business.id}_completed_at`];
+        delete newOps[`${business.id}_reward_item_id`];
+        delete newOps[`${business.id}_reward_item_quantity`];
+        return newOps;
+      });
 
         // Reload inventory to show new items
         loadInventory();

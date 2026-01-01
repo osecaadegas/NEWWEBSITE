@@ -62,7 +62,9 @@ CREATE INDEX IF NOT EXISTS idx_thelife_inventory_item ON the_life_player_invento
 CREATE INDEX IF NOT EXISTS idx_thelife_items_type ON the_life_items(type);
 
 -- Add reward_item_id to businesses table (what item they give)
+-- Also add reward_type to choose between cash or items
 ALTER TABLE the_life_businesses 
+ADD COLUMN IF NOT EXISTS reward_type TEXT DEFAULT 'cash', -- 'cash' or 'items'
 ADD COLUMN IF NOT EXISTS reward_item_id UUID REFERENCES the_life_items(id),
 ADD COLUMN IF NOT EXISTS reward_item_quantity INTEGER DEFAULT 1;
 

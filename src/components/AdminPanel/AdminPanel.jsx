@@ -87,7 +87,11 @@ export default function AdminPanel() {
     duration_minutes: 30,
     min_level_required: 1,
     is_active: true,
-    item_reward_id: null,
+    reward_type: 'cash',
+    reward_item_id: null,
+    reward_item_quantity: 1,
+    purchase_price: 5000,
+    production_cost: 500,
     item_quantity: 10,
     unit_name: 'grams'
   });
@@ -424,7 +428,7 @@ export default function AdminPanel() {
 
   const loadItems = async () => {
     const { data, error } = await supabase
-      .from('items')
+      .from('the_life_items')
       .select('*')
       .order('name', { ascending: true });
     
@@ -432,8 +436,7 @@ export default function AdminPanel() {
       console.error('Error loading items:', error);
     } else {
       setItems(data || []);
-      // Also set available items for business dropdown (filter tradeable)
-      setAvailableItems(data?.filter(item => item.tradeable) || []);
+      setAvailableItems(data || []);
     }
   };
 
@@ -648,9 +651,11 @@ export default function AdminPanel() {
         duration_minutes: business.duration_minutes,
         min_level_required: business.min_level_required,
         is_active: business.is_active,
-        item_reward_id: business.item_reward_id || null,
-        item_quantity: business.item_quantity || 10,
-        unit_name: business.unit_name || 'grams'
+        reward_type: business.reward_type || 'cash',
+        reward_item_id: business.reward_item_id || null,
+        reward_item_quantity: business.reward_item_quantity || 1,
+        purchase_price: business.purchase_price || 5000,
+        production_cost: business.production_cost || 500
       });
       setEditingBusiness(business);
     } else {
@@ -663,9 +668,11 @@ export default function AdminPanel() {
         duration_minutes: 30,
         min_level_required: 1,
         is_active: true,
-        item_reward_id: null,
-        item_quantity: 10,
-        unit_name: 'grams'
+        reward_type: 'cash',
+        reward_item_id: null,
+        reward_item_quantity: 1,
+        purchase_price: 5000,
+        production_cost: 500
       });
       setEditingBusiness(null);
     }
@@ -1966,15 +1973,19 @@ export default function AdminPanel() {
                         <p className="business-desc">{business.description}</p>
                         <div className="business-stats-grid">
                           <div className="stat">
-                            <span className="label">Cost</span>
-                            <span className="value">${business.cost.toLocaleString()}</span>
+                            <span className="label">Purchase</span>
+                            <span className="value">${business.purchase_price?.toLocaleString() || business.cost?.toLocaleString()}</span>
+                          </div>
+                          <div className="stat">
+                            <span className="label">Production</span>
+                            <span className="value">${business.production_cost?.toLocaleString() || business.cost?.toLocaleString()}</span>
                           </div>
                           <div className="stat">
                             <span className="label">Reward</span>
                             <span className="value">
-                              {business.item_reward_id ? 
-                                `${business.item_quantity} ${business.unit_name}` : 
-                                `$${business.profit.toLocaleString()}`}
+                              {business.reward_type === 'items' && business.reward_item_id ? 
+                                `${business.reward_item_quantity || 1}x Items` : 
+                                `$${business.profit?.toLocaleString() || '0'}`}
                             </span>
                           </div>
                           <div className="stat">
@@ -2303,52 +2314,95 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="form-group">
-                      <label>Cost ($)</label>
+                      <label>Purchase Price ($)</label>
                       <input
                         type="number"
-                        value={businessFormData.cost}
-                        onChange={(e) => setBusinessFormData({...businessFormData, cost: parseInt(e.target.value)})}
-                        min="0"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Profit ($) - Legacy</label>
-                      <input
-                        type="number"
-                        value={businessFormData.profit}
-                        onChange={(e) => setBusinessFormData({...businessFormData, profit: parseInt(e.target.value)})}
+                        value={businessFormData.purchase_price}
+                        onChange={(e) => setBusinessFormData({...businessFormData, purchase_price: parseInt(e.target.value)})}
                         min="0"
                       />
                       <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
-                        ⚠️ Will be replaced by item rewards
+                        One-time cost to buy the business
                       </small>
                     </div>
 
                     <div className="form-group">
-                      <label>Item Reward</label>
-                      <select
-                        value={businessFormData.item_reward_id || ''}
-                        onChange={(e) => setBusinessFormData({...businessFormData, item_reward_id: e.target.value || null})}
-                      >
-                        <option value="">None (Cash Only)</option>
-                        {availableItems.map(item => (
-                          <option key={item.id} value={item.id}>
-                            {item.icon} {item.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label>Item Quantity</label>
+                      <label>Production Cost ($)</label>
                       <input
                         type="number"
-                        value={businessFormData.item_quantity}
-                        onChange={(e) => setBusinessFormData({...businessFormData, item_quantity: parseInt(e.target.value)})}
-                        min="1"
+                        value={businessFormData.production_cost}
+                        onChange={(e) => setBusinessFormData({...businessFormData, production_cost: parseInt(e.target.value)})}
+                        min="0"
                       />
+                      <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                        Cost to run production each time
+                      </small>
                     </div>
+
+                    <div className="form-group full-width">
+                      <label>Reward Type</label>
+                      <div style={{display: 'flex', gap: '15px', marginTop: '10px'}}>
+                        <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                          <input
+                            type="radio"
+                            name="reward_type"
+                            value="cash"
+                            checked={businessFormData.reward_type === 'cash'}
+                            onChange={(e) => setBusinessFormData({...businessFormData, reward_type: e.target.value})}
+                          />
+                          <span>💵 Cash Reward</span>
+                        </label>
+                        <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+                          <input
+                            type="radio"
+                            name="reward_type"
+                            value="items"
+                            checked={businessFormData.reward_type === 'items'}
+                            onChange={(e) => setBusinessFormData({...businessFormData, reward_type: e.target.value})}
+                          />
+                          <span>🎒 Item Reward</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {businessFormData.reward_type === 'cash' ? (
+                      <div className="form-group">
+                        <label>Cash Profit ($)</label>
+                        <input
+                          type="number"
+                          value={businessFormData.profit}
+                          onChange={(e) => setBusinessFormData({...businessFormData, profit: parseInt(e.target.value)})}
+                          min="0"
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <div className="form-group">
+                          <label>Item Reward</label>
+                          <select
+                            value={businessFormData.reward_item_id || ''}
+                            onChange={(e) => setBusinessFormData({...businessFormData, reward_item_id: e.target.value || null})}
+                          >
+                            <option value="">Select Item...</option>
+                            {availableItems.map(item => (
+                              <option key={item.id} value={item.id}>
+                                {item.icon} {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Item Quantity</label>
+                          <input
+                            type="number"
+                            value={businessFormData.reward_item_quantity}
+                            onChange={(e) => setBusinessFormData({...businessFormData, reward_item_quantity: parseInt(e.target.value)})}
+                            min="1"
+                          />
+                        </div>
+                      </>
+                    )}
 
                     <div className="form-group">
                       <label>Unit Name</label>
