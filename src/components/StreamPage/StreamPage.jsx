@@ -1,5 +1,6 @@
 import './StreamPage.css';
 import StreamHighlights from '../StreamHighlights/StreamHighlights';
+import DailyWheel from '../DailyWheel/DailyWheel';
 
 export default function StreamPage() {
   const twitchChannel = 'osecaadegas95';
@@ -50,6 +51,9 @@ export default function StreamPage() {
 
         {/* Stream Highlights Section */}
         <StreamHighlights />
+
+        {/* Daily Wheel Section */}
+        <DailyWheel />
       </div>
     </div>
   );

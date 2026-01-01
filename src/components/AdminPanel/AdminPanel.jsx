@@ -20,7 +20,7 @@ export default function AdminPanel() {
   const usersPerPage = 10;
   
   // Offer Card Builder State
-  const [activeTab, setActiveTab] = useState('users'); // 'users', 'offers', 'thelife', or 'highlights'
+  const [activeTab, setActiveTab] = useState('users'); // 'users', 'offers', 'thelife', 'highlights', or 'wheel'
   const [offers, setOffers] = useState([]);
   const [editingOffer, setEditingOffer] = useState(null);
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -116,6 +116,21 @@ export default function AdminPanel() {
     is_active: true
   });
 
+  // Daily Wheel State
+  const [wheelPrizes, setWheelPrizes] = useState([]);
+  const [showWheelModal, setShowWheelModal] = useState(false);
+  const [editingPrize, setEditingPrize] = useState(null);
+  const [prizeFormData, setPrizeFormData] = useState({
+    label: '',
+    icon: '🎁',
+    color: '#1a1a1a',
+    text_color: '#ffffff',
+    se_points: 0,
+    probability: 1,
+    is_active: true,
+    display_order: 0
+  });
+
   useEffect(() => {
     if (!adminLoading && !isAdmin) {
       navigate('/');
@@ -130,6 +145,7 @@ export default function AdminPanel() {
     loadItems();
     loadWorkers();
     loadHighlights();
+    loadWheelPrizes();
   }, []);
 
   const loadUsers = async () => {
@@ -1053,6 +1069,129 @@ export default function AdminPanel() {
         .eq('id', highlightId);
 
       if (error) throw error;
+      setSuccess('Highlight status updated!');
+      loadHighlights();
+    } catch (err) {
+      setError('Failed to update highlight: ' + err.message);
+    }
+  };
+
+  // === DAILY WHEEL MANAGEMENT ===
+
+  const loadWheelPrizes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_wheel_prizes')
+        .select('*')
+        .order('display_order');
+
+      if (error) throw error;
+      setWheelPrizes(data || []);
+    } catch (err) {
+      console.error('Error loading wheel prizes:', err);
+    }
+  };
+
+  const openPrizeModal = (prize = null) => {
+    if (prize) {
+      setEditingPrize(prize);
+      setPrizeFormData({
+        label: prize.label,
+        icon: prize.icon,
+        color: prize.color,
+        text_color: prize.text_color,
+        se_points: prize.se_points,
+        probability: prize.probability,
+        is_active: prize.is_active,
+        display_order: prize.display_order
+      });
+    } else {
+      setEditingPrize(null);
+      setPrizeFormData({
+        label: '',
+        icon: '🎁',
+        color: '#1a1a1a',
+        text_color: '#ffffff',
+        se_points: 0,
+        probability: 1,
+        is_active: true,
+        display_order: wheelPrizes.length
+      });
+    }
+    setShowWheelModal(true);
+  };
+
+  const savePrize = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    try {
+      const prizeData = {
+        ...prizeFormData,
+        se_points: parseInt(prizeFormData.se_points) || 0,
+        probability: parseInt(prizeFormData.probability) || 1,
+        display_order: parseInt(prizeFormData.display_order) || 0
+      };
+
+      let result;
+      if (editingPrize) {
+        result = await supabase
+          .from('daily_wheel_prizes')
+          .update(prizeData)
+          .eq('id', editingPrize.id);
+      } else {
+        result = await supabase
+          .from('daily_wheel_prizes')
+          .insert([prizeData]);
+      }
+
+      if (result.error) throw result.error;
+
+      setSuccess(`Prize ${editingPrize ? 'updated' : 'created'} successfully!`);
+      setShowWheelModal(false);
+      loadWheelPrizes();
+    } catch (err) {
+      setError('Failed to save prize: ' + err.message);
+    }
+  };
+
+  const deletePrize = async (prizeId) => {
+    if (!confirm('Are you sure you want to delete this prize?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('daily_wheel_prizes')
+        .delete()
+        .eq('id', prizeId);
+
+      if (error) throw error;
+      setSuccess('Prize deleted successfully!');
+      loadWheelPrizes();
+    } catch (err) {
+      setError('Failed to delete prize: ' + err.message);
+    }
+  };
+
+  const togglePrizeActive = async (prizeId, currentStatus) => {
+    try {
+      const { error } = await supabase
+        .from('daily_wheel_prizes')
+        .update({ is_active: !currentStatus })
+        .eq('id', prizeId);
+
+      if (error) throw error;
+      setSuccess('Prize status updated!');
+      loadWheelPrizes();
+    } catch (err) {
+      setError('Failed to update prize: ' + err.message);
+    }
+  };
+
+      if (error) throw error;
       loadHighlights();
     } catch (err) {
       setError('Failed to toggle highlight status: ' + err.message);
@@ -1106,6 +1245,12 @@ export default function AdminPanel() {
           onClick={() => setActiveTab('highlights')}
         >
           🎬 Stream Highlights
+        </button>
+        <button 
+          className={`admin-tab ${activeTab === 'wheel' ? 'active' : ''}`}
+          onClick={() => setActiveTab('wheel')}
+        >
+          🎡 Daily Wheel
         </button>
       </div>
 
@@ -2635,6 +2780,223 @@ export default function AdminPanel() {
                     Cancel
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Daily Wheel Tab */}
+      {activeTab === 'wheel' && (
+        <>
+          <div className="admin-section">
+            <div className="section-header">
+              <h2>🎡 Daily Wheel Prizes</h2>
+              <button onClick={() => openPrizeModal()} className="btn-add">
+                + Add Prize
+              </button>
+            </div>
+
+            <div className="prizes-list">
+              {wheelPrizes.map((prize) => (
+                <div key={prize.id} className="prize-card">
+                  <div className="prize-preview" style={{ backgroundColor: prize.color }}>
+                    <div className="prize-icon" style={{ fontSize: '3rem' }}>
+                      {prize.icon}
+                    </div>
+                    {!prize.is_active && (
+                      <div className="inactive-badge">INACTIVE</div>
+                    )}
+                  </div>
+                  <div className="prize-details">
+                    <h3 style={{ color: prize.text_color }}>{prize.label}</h3>
+                    <div className="prize-stats">
+                      <span>💰 {prize.se_points} SE Points</span>
+                      <span>🎲 Probability: {prize.probability}</span>
+                      <span>📊 Order: {prize.display_order}</span>
+                    </div>
+                    <div className="prize-colors">
+                      <span>BG: {prize.color}</span>
+                      <span>Text: {prize.text_color}</span>
+                    </div>
+                  </div>
+                  <div className="prize-actions">
+                    <button 
+                      onClick={() => togglePrizeActive(prize.id, prize.is_active)} 
+                      className={`btn-toggle ${prize.is_active ? 'active' : 'inactive'}`}
+                    >
+                      {prize.is_active ? '✓ Active' : '✗ Inactive'}
+                    </button>
+                    <button onClick={() => openPrizeModal(prize)} className="btn-edit">
+                      ✏️ Edit
+                    </button>
+                    <button onClick={() => deletePrize(prize.id)} className="btn-delete">
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {wheelPrizes.length === 0 && (
+                <div className="no-data-message">
+                  <p>No prizes yet. Add your first wheel prize!</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Prize Modal */}
+          {showWheelModal && (
+            <div className="modal-overlay" onClick={() => setShowWheelModal(false)}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingPrize ? 'Edit Prize' : 'Add New Prize'}</h2>
+                  <button className="close-btn" onClick={() => setShowWheelModal(false)}>✕</button>
+                </div>
+
+                <form onSubmit={savePrize}>
+                  <div className="modal-body">
+                    <div className="form-section">
+                      <div className="form-group">
+                        <label>Label *</label>
+                        <input
+                          type="text"
+                          value={prizeFormData.label}
+                          onChange={(e) => setPrizeFormData({...prizeFormData, label: e.target.value})}
+                          placeholder="500 Points"
+                          required
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label>Icon (Emoji) *</label>
+                        <input
+                          type="text"
+                          value={prizeFormData.icon}
+                          onChange={(e) => setPrizeFormData({...prizeFormData, icon: e.target.value})}
+                          placeholder="💰"
+                          required
+                        />
+                        <small>Use a single emoji character</small>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Background Color *</label>
+                          <input
+                            type="color"
+                            value={prizeFormData.color}
+                            onChange={(e) => setPrizeFormData({...prizeFormData, color: e.target.value})}
+                          />
+                          <input
+                            type="text"
+                            value={prizeFormData.color}
+                            onChange={(e) => setPrizeFormData({...prizeFormData, color: e.target.value})}
+                            placeholder="#1a1a1a"
+                            style={{ marginTop: '5px' }}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Text Color *</label>
+                          <input
+                            type="color"
+                            value={prizeFormData.text_color}
+                            onChange={(e) => setPrizeFormData({...prizeFormData, text_color: e.target.value})}
+                          />
+                          <input
+                            type="text"
+                            value={prizeFormData.text_color}
+                            onChange={(e) => setPrizeFormData({...prizeFormData, text_color: e.target.value})}
+                            placeholder="#ffffff"
+                            style={{ marginTop: '5px' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>StreamElements Points</label>
+                          <input
+                            type="number"
+                            value={prizeFormData.se_points}
+                            onChange={(e) => setPrizeFormData({...prizeFormData, se_points: e.target.value})}
+                            placeholder="0"
+                            min="0"
+                          />
+                          <small>0 = no points awarded</small>
+                        </div>
+
+                        <div className="form-group">
+                          <label>Probability Weight *</label>
+                          <input
+                            type="number"
+                            value={prizeFormData.probability}
+                            onChange={(e) => setPrizeFormData({...prizeFormData, probability: e.target.value})}
+                            placeholder="1"
+                            min="1"
+                            required
+                          />
+                          <small>Higher = more likely</small>
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <label>Display Order</label>
+                        <input
+                          type="number"
+                          value={prizeFormData.display_order}
+                          onChange={(e) => setPrizeFormData({...prizeFormData, display_order: e.target.value})}
+                          placeholder="0"
+                          min="0"
+                        />
+                        <small>Position on the wheel (0-7 for 8 segments)</small>
+                      </div>
+
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={prizeFormData.is_active}
+                            onChange={(e) => setPrizeFormData({...prizeFormData, is_active: e.target.checked})}
+                          />
+                          <span>Active (visible on wheel)</span>
+                        </label>
+                      </div>
+
+                      {/* Preview */}
+                      <div className="form-group">
+                        <label>Preview</label>
+                        <div className="prize-preview-box" style={{ 
+                          backgroundColor: prizeFormData.color,
+                          color: prizeFormData.text_color,
+                          padding: '20px',
+                          borderRadius: '8px',
+                          textAlign: 'center'
+                        }}>
+                          <div style={{ fontSize: '3rem' }}>{prizeFormData.icon}</div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '10px' }}>
+                            {prizeFormData.label || 'Prize Label'}
+                          </div>
+                          {prizeFormData.se_points > 0 && (
+                            <div style={{ fontSize: '0.9rem', marginTop: '5px' }}>
+                              +{prizeFormData.se_points} Points
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="modal-actions">
+                    <button type="submit" className="btn-save">
+                      {editingPrize ? 'Update Prize' : 'Add Prize'}
+                    </button>
+                    <button type="button" onClick={() => setShowWheelModal(false)} className="btn-cancel">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
