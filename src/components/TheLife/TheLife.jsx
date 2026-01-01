@@ -623,6 +623,18 @@ export default function TheLife() {
     }
 
     try {
+      const completedAt = new Date(Date.now() + business.duration_minutes * 60 * 1000);
+      
+      // Set timer in state
+      const opData = {
+        [business.id]: true,
+        [`${business.id}_completed_at`]: completedAt.toISOString(),
+        [`${business.id}_reward_item_id`]: business.reward_item_id,
+        [`${business.id}_reward_item_quantity`]: business.reward_item_quantity
+      };
+
+      setDrugOps(prev => ({ ...prev, ...opData }));
+
       // Deduct production cost
       const { data: playerData, error: costError } = await supabase
         .from('the_life_players')
@@ -633,51 +645,10 @@ export default function TheLife() {
 
       if (costError) throw costError;
       setPlayer(playerData);
-
-      // Add items to inventory if business gives items
-      if (business.reward_item_id && business.reward_item_quantity) {
-        const { data: existing, error: checkError } = await supabase
-          .from('the_life_player_inventory')
-          .select('*')
-          .eq('player_id', playerData.id)
-          .eq('item_id', business.reward_item_id)
-          .maybeSingle();
-
-        if (checkError && checkError.code !== 'PGRST116') throw checkError;
-
-        if (existing) {
-          // Update quantity
-          const { error: updateError } = await supabase
-            .from('the_life_player_inventory')
-            .update({ quantity: existing.quantity + business.reward_item_quantity })
-            .eq('id', existing.id);
-          
-          if (updateError) throw updateError;
-        } else {
-          // Insert new item
-          const { error: insertError } = await supabase
-            .from('the_life_player_inventory')
-            .insert({
-              player_id: playerData.id,
-              item_id: business.reward_item_id,
-              quantity: business.reward_item_quantity
-            });
-          
-          if (insertError) throw insertError;
-        }
-
-        await loadTheLifeInventory();
-        setMessage({ 
-          type: 'success', 
-          text: `Produced! Received ${business.reward_item_quantity}x items!` 
-        });
-      } else {
-        setMessage({ type: 'success', text: `Ran ${business.name}!` });
-      }
+      setMessage({ type: 'success', text: `Started ${business.name}! Wait ${business.duration_minutes} minutes.` });
     } catch (err) {
       console.error('Error running business:', err);
       setMessage({ type: 'error', text: `Error: ${err.message}` });
-      setMessage({ type: 'error', text: 'Failed to run business' });
     }
   };
 
@@ -735,20 +706,54 @@ export default function TheLife() {
 
   const collectBusiness = async (business) => {
     try {
-      // If business gives items, add to inventory
-      if (business.item_reward_id) {
-        // Use the database function to add items
-        const { error: invError } = await supabase.rpc('add_item_to_inventory', {
-          p_user_id: user.id,
-          p_item_id: business.item_reward_id,
-          p_quantity: business.item_quantity
-        });
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-        if (invError) throw invError;
+      if (!playerData) return;
 
+      // Get stored reward info from drugOps
+      const rewardItemId = drugOps[`${business.id}_reward_item_id`];
+      const rewardQuantity = drugOps[`${business.id}_reward_item_quantity`];
+
+      // Add items to inventory if business gives items
+      if (rewardItemId && rewardQuantity) {
+        const { data: existing, error: checkError } = await supabase
+          .from('the_life_player_inventory')
+          .select('*')
+          .eq('player_id', playerData.id)
+          .eq('item_id', rewardItemId)
+          .maybeSingle();
+
+        if (checkError && checkError.code !== 'PGRST116') throw checkError;
+
+        if (existing) {
+          // Update quantity
+          const { error: updateError } = await supabase
+            .from('the_life_player_inventory')
+            .update({ quantity: existing.quantity + rewardQuantity })
+            .eq('id', existing.id);
+          
+          if (updateError) throw updateError;
+        } else {
+          // Insert new item
+          const { error: insertError } = await supabase
+            .from('the_life_player_inventory')
+            .insert({
+              player_id: playerData.id,
+              item_id: rewardItemId,
+              quantity: rewardQuantity
+            });
+          
+          if (insertError) throw insertError;
+        }
+
+        await loadTheLifeInventory();
         setMessage({ 
           type: 'success', 
-          text: `Collected ${business.item_quantity} ${business.unit_name} of ${business.item?.name || 'items'}!` 
+          text: `Collected ${rewardQuantity}x items!` 
         });
 
         // Reload inventory to show new items
@@ -1616,9 +1621,9 @@ export default function TheLife() {
                       <>
                         <p>Production Cost: ${productionCost.toLocaleString()}</p>
                     <p>
-                      {business.item_reward_id ? 
-                        `Reward: ${business.item_quantity} ${business.unit_name} ${business.item?.icon || ''}` :
-                        `Profit: $${business.profit.toLocaleString()}`
+                      {business.reward_item_id ? 
+                        `Reward: ${business.reward_item_quantity || 1}x Items` :
+                        `Profit: $${business.profit?.toLocaleString() || '0'}`
                       } | Time: {business.duration_minutes}m
                     </p>
                     {meetsLevel ? (
@@ -1631,9 +1636,9 @@ export default function TheLife() {
                                 onClick={() => collectBusiness(business)} 
                                 className="collect-btn"
                               >
-                                {business.item_reward_id ?
-                                  `Collect ${business.item_quantity} ${business.unit_name}` :
-                                  `Collect $${business.profit.toLocaleString()}`
+                                {business.reward_item_id ?
+                                  `Collect Items` :
+                                  `Collect $${business.profit?.toLocaleString() || '0'}`
                                 }
                               </button>
                             ) : (
