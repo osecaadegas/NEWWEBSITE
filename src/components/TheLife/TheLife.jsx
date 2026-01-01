@@ -37,6 +37,28 @@ export default function TheLife() {
     }
   }, [user]);
 
+  // Subscribe to real-time updates for robberies
+  useEffect(() => {
+    const channel = supabase
+      .channel('robberies-changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'the_life_robberies' 
+        }, 
+        (payload) => {
+          console.log('Robbery data changed, reloading...', payload);
+          loadRobberies();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Jail countdown timer
   useEffect(() => {
     if (!player?.jail_until) return;
