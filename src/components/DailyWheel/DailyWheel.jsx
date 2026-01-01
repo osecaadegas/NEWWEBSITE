@@ -543,23 +543,33 @@ export default function DailyWheel() {
           <button 
             onClick={() => {
               console.log('Button clicked!');
+              console.log('States:', { loading, isSpinning, canSpin, prizesLength: prizes.length });
               spin();
             }}
-            disabled={!canSpin || isSpinning || prizes.length === 0 || loading}
+            disabled={loading || isSpinning || prizes.length === 0}
             className="spin-btn"
+            style={{ opacity: (loading || isSpinning || prizes.length === 0) ? 0.5 : 1 }}
           >
             {loading ? 'LOADING...' : isSpinning ? 'SPINNING...' : 'SPIN NOW'}
           </button>
           
-          {!canSpin && countdown && (
+          {!loading && !canSpin && countdown && (
             <div className="timer-msg">
               Next spin available in: <span className="font-bold">{countdown}</span>
             </div>
           )}
           
-          <div className="status-msg">
-            One free spin every 24 hours
-          </div>
+          {!loading && canSpin && (
+            <div className="status-msg" style={{ color: '#4ade80' }}>
+              ✓ Ready to spin!
+            </div>
+          )}
+          
+          {!loading && !canSpin && !countdown && (
+            <div className="status-msg">
+              One free spin every 24 hours
+            </div>
+          )}
         </div>
       </div>
 
