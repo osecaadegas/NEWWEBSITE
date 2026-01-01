@@ -30,12 +30,20 @@ export default function StreamElementsPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [isTwitchUser, setIsTwitchUser] = useState(false);
+  const [seCredentialsConfigured, setSeCredentialsConfigured] = useState(false);
 
   useEffect(() => {
     checkIfTwitchUser();
+    checkSeCredentials();
     loadRedemptionItems();
     loadAllRedemptions();
   }, []);
+
+  const checkSeCredentials = () => {
+    const channelId = import.meta.env.VITE_SE_CHANNEL_ID;
+    const jwtToken = import.meta.env.VITE_SE_JWT_TOKEN;
+    setSeCredentialsConfigured(!!(channelId && jwtToken));
+  };
 
   const checkIfTwitchUser = async () => {
     try {
@@ -256,11 +264,19 @@ export default function StreamElementsPanel() {
           </div>
         )}
 
-        {!isConnected && isTwitchUser && (
+        {!isConnected && isTwitchUser && seCredentialsConfigured && (
           <div className="se-info-box" style={{ marginBottom: '20px', background: 'rgba(147, 51, 234, 0.1)', borderColor: 'rgba(147, 51, 234, 0.3)' }}>
-            <h3>✨ Twitch User Detected</h3>
-            <p>Your StreamElements loyalty points are automatically synced! You can redeem rewards below once connected.</p>
-            <p style={{color: '#9333ea', fontSize: '0.9rem', marginTop: '10px'}}>💡 Points sync may take a moment after first login</p>
+            <h3>✨ Syncing Your Points...</h3>
+            <p>Your StreamElements loyalty points are being synced automatically!</p>
+            <p style={{color: '#9333ea', fontSize: '0.9rem', marginTop: '10px'}}>💡 This may take a moment. Refresh if points don't appear.</p>
+          </div>
+        )}
+
+        {!isConnected && isTwitchUser && !seCredentialsConfigured && (
+          <div className="se-info-box" style={{ marginBottom: '20px', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+            <h3>⚙️ Setup Required</h3>
+            <p style={{color: '#ef4444'}}>StreamElements auto-sync is not configured yet. Contact the streamer!</p>
+            <p style={{fontSize: '0.85rem', color: '#888', marginTop: '8px'}}>The streamer needs to add their SE credentials to enable automatic point syncing for Twitch viewers.</p>
           </div>
         )}
         

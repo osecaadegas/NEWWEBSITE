@@ -64,9 +64,12 @@ export function StreamElementsProvider({ children }) {
       const streamerJwtToken = import.meta.env.VITE_SE_JWT_TOKEN;
 
       if (!streamerChannelId || !streamerJwtToken) {
-        console.log('StreamElements credentials not configured');
+        console.warn('⚠️ StreamElements credentials not configured. Set VITE_SE_CHANNEL_ID and VITE_SE_JWT_TOKEN environment variables.');
+        console.warn('Auto-connect disabled for Twitch users.');
         return;
       }
+
+      console.log('🔄 Auto-connecting Twitch user:', twitchUsername);
 
       // Try to fetch points using Twitch username
       const response = await fetch(
@@ -81,6 +84,8 @@ export function StreamElementsProvider({ children }) {
 
       if (response.ok) {
         const data = await response.json();
+        
+        console.log('✅ Auto-connect successful! Points:', data.points);
         
         // Save connection to database
         await supabase
