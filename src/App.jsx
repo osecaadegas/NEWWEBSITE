@@ -38,6 +38,7 @@ import GiveawayCreator from './components/GiveawayCreator/GiveawayCreator';
 import OverlayControls from './components/OverlayControls/OverlayControls';
 import Overlay from './components/Overlay/Overlay';
 import ProfilePage from './components/ProfilePage/ProfilePage';
+import DailyWheelPage from './components/DailyWheel/DailyWheelPage';
 
 function AppContent({ isAdminOverlay = false }) {
   const location = useLocation();
@@ -606,6 +607,7 @@ function App() {
                 <Route path="/guess-balance" element={<GuessBalancePage />} />
                 <Route path="/giveaways" element={<GiveawaysPage />} />
                 <Route path="/vouchers" element={<VoucherRedeemPage />} />
+                <Route path="/daily-wheel" element={<DailyWheelPage />} />
                 <Route path="/games/dice" element={<GamesPage gameType="dice" />} />
                 <Route path="/games/roulette" element={<GamesPage gameType="roulette" />} />
                 <Route path="/games/blackjack" element={<BlackjackPremium />} />

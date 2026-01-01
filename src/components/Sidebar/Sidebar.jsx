@@ -263,6 +263,13 @@ export default function Sidebar() {
                   <span className="subitem-icon">🎟️</span>
                   <span className="subitem-label">Vouchers</span>
                 </button>
+                <button
+                  className={`sidebar-subitem ${isActive('/daily-wheel') ? 'active' : ''}`}
+                  onClick={() => handleNavigation('/daily-wheel')}
+                >
+                  <span className="subitem-icon">🎡</span>
+                  <span className="subitem-label">Daily Wheel</span>
+                </button>
               </div>
             )}
           </div>
