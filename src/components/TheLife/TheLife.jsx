@@ -1034,21 +1034,40 @@ export default function TheLife() {
 
       if (error) throw error;
 
-      // Fetch user emails/metadata for usernames
+      // Fetch Twitch usernames for each player
       if (data && data.length > 0) {
         const enrichedData = await Promise.all(
           data.map(async (playerData) => {
-            const { data: userData } = await supabase.auth.admin.getUserById(playerData.user_id).catch(() => ({ data: null }));
+            // Get user metadata to extract Twitch username
+            const { data: metadata } = await supabase
+              .rpc('get_user_metadata', { user_id: playerData.user_id })
+              .catch(() => ({ data: null }));
             
-            // Try to get username from metadata or use email
-            const username = userData?.user?.user_metadata?.preferred_username || 
-                           userData?.user?.user_metadata?.name ||
-                           userData?.user?.email?.split('@')[0] ||
-                           'Player';
+            let twitchUsername = 'Player';
+            
+            if (metadata) {
+              // Check if user logged in via Twitch
+              if (metadata.identities && metadata.identities.length > 0) {
+                const twitchIdentity = metadata.identities.find(i => i.provider === 'twitch');
+                if (twitchIdentity?.identity_data) {
+                  twitchUsername = twitchIdentity.identity_data.preferred_username || 
+                                  twitchIdentity.identity_data.user_name ||
+                                  twitchIdentity.identity_data.full_name;
+                }
+              }
+              // Fallback to user_metadata
+              if (twitchUsername === 'Player' && metadata.user_metadata) {
+                twitchUsername = metadata.user_metadata.preferred_username || 
+                                metadata.user_metadata.user_name ||
+                                metadata.user_metadata.full_name ||
+                                metadata.email?.split('@')[0] ||
+                                'Player';
+              }
+            }
             
             return {
               ...playerData,
-              username,
+              username: twitchUsername,
               net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
             };
           })
