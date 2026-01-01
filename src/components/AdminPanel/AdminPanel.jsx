@@ -68,9 +68,7 @@ export default function AdminPanel() {
     success_rate: 50,
     jail_time_minutes: 30,
     hp_loss_on_fail: 10,
-    xp_reward: 10,
-    success_message: '',
-    fail_message: ''
+    xp_reward: 10
   });
   const [itemFormData, setItemFormData] = useState({
     name: '',
@@ -91,8 +89,7 @@ export default function AdminPanel() {
     is_active: true,
     item_reward_id: null,
     item_quantity: 10,
-    unit_name: 'grams',
-    success_message: ''
+    unit_name: 'grams'
   });
   const [workerFormData, setWorkerFormData] = useState({
     name: '',
@@ -102,8 +99,7 @@ export default function AdminPanel() {
     income_per_hour: 100,
     rarity: 'common',
     min_level_required: 1,
-    is_active: true,
-    success_message: ''
+    is_active: true
   });
   const [availableItems, setAvailableItems] = useState([]);
 
@@ -454,9 +450,7 @@ export default function AdminPanel() {
         success_rate: crime.success_rate,
         jail_time_minutes: crime.jail_time_minutes,
         hp_loss_on_fail: crime.hp_loss_on_fail,
-        xp_reward: crime.xp_reward,
-        success_message: crime.success_message || 'Success! You earned $${reward} and ${xp} XP! (${chance}% chance)',
-        fail_message: crime.fail_message || 'You failed! Lost ${hp} HP and going to jail for ${jailTime} minutes.'
+        xp_reward: crime.xp_reward
       });
       setEditingCrime(crime);
     } else {
@@ -471,9 +465,7 @@ export default function AdminPanel() {
         success_rate: 50,
         jail_time_minutes: 30,
         hp_loss_on_fail: 10,
-        xp_reward: 10,
-        success_message: 'Success! You earned $${reward} and ${xp} XP! (${chance}% chance)',
-        fail_message: 'You failed! Lost ${hp} HP and going to jail for ${jailTime} minutes.'
+        xp_reward: 10
       });
       setEditingCrime(null);
     }
@@ -510,9 +502,7 @@ export default function AdminPanel() {
             success_rate: parseInt(crimeFormData.success_rate),
             jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
             hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
-            xp_reward: parseInt(crimeFormData.xp_reward),
-            success_message: crimeFormData.success_message,
-            fail_message: crimeFormData.fail_message
+            xp_reward: parseInt(crimeFormData.xp_reward)
           })
           .eq('id', editingCrime.id)
           .select();
@@ -540,8 +530,6 @@ export default function AdminPanel() {
             jail_time_minutes: parseInt(crimeFormData.jail_time_minutes),
             hp_loss_on_fail: parseInt(crimeFormData.hp_loss_on_fail),
             xp_reward: parseInt(crimeFormData.xp_reward),
-            success_message: crimeFormData.success_message,
-            fail_message: crimeFormData.fail_message,
             is_active: true
           }])
           .select();
@@ -662,8 +650,7 @@ export default function AdminPanel() {
         is_active: business.is_active,
         item_reward_id: business.item_reward_id || null,
         item_quantity: business.item_quantity || 10,
-        unit_name: business.unit_name || 'grams',
-        success_message: business.success_message || ''
+        unit_name: business.unit_name || 'grams'
       });
       setEditingBusiness(business);
     } else {
@@ -678,8 +665,7 @@ export default function AdminPanel() {
         is_active: true,
         item_reward_id: null,
         item_quantity: 10,
-        unit_name: 'grams',
-        success_message: ''
+        unit_name: 'grams'
       });
       setEditingBusiness(null);
     }
@@ -870,8 +856,7 @@ export default function AdminPanel() {
         income_per_hour: worker.income_per_hour,
         rarity: worker.rarity,
         min_level_required: worker.min_level_required,
-        is_active: worker.is_active,
-        success_message: worker.success_message || ''
+        is_active: worker.is_active
       });
       setEditingWorker(worker);
     } else {
@@ -883,8 +868,7 @@ export default function AdminPanel() {
         income_per_hour: 100,
         rarity: 'common',
         min_level_required: 1,
-        is_active: true,
-        success_message: ''
+        is_active: true
       });
       setEditingWorker(null);
     }
@@ -2258,31 +2242,6 @@ export default function AdminPanel() {
                       />
                     </div>
                   </div>
-
-                  <div className="form-section">
-                    <h3>Custom Messages</h3>
-                    <p className="form-hint">Use placeholders: ${reward}, ${xp}, ${chance}, ${hp}, ${jailTime}</p>
-                    
-                    <div className="form-group">
-                      <label>Success Message</label>
-                      <textarea
-                        value={crimeFormData.success_message || ''}
-                        onChange={(e) => setCrimeFormData({...crimeFormData, success_message: e.target.value})}
-                        placeholder="Success! You earned $${reward} and ${xp} XP! (${chance}% chance)"
-                        rows="2"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Failure Message</label>
-                      <textarea
-                        value={crimeFormData.fail_message || ''}
-                        onChange={(e) => setCrimeFormData({...crimeFormData, fail_message: e.target.value})}
-                        placeholder="You failed! Lost ${hp} HP and going to jail for ${jailTime} minutes."
-                        rows="2"
-                      />
-                    </div>
-                  </div>
                 </div>
 
                 <div className="modal-actions">
@@ -2430,21 +2389,6 @@ export default function AdminPanel() {
                         />
                         Is Active
                       </label>
-                    </div>
-                  </div>
-
-                  <div className="form-section">
-                    <h3>Custom Message</h3>
-                    <p className="form-hint">Use placeholders: ${reward} (cash or item amount), ${item} (item name)</p>
-                    
-                    <div className="form-group">
-                      <label>Collection Message</label>
-                      <textarea
-                        value={businessFormData.success_message}
-                        onChange={(e) => setBusinessFormData({...businessFormData, success_message: e.target.value})}
-                        placeholder="Collected ${reward} ${item}!"
-                        rows="2"
-                      />
                     </div>
                   </div>
                 </div>
@@ -2652,21 +2596,6 @@ export default function AdminPanel() {
                         />
                         <span>Active (visible to players)</span>
                       </label>
-                    </div>
-                  </div>
-
-                  <div className="form-section">
-                    <h3>Custom Message</h3>
-                    <p className="form-hint">Use placeholders: ${reward} (income per hour)</p>
-                    
-                    <div className="form-group">
-                      <label>Hire Success Message</label>
-                      <textarea
-                        value={workerFormData.success_message}
-                        onChange={(e) => setWorkerFormData({...workerFormData, success_message: e.target.value})}
-                        placeholder="Hired ${name}! They generate $${reward} per hour."
-                        rows="2"
-                      />
                     </div>
                   </div>
                 </div>

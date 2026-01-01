@@ -283,19 +283,9 @@ export default function TheLife() {
       if (success) {
         updates.cash = player.cash + reward;
         updates.successful_robberies = player.successful_robberies + 1;
-        
-        // Use custom success message or default
-        let successMessage = robbery.success_message || `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP! (${Math.round(successChance)}% chance)`;
-        if (robbery.success_message) {
-          successMessage = successMessage
-            .replace(/\$\{reward\}/g, reward.toLocaleString())
-            .replace(/\$\{xp\}/g, robbery.xp_reward)
-            .replace(/\$\{chance\}/g, Math.round(successChance));
-        }
-        
         setMessage({ 
           type: 'success', 
-          text: successMessage
+          text: `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP! (${Math.round(successChance)}% chance)` 
         });
       } else {
         // Failed - jail time increases if you're underleveled
@@ -312,19 +302,9 @@ export default function TheLife() {
         jailUntil.setMinutes(jailUntil.getMinutes() + jailTime);
         updates.jail_until = jailUntil.toISOString();
         updates.hp = Math.max(0, player.hp - robbery.hp_loss_on_fail);
-        
-        // Use custom fail message or default
-        let failMessage = robbery.fail_message || `Failed! You're in jail for ${jailTime} minutes and lost ${robbery.hp_loss_on_fail} HP (${Math.round(successChance)}% chance)`;
-        if (robbery.fail_message) {
-          failMessage = failMessage
-            .replace(/\$\{hp\}/g, robbery.hp_loss_on_fail)
-            .replace(/\$\{jailTime\}/g, jailTime)
-            .replace(/\$\{chance\}/g, Math.round(successChance));
-        }
-        
         setMessage({ 
           type: 'error', 
-          text: failMessage
+          text: `Failed! You're in jail for ${jailTime} minutes and lost ${robbery.hp_loss_on_fail} HP (${Math.round(successChance)}% chance)` 
         });
       }
 
@@ -617,18 +597,9 @@ export default function TheLife() {
 
         if (invError) throw invError;
 
-        // Use custom message or default
-        let message = business.success_message || `Collected ${business.item_quantity} ${business.unit_name} of ${business.item?.name || 'items'}!`;
-        if (business.success_message) {
-          message = message
-            .replace(/\$\{reward\}/g, business.item_quantity)
-            .replace(/\$\{unit\}/g, business.unit_name)
-            .replace(/\$\{item\}/g, business.item?.name || 'items');
-        }
-
         setMessage({ 
           type: 'success', 
-          text: message
+          text: `Collected ${business.item_quantity} ${business.unit_name} of ${business.item?.name || 'items'}!` 
         });
 
         // Reload inventory to show new items
@@ -644,14 +615,7 @@ export default function TheLife() {
 
         if (error) throw error;
         setPlayer(data);
-        
-        // Use custom message or default
-        let message = business.success_message || `Collected $${business.profit.toLocaleString()}!`;
-        if (business.success_message) {
-          message = message.replace(/\$\{reward\}/g, business.profit.toLocaleString());
-        }
-        
-        setMessage({ type: 'success', text: message });
+        setMessage({ type: 'success', text: `Collected $${business.profit.toLocaleString()}!` });
       }
 
       // Reset business operation
@@ -888,16 +852,7 @@ export default function TheLife() {
       setPlayer(data);
       loadBrothel();
       loadHiredWorkers();
-      
-      // Use custom message or default
-      let message = worker.success_message || `${worker.name} hired successfully! Generates $${worker.income_per_hour.toLocaleString()} per hour.`;
-      if (worker.success_message) {
-        message = message
-          .replace(/\$\{name\}/g, worker.name)
-          .replace(/\$\{reward\}/g, worker.income_per_hour.toLocaleString());
-      }
-      
-      setMessage({ type: 'success', text: message });
+      setMessage({ type: 'success', text: `${worker.name} hired successfully!` });
     } catch (err) {
       console.error('Error hiring worker:', err);
       setMessage({ type: 'error', text: 'Failed to hire worker!' });
