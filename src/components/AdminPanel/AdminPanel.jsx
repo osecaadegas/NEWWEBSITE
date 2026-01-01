@@ -2274,7 +2274,7 @@ export default function AdminPanel() {
                     <div className="form-group">
                       <label>Success Message</label>
                       <textarea
-                        value={crimeFormData.success_message}
+                        value={crimeFormData.success_message || ''}
                         onChange={(e) => setCrimeFormData({...crimeFormData, success_message: e.target.value})}
                         placeholder="Success! You earned $${reward} and ${xp} XP! (${chance}% chance)"
                         rows="2"
@@ -2284,7 +2284,7 @@ export default function AdminPanel() {
                     <div className="form-group">
                       <label>Failure Message</label>
                       <textarea
-                        value={crimeFormData.fail_message}
+                        value={crimeFormData.fail_message || ''}
                         onChange={(e) => setCrimeFormData({...crimeFormData, fail_message: e.target.value})}
                         placeholder="You failed! Lost ${hp} HP and going to jail for ${jailTime} minutes."
                         rows="2"
