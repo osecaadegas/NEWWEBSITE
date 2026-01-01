@@ -31,6 +31,7 @@ ALTER TABLE the_life_player_inventory ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Anyone can view TheLife items" ON the_life_items;
+DROP POLICY IF EXISTS "Admins can manage TheLife items" ON the_life_items;
 DROP POLICY IF EXISTS "Players can view own inventory" ON the_life_player_inventory;
 DROP POLICY IF EXISTS "Players can manage own inventory" ON the_life_player_inventory;
 
@@ -38,6 +39,17 @@ DROP POLICY IF EXISTS "Players can manage own inventory" ON the_life_player_inve
 CREATE POLICY "Anyone can view TheLife items"
   ON the_life_items FOR SELECT
   USING (true);
+
+-- Admins can insert, update, delete items
+CREATE POLICY "Admins can manage TheLife items"
+  ON the_life_items FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM user_roles 
+      WHERE user_id = auth.uid() 
+      AND role IN ('admin', 'moderator')
+    )
+  );
 
 -- Policies for player inventory
 CREATE POLICY "Players can view own inventory"
@@ -65,8 +77,23 @@ CREATE INDEX IF NOT EXISTS idx_thelife_items_type ON the_life_items(type);
 -- Also add reward_type to choose between cash or items
 ALTER TABLE the_life_businesses 
 ADD COLUMN IF NOT EXISTS reward_type TEXT DEFAULT 'cash', -- 'cash' or 'items'
-ADD COLUMN IF NOT EXISTS reward_item_id UUID REFERENCES the_life_items(id),
+ADD COLUMN IF NOT EXISTS reward_item_id UUID,
 ADD COLUMN IF NOT EXISTS reward_item_quantity INTEGER DEFAULT 1;
+
+-- Add foreign key constraint with ON DELETE SET NULL
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints 
+    WHERE constraint_name = 'the_life_businesses_reward_item_id_fkey'
+  ) THEN
+    ALTER TABLE the_life_businesses 
+    ADD CONSTRAINT the_life_businesses_reward_item_id_fkey 
+    FOREIGN KEY (reward_item_id) 
+    REFERENCES the_life_items(id) 
+    ON DELETE SET NULL;
+  END IF;
+END $$;
 
 -- Insert default items
 INSERT INTO the_life_items (name, description, type, icon, rarity, tradeable, usable, effect) VALUES

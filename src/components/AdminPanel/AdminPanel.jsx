@@ -2392,10 +2392,22 @@ export default function AdminPanel() {
                             <option value="">Select Item...</option>
                             {availableItems.map(item => (
                               <option key={item.id} value={item.id}>
-                                {item.icon} {item.name}
+                                {item.name} ({item.rarity})
                               </option>
                             ))}
                           </select>
+                          {businessFormData.reward_item_id && (
+                            <div style={{marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px'}}>
+                              <img 
+                                src={availableItems.find(i => i.id === businessFormData.reward_item_id)?.icon} 
+                                alt="Item preview" 
+                                style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '5px'}}
+                              />
+                              <span style={{color: '#888', fontSize: '0.9rem'}}>
+                                {availableItems.find(i => i.id === businessFormData.reward_item_id)?.name}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="form-group">
