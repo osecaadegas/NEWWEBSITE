@@ -1976,7 +1976,13 @@ export default function TheLife() {
                     }}>
                       {inv.item.rarity}
                     </div>
-                    <div className="item-icon" style={{fontSize: '48px'}}>{inv.item.icon || '📦'}</div>
+                    <div className="item-image-container">
+                      <img 
+                        src={inv.item.icon || 'https://images.unsplash.com/photo-1606400082777-ef05f3c5cde9?w=400'} 
+                        alt={inv.item.name}
+                        className="item-image"
+                      />
+                    </div>
                     <h4>{inv.item.name}</h4>
                     <p className="item-description">{inv.item.description}</p>
                     <p className="item-quantity">Quantity: {inv.quantity}</p>

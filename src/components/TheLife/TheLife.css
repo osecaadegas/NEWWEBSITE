@@ -1478,6 +1478,27 @@
   border-color: #d4af37;
 }
 
+.item-image-container {
+  width: 100%;
+  height: 140px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  transition: transform 0.3s ease;
+}
+
+.equipment-card:hover .item-image {
+  transform: scale(1.05);
+}
+
 .item-icon {
   font-size: 3rem;
   margin-bottom: 10px;

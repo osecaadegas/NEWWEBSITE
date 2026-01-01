@@ -70,14 +70,14 @@ ADD COLUMN IF NOT EXISTS reward_item_quantity INTEGER DEFAULT 1;
 
 -- Insert default items
 INSERT INTO the_life_items (name, description, type, icon, rarity, tradeable, usable, effect) VALUES
-  ('Jail Free Card', 'Get out of jail instantly, no questions asked', 'special', '🔓', 'legendary', false, true, '{"type": "jail_free"}'),
-  ('Cash Stack', 'A bundle of cash from your business', 'business_reward', '💵', 'common', true, false, '{"type": "currency", "value": 1000}'),
-  ('Drug Package', 'Sealed package of high-quality product', 'business_reward', '📦', 'rare', true, false, '{"type": "currency", "value": 5000}'),
-  ('Luxury Watch', 'Expensive timepiece from jewelry store', 'business_reward', '⌚', 'epic', true, false, '{"type": "currency", "value": 10000}'),
-  ('Gold Bar', 'Pure gold from the vault', 'business_reward', '🏅', 'legendary', true, false, '{"type": "currency", "value": 25000}'),
-  ('Health Pack', 'Restores 50 HP instantly', 'consumable', '💊', 'rare', true, true, '{"type": "heal", "value": 50}'),
-  ('Energy Drink', 'Restores 100 stamina', 'consumable', '🥤', 'common', true, true, '{"type": "stamina", "value": 100}'),
-  ('Lucky Charm', 'Increases success rate by 10% for next crime', 'consumable', '🍀', 'epic', false, true, '{"type": "luck_boost", "value": 10}')
+  ('Jail Free Card', 'Get out of jail instantly, no questions asked', 'special', 'https://images.unsplash.com/photo-1582139329536-e7284fece509?w=400', 'legendary', false, true, '{"type": "jail_free"}'),
+  ('Cash Stack', 'A bundle of cash from your business', 'business_reward', 'https://images.unsplash.com/photo-1607863680198-23d4b2565df0?w=400', 'common', true, false, '{"type": "currency", "value": 1000}'),
+  ('Drug Package', 'Sealed package of high-quality product', 'business_reward', 'https://images.unsplash.com/photo-1606400082777-ef05f3c5cde9?w=400', 'rare', true, false, '{"type": "currency", "value": 5000}'),
+  ('Luxury Watch', 'Expensive timepiece from jewelry store', 'business_reward', 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=400', 'epic', true, false, '{"type": "currency", "value": 10000}'),
+  ('Gold Bar', 'Pure gold from the vault', 'business_reward', 'https://images.unsplash.com/photo-1610375461246-83df859d849d?w=400', 'legendary', true, false, '{"type": "currency", "value": 25000}'),
+  ('Health Pack', 'Restores 50 HP instantly', 'consumable', 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400', 'rare', true, true, '{"type": "heal", "value": 50}'),
+  ('Energy Drink', 'Restores 100 stamina', 'consumable', 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=400', 'common', true, true, '{"type": "stamina", "value": 100}'),
+  ('Lucky Charm', 'Increases success rate by 10% for next crime', 'consumable', 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400', 'epic', false, true, '{"type": "luck_boost", "value": 10}')
 ON CONFLICT DO NOTHING;
 
 -- Update existing businesses to give items
