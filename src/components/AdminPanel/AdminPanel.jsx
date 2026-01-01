@@ -1191,13 +1191,6 @@ export default function AdminPanel() {
     }
   };
 
-      if (error) throw error;
-      loadHighlights();
-    } catch (err) {
-      setError('Failed to toggle highlight status: ' + err.message);
-    }
-  };
-
   if (adminLoading || loading) {
     return (
       <div className="admin-panel-loading">
