@@ -220,15 +220,7 @@ export default function TheLife() {
     try {
       const { data, error } = await supabase
         .from('the_life_businesses')
-        .select(`
-          *,
-          item:item_reward_id (
-            id,
-            name,
-            icon,
-            rarity
-          )
-        `)
+        .select('*')
         .eq('is_active', true)
         .order('min_level_required', { ascending: true });
 
@@ -644,28 +636,34 @@ export default function TheLife() {
 
       // Add items to inventory if business gives items
       if (business.reward_item_id && business.reward_item_quantity) {
-        const { data: existing } = await supabase
+        const { data: existing, error: checkError } = await supabase
           .from('the_life_player_inventory')
           .select('*')
           .eq('player_id', playerData.id)
           .eq('item_id', business.reward_item_id)
-          .single();
+          .maybeSingle();
+
+        if (checkError && checkError.code !== 'PGRST116') throw checkError;
 
         if (existing) {
           // Update quantity
-          await supabase
+          const { error: updateError } = await supabase
             .from('the_life_player_inventory')
             .update({ quantity: existing.quantity + business.reward_item_quantity })
             .eq('id', existing.id);
+          
+          if (updateError) throw updateError;
         } else {
           // Insert new item
-          await supabase
+          const { error: insertError } = await supabase
             .from('the_life_player_inventory')
             .insert({
               player_id: playerData.id,
               item_id: business.reward_item_id,
               quantity: business.reward_item_quantity
             });
+          
+          if (insertError) throw insertError;
         }
 
         await loadTheLifeInventory();
@@ -678,6 +676,7 @@ export default function TheLife() {
       }
     } catch (err) {
       console.error('Error running business:', err);
+      setMessage({ type: 'error', text: `Error: ${err.message}` });
       setMessage({ type: 'error', text: 'Failed to run business' });
     }
   };
