@@ -1019,14 +1019,47 @@ export default function TheLife() {
     try {
       const { data, error } = await supabase
         .from('the_life_players')
-        .select('user_id, level, xp, cash, bank_balance, pvp_wins, total_robberies')
+        .select(`
+          id,
+          user_id,
+          level,
+          xp,
+          cash,
+          bank_balance,
+          pvp_wins,
+          total_robberies
+        `)
         .order('xp', { ascending: false })
         .limit(10);
 
       if (error) throw error;
-      setLeaderboard(data || []);
+
+      // Fetch user emails/metadata for usernames
+      if (data && data.length > 0) {
+        const enrichedData = await Promise.all(
+          data.map(async (playerData) => {
+            const { data: userData } = await supabase.auth.admin.getUserById(playerData.user_id).catch(() => ({ data: null }));
+            
+            // Try to get username from metadata or use email
+            const username = userData?.user?.user_metadata?.preferred_username || 
+                           userData?.user?.user_metadata?.name ||
+                           userData?.user?.email?.split('@')[0] ||
+                           'Player';
+            
+            return {
+              ...playerData,
+              username,
+              net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
+            };
+          })
+        );
+        setLeaderboard(enrichedData);
+      } else {
+        setLeaderboard([]);
+      }
     } catch (err) {
       console.error('Error loading leaderboard:', err);
+      setLeaderboard([]);
     }
   };
 
