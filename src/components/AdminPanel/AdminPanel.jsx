@@ -69,8 +69,8 @@ export default function AdminPanel() {
     jail_time_minutes: 30,
     hp_loss_on_fail: 10,
     xp_reward: 10,
-    success_message: 'Success! You earned $${reward} and ${xp} XP! (${chance}% chance)',
-    fail_message: 'You failed! Lost ${hp} HP and going to jail for ${jailTime} minutes.'
+    success_message: '',
+    fail_message: ''
   });
   const [itemFormData, setItemFormData] = useState({
     name: '',
