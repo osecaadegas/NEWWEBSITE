@@ -5,7 +5,9 @@
   height: 100%;
   padding: 1rem;
   overflow-y: auto;
-  max-width: 500px;
+  width: 480px;
+  min-width: 480px;
+  max-width: 480px;
 }
 
 /* Empty State */
@@ -180,7 +182,7 @@
 .sidebar-card-container {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 420px;
   perspective: 1000px;
   margin-bottom: 0.75rem;
 }
@@ -190,20 +192,44 @@
   width: 100%;
   height: 100%;
   transform-style: preserve-3d;
-  transition: transform 1s ease-in-out;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 8px;
 }
 
-.sidebar-card-flipper.flipped {
-  transform: rotateY(180deg);
+/* Super Bonus Pulsing Gold Edge Effect */
+.sidebar-card-flipper.super-bonus {
+  animation: golden-edge-pulse 2s ease-in-out infinite;
 }
+
+@keyframes golden-edge-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 10px 2px rgba(212, 175, 55, 0.4),
+      0 0 20px 4px rgba(255, 215, 0, 0.3),
+      inset 0 0 10px 2px rgba(212, 175, 55, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px 4px rgba(212, 175, 55, 0.8),
+      0 0 30px 6px rgba(255, 215, 0, 0.6),
+      inset 0 0 15px 3px rgba(212, 175, 55, 0.4);
+  }
+}
+
+/* Remove the flipped class - we use inline styles now */
 
 .sidebar-card-face {
   position: absolute;
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   border-radius: 8px;
   overflow: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .sidebar-card-front {
@@ -222,6 +248,38 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease-in;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: opacity;
+}
+
+.sidebar-card-image.loaded {
+  opacity: 1;
+}
+
+.sidebar-card-loading {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .provider-display {
@@ -329,11 +387,29 @@
 }
 
 .bonus-list-items {
+  height: 280px; /* Show exactly 4 items (4 * 70px) */
+  overflow: hidden;
+  position: relative;
+}
+
+.bonus-list-scroll {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 300px;
-  overflow-y: auto;
+  animation: auto-scroll 20s linear infinite;
+}
+
+@keyframes auto-scroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%); /* Move up by half (first set of items) */
+  }
+}
+
+.bonus-list-scroll:hover {
+  animation-play-state: paused;
 }
 
 .bonus-list-item {
@@ -377,19 +453,24 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0; /* Allow text truncation */
 }
 
 .list-item-name {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #fff;
-  white-space: nowrap;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .list-item-multi {
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #3b82f6;
 }

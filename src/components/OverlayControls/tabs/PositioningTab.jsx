@@ -330,6 +330,115 @@ export default function PositioningTab({ overlay, updateSettings }) {
             </div>
           </div>
         </div>
+
+        {/* Twitch Chat Positioning */}
+        <div className="position-widget-card">
+          <h3>💬 Twitch Chat</h3>
+          <div className="position-inputs">
+            <div className="position-grid-and-vertical">
+              <div className="position-control-area"
+                onMouseDown={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const handleDrag = (moveEvent) => {
+                    const x = Math.max(0, Math.min(2100, (moveEvent.clientX - rect.left) * (2100 / rect.width)));
+                    const y = Math.max(0, Math.min(1200, (moveEvent.clientY - rect.top) * (1200 / rect.height)));
+                    const newSettings = {
+                      ...overlay.settings,
+                      widgets: {
+                        ...overlay.settings.widgets,
+                        chat: {
+                          ...overlay.settings.widgets.chat,
+                          position: { x: Math.round(x), y: Math.round(y) }
+                        }
+                      }
+                    };
+                    updateSettings(newSettings);
+                  };
+                  const handleMouseUp = () => {
+                    window.removeEventListener('mousemove', handleDrag);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                  };
+                  window.addEventListener('mousemove', handleDrag);
+                  window.addEventListener('mouseup', handleMouseUp);
+                  handleDrag(e);
+                }}
+              >
+                <div className="position-dot"
+                  style={{
+                    left: `${(Math.min(overlay.settings.widgets?.chat?.position?.x || 50, 2100) / 2100) * 100}%`,
+                    top: `${(Math.min(overlay.settings.widgets?.chat?.position?.y || 100, 1200) / 1200) * 100}%`
+                  }}
+                />
+              </div>
+              <div className="position-input-group vertical">
+                <label>↕ Vertical</label>
+                <input type="range" value={overlay.settings.widgets?.chat?.position?.y || 100}
+                  onChange={(e) => {
+                    const newSettings = {
+                      ...overlay.settings,
+                      widgets: {
+                        ...overlay.settings.widgets,
+                        chat: {
+                          ...overlay.settings.widgets.chat,
+                          position: { ...overlay.settings.widgets?.chat?.position, y: Number(e.target.value) }
+                        }
+                      }
+                    };
+                    updateSettings(newSettings);
+                  }}
+                  min="0" max="1200" />
+                <input type="number" className="slider-value-input" key={overlay.settings.widgets?.chat?.position?.y || 100} defaultValue={overlay.settings.widgets?.chat?.position?.y || 100}
+                  onBlur={(e) => {
+                    const newSettings = {
+                      ...overlay.settings,
+                      widgets: {
+                        ...overlay.settings.widgets,
+                        chat: {
+                          ...overlay.settings.widgets.chat,
+                          position: { ...overlay.settings.widgets?.chat?.position, y: Math.max(0, Math.min(1200, Number(e.target.value))) }
+                        }
+                      }
+                    };
+                    updateSettings(newSettings);
+                  }}
+                  min="0" max="1200" />
+              </div>
+            </div>
+            <div className="position-input-group horizontal">
+              <label>↔ Horizontal</label>
+              <input type="range" value={overlay.settings.widgets?.chat?.position?.x || 50}
+                onChange={(e) => {
+                  const newSettings = {
+                    ...overlay.settings,
+                    widgets: {
+                      ...overlay.settings.widgets,
+                      chat: {
+                        ...overlay.settings.widgets.chat,
+                        position: { ...overlay.settings.widgets?.chat?.position, x: Number(e.target.value) }
+                      }
+                    }
+                  };
+                  updateSettings(newSettings);
+                }}
+                min="0" max="2100" />
+              <input type="number" className="slider-value-input" key={overlay.settings.widgets?.chat?.position?.x || 50} defaultValue={overlay.settings.widgets?.chat?.position?.x || 50}
+                onBlur={(e) => {
+                  const newSettings = {
+                    ...overlay.settings,
+                    widgets: {
+                      ...overlay.settings.widgets,
+                      chat: {
+                        ...overlay.settings.widgets.chat,
+                        position: { ...overlay.settings.widgets?.chat?.position, x: Math.max(0, Math.min(2100, Number(e.target.value))) }
+                      }
+                    }
+                  };
+                  updateSettings(newSettings);
+                }}
+                min="0" max="2100" />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

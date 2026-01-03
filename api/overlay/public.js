@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   // Get overlay by public_id
   const { data, error } = await supabase
     .from('overlays')
-    .select('settings, updated_at')
+    .select('settings, updated_at, user_id')
     .eq('public_id', id)
     .single();
 
@@ -31,9 +31,17 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: error.message });
   }
 
-  // Only return settings (not user_id or other sensitive data)
+  // Fetch user data to get twitch username
+  let userData = null;
+  if (data.user_id) {
+    const { data: user } = await supabase.auth.admin.getUserById(data.user_id);
+    userData = user?.user;
+  }
+
+  // Return settings and relevant user info (twitch username only)
   res.status(200).json({
     settings: data.settings,
-    updated_at: data.updated_at
+    updated_at: data.updated_at,
+    user: userData
   });
 }

@@ -6,6 +6,9 @@ function GiveawayCreator() {
   const [giveaways, setGiveaways] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(null);
+  const [participants, setParticipants] = useState([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -175,6 +178,80 @@ function GiveawayCreator() {
       fetchGiveaways();
     } catch (error) {
       console.error('Error deleting giveaway:', error);
+    }
+  };
+
+  const viewParticipants = async (giveawayId) => {
+    setShowParticipants(giveawayId);
+    setLoadingParticipants(true);
+
+    try {
+      const { data: entries, error } = await supabase
+        .from('giveaway_entries')
+        .select('user_id, tickets_count, entered_at')
+        .eq('giveaway_id', giveawayId)
+        .order('entered_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Get SE usernames
+      const { data: seAccounts } = await supabase
+        .from('streamelements_connections')
+        .select('user_id, se_username');
+
+      // Get Twitch usernames
+      const { data: userProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, twitch_username');
+
+      const seUsernameMap = {};
+      if (seAccounts) {
+        seAccounts.forEach(account => {
+          seUsernameMap[account.user_id] = account.se_username;
+        });
+      }
+
+      const twitchUsernameMap = {};
+      if (userProfiles) {
+        userProfiles.forEach(profile => {
+          if (profile.twitch_username) {
+            twitchUsernameMap[profile.user_id] = profile.twitch_username;
+          }
+        });
+      }
+
+      const enrichedEntries = entries?.map(entry => ({
+        ...entry,
+        username: seUsernameMap[entry.user_id] || twitchUsernameMap[entry.user_id] || 'Unknown User'
+      })) || [];
+
+      setParticipants(enrichedEntries);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+      alert('Failed to load participants');
+    } finally {
+      setLoadingParticipants(false);
+    }
+  };
+
+  const removeParticipant = async (giveawayId, userId, username) => {
+    if (!confirm(`Remove ${username} from this giveaway?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('giveaway_entries')
+        .delete()
+        .eq('giveaway_id', giveawayId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      alert(`${username} has been removed`);
+      viewParticipants(giveawayId);
+      fetchGiveaways();
+    } catch (error) {
+      console.error('Error removing participant:', error);
+      alert('Failed to remove participant');
     }
   };
 
@@ -353,6 +430,14 @@ function GiveawayCreator() {
                         </button>
                       </>
                     )}
+                    {entriesCount > 0 && (
+                      <button 
+                        onClick={() => viewParticipants(giveaway.id)}
+                        className="view-participants-btn"
+                      >
+                        View Entries ({entriesCount})
+                      </button>
+                    )}
                     {winnersCount > 0 && (
                       <span className="winners-badge">🏆 {winnersCount} Winner(s)</span>
                     )}
@@ -369,6 +454,52 @@ function GiveawayCreator() {
           })}
         </div>
       </div>
+
+      {/* Participants Modal */}
+      {showParticipants && (
+        <>
+          <div className="modal-overlay" onClick={() => setShowParticipants(null)}></div>
+          <div className="participants-modal">
+            <div className="modal-header">
+              <h2>🎟️ Giveaway Entries</h2>
+              <button className="modal-close" onClick={() => setShowParticipants(null)}>✕</button>
+            </div>
+            
+            <div className="modal-body">
+              {loadingParticipants ? (
+                <div className="loading">Loading participants...</div>
+              ) : participants.length === 0 ? (
+                <div className="empty-state">No entries yet</div>
+              ) : (
+                <div className="participants-list">
+                  {participants.map((participant, index) => (
+                    <div key={index} className="participant-row">
+                      <div className="participant-info">
+                        <div className="participant-avatar">
+                          {participant.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="participant-details">
+                          <div className="participant-name">{participant.username}</div>
+                          <div className="participant-meta">
+                            {participant.tickets_count} ticket{participant.tickets_count > 1 ? 's' : ''} • 
+                            Entered {new Date(participant.entered_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        className="remove-participant-btn"
+                        onClick={() => removeParticipant(showParticipants, participant.user_id, participant.username)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

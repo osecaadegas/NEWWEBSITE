@@ -8,12 +8,14 @@ function VoucherRedeemPage() {
   const [voucherCode, setVoucherCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [redemptionHistory, setRedemptionHistory] = useState([]);
+  const [allRedemptions, setAllRedemptions] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
     if (user) {
       fetchRedemptionHistory();
     }
+    fetchAllRedemptions();
   }, [user]);
 
   const fetchRedemptionHistory = async () => {
@@ -32,6 +34,56 @@ function VoucherRedeemPage() {
       setRedemptionHistory(data || []);
     } catch (error) {
       console.error('Error fetching redemption history:', error);
+    }
+  };
+
+  const fetchAllRedemptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voucher_redemptions')
+        .select(`
+          *,
+          voucher_codes(code, points)
+        `)
+        .order('redeemed_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      // Get SE usernames
+      const { data: seAccounts } = await supabase
+        .from('streamelements_connections')
+        .select('user_id, se_username');
+
+      // Get Twitch usernames
+      const { data: userProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, twitch_username');
+
+      const seUsernameMap = {};
+      if (seAccounts) {
+        seAccounts.forEach(account => {
+          seUsernameMap[account.user_id] = account.se_username;
+        });
+      }
+
+      const twitchUsernameMap = {};
+      if (userProfiles) {
+        userProfiles.forEach(profile => {
+          if (profile.twitch_username) {
+            twitchUsernameMap[profile.user_id] = profile.twitch_username;
+          }
+        });
+      }
+
+      const enriched = data?.map(redemption => ({
+        ...redemption,
+        username: seUsernameMap[redemption.user_id] || twitchUsernameMap[redemption.user_id] || 'Unknown User'
+      })) || [];
+
+      setAllRedemptions(enriched);
+    } catch (error) {
+      console.error('Error fetching all redemptions:', error);
     }
   };
 
@@ -149,6 +201,7 @@ function VoucherRedeemPage() {
       });
       setVoucherCode('');
       fetchRedemptionHistory();
+      fetchAllRedemptions();
 
     } catch (error) {
       console.error('Error redeeming voucher:', error);
@@ -195,7 +248,7 @@ function VoucherRedeemPage() {
 
         {redemptionHistory.length > 0 && (
           <div className="redemption-history">
-            <h2>Redemption History</h2>
+            <h2>Your Redemption History</h2>
             <div className="history-list">
               {redemptionHistory.map((redemption) => (
                 <div key={redemption.id} className="history-item">
@@ -206,6 +259,38 @@ function VoucherRedeemPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {allRedemptions.length > 0 && (
+          <div className="all-redemptions">
+            <h2>🎟️ Recent Redemptions</h2>
+            <div className="redemptions-table">
+              <div className="table-header">
+                <div className="table-cell">Voucher</div>
+                <div className="table-cell">Nickname</div>
+                <div className="table-cell">Points</div>
+                <div className="table-cell">Date</div>
+              </div>
+              <div className="table-body">
+                {allRedemptions.map((redemption, index) => (
+                  <div key={index} className="table-row">
+                    <div className="table-cell code">{redemption.voucher_codes?.code}</div>
+                    <div className="table-cell username">{redemption.username}</div>
+                    <div className="table-cell points">+{redemption.points_awarded.toLocaleString()} pts</div>
+                    <div className="table-cell date">
+                      {new Date(redemption.redeemed_at).toLocaleDateString('en-US', { 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

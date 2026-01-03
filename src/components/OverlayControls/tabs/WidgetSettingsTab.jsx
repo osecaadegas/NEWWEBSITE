@@ -7,6 +7,7 @@ import SlotmachineWidget from '../widgets/SlotmachineWidget/SlotmachineWidget';
 import RandomSlotPickerWidget from '../widgets/RandomSlotPickerWidget/RandomSlotPickerWidget';
 import WheelOfNamesWidget from '../widgets/WheelOfNamesWidget/WheelOfNamesWidget';
 import NavbarWidget from '../widgets/NavbarWidget/NavbarWidget';
+import ChatWidget from '../widgets/ChatWidget/ChatWidget';
 import CustomizationWidget from '../widgets/CustomizationWidget/CustomizationWidget';
 
 export default function WidgetSettingsTab({ overlay, updateSettings, slots }) {
@@ -22,6 +23,7 @@ export default function WidgetSettingsTab({ overlay, updateSettings, slots }) {
         <RandomSlotPickerWidget overlay={overlay} updateSettings={updateSettings} />
         <WheelOfNamesWidget overlay={overlay} updateSettings={updateSettings} />
         <NavbarWidget overlay={overlay} updateSettings={updateSettings} />
+        <ChatWidget overlay={overlay} updateSettings={updateSettings} />
         <CustomizationWidget overlay={overlay} updateSettings={updateSettings} />
       </div>
     </div>

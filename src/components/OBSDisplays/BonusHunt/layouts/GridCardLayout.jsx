@@ -3,6 +3,7 @@ import './GridCardLayout.css';
 
 export default function GridCardLayout({ bonuses, settings }) {
   const [slotData, setSlotData] = useState({});
+  const [preloadedImages, setPreloadedImages] = useState({});
 
   // Map bonuses to consistent format
   const mappedBonuses = (bonuses || []).map(b => ({
@@ -17,6 +18,19 @@ export default function GridCardLayout({ bonuses, settings }) {
   }));
 
   const activeBonuses = mappedBonuses.filter(b => b.status === 'active' || b.status === 'completed');
+
+  // Preload all images
+  useEffect(() => {
+    activeBonuses.forEach((bonus) => {
+      if (bonus.slot_image && !preloadedImages[bonus.slot_image]) {
+        const img = new Image();
+        img.onload = () => {
+          setPreloadedImages(prev => ({ ...prev, [bonus.slot_image]: true }));
+        };
+        img.src = bonus.slot_image;
+      }
+    });
+  }, [activeBonuses]);
 
   if (activeBonuses.length === 0) {
     return (
@@ -75,12 +89,18 @@ export default function GridCardLayout({ bonuses, settings }) {
                 <div className="grid-card-flipper">
                   {/* Front - Slot Image */}
                   <div className="grid-card-face grid-card-face-front">
-                    <img 
-                      src={bonus.slot_image || 'https://placehold.co/300x300/1e293b/white?text=SLOT'} 
-                      alt={bonus.slot_name}
-                      className="grid-card-slot-image"
-                      onError={(e) => e.target.src = 'https://placehold.co/300x300/1e293b/white?text=SLOT'}
-                    />
+                    {preloadedImages[bonus.slot_image] ? (
+                      <img 
+                        src={bonus.slot_image || 'https://placehold.co/300x300/1e293b/white?text=SLOT'} 
+                        alt={bonus.slot_name}
+                        className="grid-card-slot-image loaded"
+                        onError={(e) => e.target.src = 'https://placehold.co/300x300/1e293b/white?text=SLOT'}
+                      />
+                    ) : (
+                      <div className="grid-card-loading">
+                        <div className="loading-spinner"></div>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Back - Provider Info */}

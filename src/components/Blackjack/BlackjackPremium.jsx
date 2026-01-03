@@ -103,13 +103,9 @@ export default function BlackjackPremium() {
 
     sceneRef.current = { scene, camera, renderer, table, edge };
 
-    // Animation loop
+    // Animation loop (static table)
     const animate = () => {
       requestAnimationFrame(animate);
-      
-      table.rotation.y += 0.002;
-      edge.rotation.y += 0.002;
-      
       renderer.render(scene, camera);
     };
 
@@ -130,12 +126,12 @@ export default function BlackjackPremium() {
     };
   }, []);
 
-  // Create and shuffle deck
+  // Create and shuffle deck (6 decks)
   const createDeck = () => {
-    const newDeck = [];
+    const singleDeck = [];
     Object.keys(SUITS).forEach(suit => {
       RANKS.forEach(rank => {
-        newDeck.push({
+        singleDeck.push({
           suit,
           rank,
           value: CARD_VALUES[rank],
@@ -144,6 +140,12 @@ export default function BlackjackPremium() {
         });
       });
     });
+    
+    // Create 6 decks (312 cards total)
+    const newDeck = [];
+    for (let i = 0; i < 6; i++) {
+      newDeck.push(...singleDeck);
+    }
     
     // Fisher-Yates shuffle
     for (let i = newDeck.length - 1; i > 0; i--) {
@@ -257,7 +259,7 @@ export default function BlackjackPremium() {
     // Check for blackjack
     const playerScore = calculateScore(newPlayerHand);
     if (playerScore === 21) {
-      setTimeout(() => dealerTurn(newPlayerHand, newDealerHand, remainingDeck), 1000);
+      setTimeout(() => dealerTurn([newPlayerHand], newDealerHand, remainingDeck), 1000);
       return;
     }
 
@@ -349,12 +351,15 @@ export default function BlackjackPremium() {
     const newDeck = deck.slice(1);
     const newHand = [...activeHand, newCard];
 
+    let finalHands;
     if (splitHands.length > 0) {
       const newSplitHands = [...splitHands];
       newSplitHands[currentSplitIndex] = newHand;
       setSplitHands(newSplitHands);
+      finalHands = newSplitHands;
     } else {
       setPlayerHand(newHand);
+      finalHands = [newHand];
     }
     
     setDeck(newDeck);
@@ -379,7 +384,7 @@ export default function BlackjackPremium() {
         setCurrentSplitIndex(prev => prev + 1);
         setMessage(`21! Playing Hand ${currentSplitIndex + 2}`);
       } else {
-        setTimeout(() => dealerTurn(splitHands.length > 0 ? splitHands : [playerHand], dealerHand, newDeck), 500);
+        setTimeout(() => dealerTurn(finalHands, dealerHand, newDeck), 500);
       }
     }
   };
@@ -392,7 +397,8 @@ export default function BlackjackPremium() {
       setCurrentSplitIndex(prev => prev + 1);
       setMessage(`Playing Hand ${currentSplitIndex + 2}`);
     } else {
-      dealerTurn(splitHands.length > 0 ? splitHands : [playerHand], dealerHand, deck);
+      const finalHands = splitHands.length > 0 ? splitHands : [playerHand];
+      dealerTurn(finalHands, dealerHand, deck);
     }
   };
 
@@ -419,7 +425,7 @@ export default function BlackjackPremium() {
       addToHistory('Double Down Bust', -newBet);
       setTimeout(() => resetRound(), 3000);
     } else {
-      setTimeout(() => dealerTurn([newHand], dealerHand, newDeck), 500);
+      setTimeout(() => dealerTurnWithBet([newHand], dealerHand, newDeck, newBet), 500);
     }
   };
 
@@ -444,6 +450,11 @@ export default function BlackjackPremium() {
 
   // Dealer's turn
   const dealerTurn = (finalPlayerHands, currentDealerHand, currentDeck) => {
+    dealerTurnWithBet(finalPlayerHands, currentDealerHand, currentDeck, currentBet);
+  };
+
+  // Dealer's turn with custom bet amount
+  const dealerTurnWithBet = (finalPlayerHands, currentDealerHand, currentDeck, betAmount) => {
     setGamePhase('dealer-turn');
     setDealerRevealed(true);
     setDealerDrawing(true);
@@ -464,13 +475,13 @@ export default function BlackjackPremium() {
       } else {
         clearInterval(dealerDrawInterval);
         setDealerDrawing(false);
-        determineWinner(finalPlayerHands, dealerCards);
+        determineWinner(finalPlayerHands, dealerCards, betAmount);
       }
     }, 1000);
   };
 
   // Determine winner
-  const determineWinner = async (finalPlayerHands, finalDealerHand) => {
+  const determineWinner = async (finalPlayerHands, finalDealerHand, betAmount = currentBet) => {
     const dealerScore = calculateScore(finalDealerHand);
     let totalWinnings = 0;
     let results = [];
@@ -506,7 +517,7 @@ export default function BlackjackPremium() {
         payoutMultiplier = 1;
       }
 
-      const winnings = Math.floor(currentBet * payoutMultiplier);
+      const winnings = Math.floor(betAmount * payoutMultiplier);
       totalWinnings += winnings;
       results.push(result);
     });
@@ -515,7 +526,7 @@ export default function BlackjackPremium() {
       await updateUserPoints(totalWinnings);
     }
 
-    const netResult = totalWinnings - (currentBet * finalPlayerHands.length);
+    const netResult = totalWinnings - (betAmount * finalPlayerHands.length);
     setMessage(results.join(' | '));
     setGamePhase('ended');
     addToHistory(results.join(' | '), netResult);

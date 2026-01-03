@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import './SidebarLayout.css';
 
 export default function SidebarLayout({ bonuses, settings }) {
   const [currentBonusIndex, setCurrentBonusIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [nextBonusIndex, setNextBonusIndex] = useState(1);
+  const [preloadedImages, setPreloadedImages] = useState({});
+  const [rotation, setRotation] = useState(0);
+  const animationRef = useRef(null);
 
   // Map bonuses to consistent format
   const mappedBonuses = (bonuses || []).map(b => ({
@@ -19,20 +22,62 @@ export default function SidebarLayout({ bonuses, settings }) {
 
   const activeBonuses = mappedBonuses.filter(b => b.status === 'active' || b.status === 'completed');
 
-  // Auto-rotate through bonuses
+  // Preload images
+  useEffect(() => {
+    activeBonuses.forEach((bonus, index) => {
+      if (bonus.slot_image && !preloadedImages[bonus.slot_image]) {
+        const img = new Image();
+        img.onload = () => {
+          setPreloadedImages(prev => ({ ...prev, [bonus.slot_image]: true }));
+        };
+        img.src = bonus.slot_image;
+      }
+    });
+  }, [activeBonuses]);
+
+  // Continuous smooth rotation
   useEffect(() => {
     if (activeBonuses.length === 0) return;
 
-    const rotateInterval = setInterval(() => {
-      setIsFlipped(true);
-      
-      setTimeout(() => {
-        setCurrentBonusIndex((prev) => (prev + 1) % activeBonuses.length);
-        setIsFlipped(false);
-      }, 1000);
-    }, 5000);
+    const speed = 0.05; // degrees per frame (slower = smoother)
+    let lastTime = performance.now();
+    let currentIndex = currentBonusIndex;
+    let hasChangedAt90 = false;
 
-    return () => clearInterval(rotateInterval);
+    const animate = (timestamp) => {
+      const delta = timestamp - lastTime;
+      lastTime = timestamp;
+      
+      setRotation(prev => {
+        const newRotation = (prev + (delta * speed)) % 360;
+        
+        // Change image when card is perfectly edge-on at 90 degrees
+        const isAt90 = newRotation >= 88 && newRotation <= 92;
+        
+        if (isAt90 && !hasChangedAt90) {
+          hasChangedAt90 = true;
+          const nextIndex = (currentIndex + 1) % activeBonuses.length;
+          currentIndex = nextIndex;
+          setCurrentBonusIndex(nextIndex);
+          setNextBonusIndex((nextIndex + 1) % activeBonuses.length);
+        } else if (newRotation < 88 || newRotation > 92) {
+          // Reset flag when we're away from 90 degrees
+          hasChangedAt90 = false;
+        }
+        
+        return newRotation;
+      });
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, [activeBonuses.length]);
 
   if (activeBonuses.length === 0) {
@@ -122,15 +167,24 @@ export default function SidebarLayout({ bonuses, settings }) {
         </div>
         
         <div className="sidebar-card-container">
-          <div className={`sidebar-card-flipper ${isFlipped ? 'flipped' : ''}`}>
+          <div 
+            className={`sidebar-card-flipper ${currentBonus.isSuperBonus ? 'super-bonus' : ''}`}
+            style={{ transform: `rotateY(${rotation}deg)` }}
+          >
             {/* Front - Slot Image */}
             <div className="sidebar-card-face sidebar-card-front">
-              <img 
-                src={currentBonus.slot_image || 'https://placehold.co/400x400/1e293b/white?text=SLOT'}
-                alt={currentBonus.slot_name}
-                className="sidebar-card-image"
-                onError={(e) => e.target.src = 'https://placehold.co/400x400/1e293b/white?text=SLOT'}
-              />
+              {preloadedImages[currentBonus.slot_image] ? (
+                <img 
+                  src={currentBonus.slot_image || 'https://placehold.co/400x400/1e293b/white?text=SLOT'}
+                  alt={currentBonus.slot_name}
+                  className="sidebar-card-image loaded"
+                  onError={(e) => e.target.src = 'https://placehold.co/400x400/1e293b/white?text=SLOT'}
+                />
+              ) : (
+                <div className="sidebar-card-loading">
+                  <div className="loading-spinner"></div>
+                </div>
+              )}
             </div>
             
             {/* Back - Provider Info */}
@@ -138,6 +192,15 @@ export default function SidebarLayout({ bonuses, settings }) {
               <div className="provider-display">
                 <div className="provider-name">{currentBonus.provider || 'Provider'}</div>
                 <div className="provider-subtext">Casino Provider</div>
+                {/* Preload next image during back face display */}
+                {activeBonuses[nextBonusIndex] && (
+                  <img 
+                    src={activeBonuses[nextBonusIndex].slot_image}
+                    alt="preload"
+                    style={{ display: 'none' }}
+                    onError={(e) => e.target.src = 'https://placehold.co/400x400/1e293b/white?text=SLOT'}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -178,26 +241,28 @@ export default function SidebarLayout({ bonuses, settings }) {
           <h3>All Bonuses</h3>
         </div>
         <div className="bonus-list-items">
-          {activeBonuses.map((bonus, index) => (
-            <div 
-              key={bonus.id} 
-              className={`bonus-list-item ${index === currentBonusIndex ? 'active' : ''} ${bonus.status === 'completed' ? 'completed' : ''}`}
-              onClick={() => setCurrentBonusIndex(index)}
-            >
-              <img 
-                src={bonus.slot_image || 'https://placehold.co/80x80/1e293b/white?text=SLOT'}
-                alt={bonus.slot_name}
-                className="list-item-image"
-                onError={(e) => e.target.src = 'https://placehold.co/80x80/1e293b/white?text=SLOT'}
-              />
-              <div className="list-item-info">
-                <div className="list-item-name">{bonus.slot_name}</div>
-                <div className="list-item-multi">
-                  {bonus.multiplier > 0 ? `${bonus.multiplier.toFixed(0)}x` : 'Pending'}
+          <div className="bonus-list-scroll">
+            {/* Render list twice for seamless infinite scroll */}
+            {[...activeBonuses, ...activeBonuses].map((bonus, index) => (
+              <div 
+                key={`${bonus.id}-${index}`}
+                className={`bonus-list-item ${index % activeBonuses.length === currentBonusIndex ? 'active' : ''} ${bonus.status === 'completed' ? 'completed' : ''}`}
+              >
+                <img 
+                  src={bonus.slot_image || 'https://placehold.co/80x80/1e293b/white?text=SLOT'}
+                  alt={bonus.slot_name}
+                  className="list-item-image"
+                  onError={(e) => e.target.src = 'https://placehold.co/80x80/1e293b/white?text=SLOT'}
+                />
+                <div className="list-item-info">
+                  <div className="list-item-name">{bonus.slot_name}</div>
+                  <div className="list-item-multi">
+                    {bonus.multiplier > 0 ? `${bonus.multiplier.toFixed(0)}x` : 'Pending'}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

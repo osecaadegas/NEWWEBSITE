@@ -13,6 +13,7 @@ import SlotmachineWidget from './widgets/SlotmachineWidget/SlotmachineWidget';
 import RandomSlotPickerWidget from './widgets/RandomSlotPickerWidget/RandomSlotPickerWidget';
 import WheelOfNamesWidget from './widgets/WheelOfNamesWidget/WheelOfNamesWidget';
 import NavbarWidget from './widgets/NavbarWidget/NavbarWidget';
+import ChatWidget from './widgets/ChatWidget/ChatWidget';
 import CustomizationWidget from './widgets/CustomizationWidget/CustomizationWidget';
 import WidgetSettingsTab from './tabs/WidgetSettingsTab';
 import PositioningTab from './tabs/PositioningTab';

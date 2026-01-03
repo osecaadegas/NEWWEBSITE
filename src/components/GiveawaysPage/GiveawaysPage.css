@@ -231,67 +231,109 @@
   font-weight: 700;
 }
 
-.participants-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+.participants-footer {
+  margin-top: 3rem;
 }
 
-.participant-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  transition: all 0.3s;
-}
-
-.participant-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(212, 175, 55, 0.3);
-}
-
-.participant-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+.participants-footer h2 {
+  color: #d4af37;
+  margin-bottom: 1.5rem;
+  text-align: center;
   font-weight: 700;
-  font-size: 1.2rem;
-  flex-shrink: 0;
 }
 
-.participant-info {
-  flex: 1;
-  min-width: 0;
+.participants-table {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.participant-name {
+.table-header {
+  display: grid;
+  grid-template-columns: 120px 180px 1fr 180px;
+  background: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+.table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 120px 180px 1fr 180px;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s;
+}
+
+.table-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-cell {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+}
+
+.table-cell.username {
   color: #fff;
   font-weight: 600;
-  font-size: 0.95rem;
-  margin-bottom: 0.25rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.participant-details {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.85rem;
-  line-height: 1.4;
+.table-cell.date {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.8125rem;
 }
 
-.participant-time {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.8rem;
-  flex-shrink: 0;
+@media (max-width: 968px) {
+  .table-header,
+  .table-row {
+    grid-template-columns: 100px 140px 1fr 140px;
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }
+  
+  .table-header {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-header {
+    display: none;
+  }
+  
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .table-cell {
+    padding: 0.25rem 0;
+  }
+  
+  .table-cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 0.5rem;
+    color: rgba(255, 255, 255, 0.5);
+  }
 }
 
 .card-message {

@@ -5,7 +5,8 @@ export default function TournamentDisplay({ tournamentData, position }) {
     return null;
   }
 
-  const { players, slots, matches, phase, format, currentMatchIndex } = tournamentData.data;
+  const { players, slots, matches, phase, format, currentMatchIndex, layout = 'horizontal' } = tournamentData.data || {};
+  const tournamentLayout = tournamentData.layout || layout || 'horizontal';
   
   // Get position from props or use defaults (bottom-left equivalent in top-left coordinates)
   const xPos = position?.x ?? 10;
@@ -127,7 +128,7 @@ export default function TournamentDisplay({ tournamentData, position }) {
   };
 
   return (
-    <div className={`bracket-widget-wrapper ${currentPhase}`} style={{ left: `${xPos}px`, bottom: `${yPos}px` }}>
+    <div className={`bracket-widget-wrapper ${currentPhase} ${tournamentLayout}`} style={{ left: `${xPos}px`, bottom: `${yPos}px` }}>
       <div className="bracket-widget-display">
         <div className="bracket-display-header">
           <div className="bracket-phase-tabs">

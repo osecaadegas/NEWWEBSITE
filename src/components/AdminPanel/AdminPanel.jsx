@@ -49,14 +49,17 @@ export default function AdminPanel() {
   const [businesses, setBusinesses] = useState([]);
   const [items, setItems] = useState([]);
   const [workers, setWorkers] = useState([]);
+  const [eventMessages, setEventMessages] = useState([]);
   const [showCrimeModal, setShowCrimeModal] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
+  const [showEventMessageModal, setShowEventMessageModal] = useState(false);
   const [editingCrime, setEditingCrime] = useState(null);
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [editingWorker, setEditingWorker] = useState(null);
+  const [editingEventMessage, setEditingEventMessage] = useState(null);
   const [crimeFormData, setCrimeFormData] = useState({
     name: '',
     description: '',
@@ -92,6 +95,7 @@ export default function AdminPanel() {
     reward_item_quantity: 1,
     purchase_price: 5000,
     production_cost: 500,
+    ticket_cost: 5,
     item_quantity: 10,
     unit_name: 'grams'
   });
@@ -103,6 +107,12 @@ export default function AdminPanel() {
     income_per_hour: 100,
     rarity: 'common',
     min_level_required: 1,
+    is_active: true
+  });
+  const [eventMessageFormData, setEventMessageFormData] = useState({
+    event_type: 'jail_crime',
+    message: '',
+    image_url: '',
     is_active: true
   });
   const [availableItems, setAvailableItems] = useState([]);
@@ -150,6 +160,7 @@ export default function AdminPanel() {
     loadWorkers();
     loadHighlights();
     loadWheelPrizes();
+    loadEventMessages();
   }, []);
 
   const loadUsers = async () => {
@@ -440,6 +451,19 @@ export default function AdminPanel() {
     }
   };
 
+  const loadEventMessages = async () => {
+    const { data, error } = await supabase
+      .from('the_life_event_messages')
+      .select('*')
+      .order('event_type', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading event messages:', error);
+    } else {
+      setEventMessages(data || []);
+    }
+  };
+
   const openCrimeModal = (crime = null) => {
     if (crime) {
       setCrimeFormData({
@@ -655,7 +679,8 @@ export default function AdminPanel() {
         reward_item_id: business.reward_item_id || null,
         reward_item_quantity: business.reward_item_quantity || 1,
         purchase_price: business.purchase_price || 5000,
-        production_cost: business.production_cost || 500
+        production_cost: business.production_cost || 500,
+        ticket_cost: business.ticket_cost || 5
       });
       setEditingBusiness(business);
     } else {
@@ -672,7 +697,8 @@ export default function AdminPanel() {
         reward_item_id: null,
         reward_item_quantity: 1,
         purchase_price: 5000,
-        production_cost: 500
+        production_cost: 500,
+        ticket_cost: 5
       });
       setEditingBusiness(null);
     }
@@ -970,6 +996,108 @@ export default function AdminPanel() {
       loadOffers();
     } catch (err) {
       setError('Failed to toggle offer status: ' + err.message);
+    }
+  };
+
+  // === EVENT MESSAGE MANAGEMENT ===
+  
+  const openEventMessageModal = (message = null) => {
+    if (message) {
+      setEventMessageFormData({
+        event_type: message.event_type,
+        message: message.message,
+        image_url: message.image_url,
+        is_active: message.is_active
+      });
+      setEditingEventMessage(message);
+    } else {
+      setEventMessageFormData({
+        event_type: 'jail_crime',
+        message: '',
+        image_url: '',
+        is_active: true
+      });
+      setEditingEventMessage(null);
+    }
+    setShowEventMessageModal(true);
+  };
+
+  const closeEventMessageModal = () => {
+    setShowEventMessageModal(false);
+    setEditingEventMessage(null);
+    setEventMessageFormData({
+      event_type: 'jail_crime',
+      message: '',
+      image_url: '',
+      is_active: true
+    });
+  };
+
+  const saveEventMessage = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!eventMessageFormData.message || !eventMessageFormData.image_url) {
+      setError('Message and image URL are required');
+      return;
+    }
+
+    try {
+      if (editingEventMessage) {
+        const { error } = await supabase
+          .from('the_life_event_messages')
+          .update(eventMessageFormData)
+          .eq('id', editingEventMessage.id);
+
+        if (error) throw error;
+        setSuccess('Event message updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('the_life_event_messages')
+          .insert([eventMessageFormData]);
+
+        if (error) throw error;
+        setSuccess('Event message created successfully!');
+      }
+
+      closeEventMessageModal();
+      loadEventMessages();
+    } catch (err) {
+      setError('Failed to save event message: ' + err.message);
+    }
+  };
+
+  const deleteEventMessage = async (messageId) => {
+    if (!confirm('Are you sure you want to delete this event message?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('the_life_event_messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+      setSuccess('Event message deleted successfully!');
+      loadEventMessages();
+    } catch (err) {
+      setError('Failed to delete event message: ' + err.message);
+    }
+  };
+
+  const toggleEventMessageActive = async (messageId, currentStatus) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_event_messages')
+        .update({ is_active: !currentStatus })
+        .eq('id', messageId);
+
+      if (error) throw error;
+      loadEventMessages();
+    } catch (err) {
+      setError('Failed to toggle event message status: ' + err.message);
     }
   };
 
@@ -1859,6 +1987,12 @@ export default function AdminPanel() {
               >
                 💃 Brothel Workers
               </button>
+              <button 
+                className={`thelife-tab ${theLifeTab === 'messages' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('messages')}
+              >
+                📸 Event Messages
+              </button>
             </div>
 
             {/* Crimes Section */}
@@ -1923,9 +2057,9 @@ export default function AdminPanel() {
                         }}>
                           <div style={{fontWeight: '600', marginBottom: '4px'}}>📊 Dynamic Success Rates:</div>
                           <div style={{fontSize: '0.8rem', color: '#cbd5e0'}}>
+                            Lv{Math.max(1, crime.min_level_required - 2)}: {Math.max(5, crime.success_rate - 20)}% | 
                             Lv{crime.min_level_required}: {crime.success_rate}% | 
-                            Lv{crime.min_level_required + 2}: {Math.min(95, crime.success_rate + 10)}% | 
-                            Lv{Math.max(1, crime.min_level_required - 2)}: {Math.max(5, crime.success_rate - 20)}%
+                            Lv{crime.min_level_required + 2}: {Math.min(95, crime.success_rate + 10)}%
                           </div>
                         </div>
                       </div>
@@ -2116,6 +2250,58 @@ export default function AdminPanel() {
                           ✏️ Edit
                         </button>
                         <button onClick={() => deleteWorker(worker.id)} className="btn-delete">
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Event Messages Section */}
+            {theLifeTab === 'messages' && (
+              <div className="messages-management">
+                <div className="section-header">
+                  <h3>📸 Event Messages Management</h3>
+                  <button onClick={() => openEventMessageModal()} className="btn-primary">
+                    ➕ Add New Message
+                  </button>
+                </div>
+                <p style={{color: '#a0aec0', marginBottom: '20px'}}>
+                  Manage popup messages and images shown when players go to jail or hospital
+                </p>
+
+                <div className="messages-grid">
+                  {eventMessages.map(msg => (
+                    <div key={msg.id} className="message-admin-card">
+                      <div className="message-preview-image">
+                        {msg.image_url ? (
+                          <img src={msg.image_url} alt="Event" />
+                        ) : (
+                          <div className="no-image">No Image</div>
+                        )}
+                        {!msg.is_active && (
+                          <div className="inactive-badge">INACTIVE</div>
+                        )}
+                      </div>
+                      <div className="message-info">
+                        <span className={`event-type-badge ${msg.event_type.replace('_', '-')}`}>
+                          {msg.event_type.replace('_', ' ').toUpperCase()}
+                        </span>
+                        <p className="message-text">{msg.message}</p>
+                      </div>
+                      <div className="message-actions">
+                        <button 
+                          onClick={() => toggleEventMessageActive(msg.id, msg.is_active)} 
+                          className={`btn-toggle ${msg.is_active ? 'active' : 'inactive'}`}
+                        >
+                          {msg.is_active ? '✓ Active' : '✗ Inactive'}
+                        </button>
+                        <button onClick={() => openEventMessageModal(msg)} className="btn-edit">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => deleteEventMessage(msg.id)} className="btn-delete">
                           🗑️ Delete
                         </button>
                       </div>
@@ -2345,6 +2531,19 @@ export default function AdminPanel() {
                       </small>
                     </div>
 
+                    <div className="form-group">
+                      <label>Ticket Cost</label>
+                      <input
+                        type="number"
+                        value={businessFormData.ticket_cost}
+                        onChange={(e) => setBusinessFormData({...businessFormData, ticket_cost: parseInt(e.target.value)})}
+                        min="0"
+                      />
+                      <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                        Number of tickets required to start production
+                      </small>
+                    </div>
+
                     <div className="form-group full-width">
                       <label>Reward Type</label>
                       <div style={{display: 'flex', gap: '15px', marginTop: '10px'}}>
@@ -2531,6 +2730,7 @@ export default function AdminPanel() {
                       <option value="consumable">Consumable</option>
                       <option value="special">Special</option>
                       <option value="business_reward">Business Reward</option>
+                      <option value="drug">Drug</option>
                       <option value="equipment">Equipment</option>
                       <option value="collectible">Collectible</option>
                     </select>
@@ -2702,6 +2902,78 @@ export default function AdminPanel() {
                     {editingWorker ? 'Update Worker' : 'Create Worker'}
                   </button>
                   <button onClick={closeWorkerModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Event Message Modal */}
+          {showEventMessageModal && (
+            <div className="modal-overlay" onClick={closeEventMessageModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingEventMessage ? 'Edit Event Message' : 'Add New Event Message'}</h2>
+                  <button onClick={closeEventMessageModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-group">
+                    <label>Event Type *</label>
+                    <select
+                      value={eventMessageFormData.event_type}
+                      onChange={(e) => setEventMessageFormData({...eventMessageFormData, event_type: e.target.value})}
+                    >
+                      <option value="jail_crime">Jail - Crime Failed</option>
+                      <option value="jail_street">Jail - Street Resell Caught</option>
+                      <option value="hospital_beaten">Hospital - Beaten Up</option>
+                      <option value="hospital_hp_loss">Hospital - HP Loss</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Message *</label>
+                    <textarea
+                      value={eventMessageFormData.message}
+                      onChange={(e) => setEventMessageFormData({...eventMessageFormData, message: e.target.value})}
+                      placeholder="e.g., Caught red-handed! Better luck next time..."
+                      rows="3"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Image URL *</label>
+                    <input
+                      type="text"
+                      value={eventMessageFormData.image_url}
+                      onChange={(e) => setEventMessageFormData({...eventMessageFormData, image_url: e.target.value})}
+                      placeholder="https://images.unsplash.com/..."
+                    />
+                    {eventMessageFormData.image_url && (
+                      <div style={{marginTop: '10px'}}>
+                        <img src={eventMessageFormData.image_url} alt="Preview" style={{width: '100%', maxHeight: '200px', objectFit: 'cover', borderRadius: '8px'}} />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-group checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={eventMessageFormData.is_active}
+                        onChange={(e) => setEventMessageFormData({...eventMessageFormData, is_active: e.target.checked})}
+                      />
+                      <span>Active (visible to players)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={saveEventMessage} className="btn-save">
+                    {editingEventMessage ? 'Update Message' : 'Create Message'}
+                  </button>
+                  <button onClick={closeEventMessageModal} className="btn-cancel">
                     Cancel
                   </button>
                 </div>

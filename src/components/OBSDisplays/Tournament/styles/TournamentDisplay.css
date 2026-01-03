@@ -9,6 +9,33 @@
   animation: slideInFromLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Vertical Layout */
+.bracket-widget-wrapper.vertical {
+  flex-direction: column;
+  animation: slideInFromBottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bracket-widget-wrapper.vertical .bracket-matches-grid {
+  grid-template-columns: 1fr !important;
+  grid-template-rows: auto;
+}
+
+.bracket-widget-wrapper.vertical .bracket-match-cell {
+  flex-direction: row;
+  width: 100%;
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .bracket-widget-wrapper.semifinals {
   /* Position controlled by inline styles */
 }
@@ -44,6 +71,57 @@
   flex-direction: column;
   height: auto;
   max-height: fit-content;
+}
+
+/* Blue Color Scheme for Vertical Layout */
+.bracket-widget-wrapper.vertical .bracket-widget-display {
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+  width: 480px;
+  min-width: 480px;
+  max-width: 480px;
+}
+
+.bracket-widget-wrapper.vertical .phase-tab {
+  background: rgba(59, 130, 246, 0.2);
+  border: 2px solid rgba(59, 130, 246, 0.4);
+  color: #3b82f6;
+}
+
+.bracket-widget-wrapper.vertical .phase-tab.active {
+  background: rgba(59, 130, 246, 0.3);
+  border: 2px solid #3b82f6;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+}
+
+.bracket-widget-wrapper.vertical .bracket-match-cell {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.bracket-widget-wrapper.vertical .bracket-match-cell.current-match {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+.bracket-widget-wrapper.vertical .mini-card-image {
+  border: 2px solid rgba(59, 130, 246, 0.4);
+}
+
+.bracket-widget-wrapper.vertical .bracket-mini-vs {
+  border: 3px solid #3b82f6;
+  color: #60a5fa;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), inset 0 0 15px rgba(59, 130, 246, 0.2);
+  text-shadow: 0 0 15px rgba(59, 130, 246, 1), 0 0 30px rgba(59, 130, 246, 0.6);
+}
+
+.bracket-widget-wrapper.vertical .multiplier-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.6), 0 0 15px rgba(59, 130, 246, 0.4);
+  color: #fff;
 }
 
 .bracket-widget-wrapper.semifinals .bracket-widget-display {
@@ -93,6 +171,11 @@
   gap: 0.75rem;
   justify-content: center;
   align-items: center;
+}
+
+.bracket-widget-wrapper.vertical .bracket-matches-grid {
+  padding: 1rem;
+  gap: 1rem;
 }
 
 /* Quarter-finals: 2x2 grid */
@@ -182,6 +265,11 @@
   border: 2px solid rgba(212, 175, 55, 0.3);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
   transition: all 0.2s ease;
+}
+
+.bracket-widget-wrapper.vertical .mini-card-image {
+  width: 180px;
+  height: 240px;
 }
 
 .bracket-widget-wrapper.semifinals .mini-card-image {

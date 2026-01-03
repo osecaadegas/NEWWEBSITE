@@ -82,6 +82,11 @@ export default function GiveawaysPage() {
         .from('streamelements_connections')
         .select('user_id, se_username');
 
+      // Get Twitch usernames from user_profiles
+      const { data: userProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, twitch_username');
+
       const seUsernameMap = {};
       if (seAccounts) {
         seAccounts.forEach(account => {
@@ -89,10 +94,20 @@ export default function GiveawaysPage() {
         });
       }
 
-      // Enrich entries with SE usernames
+      // Create Twitch username map from user_profiles
+      const twitchUsernameMap = {};
+      if (userProfiles) {
+        userProfiles.forEach(profile => {
+          if (profile.twitch_username) {
+            twitchUsernameMap[profile.user_id] = profile.twitch_username;
+          }
+        });
+      }
+
+      // Enrich entries with SE usernames or Twitch usernames
       const enriched = data?.map(entry => ({
         ...entry,
-        username: seUsernameMap[entry.user_id] || 'Unknown User',
+        username: seUsernameMap[entry.user_id] || twitchUsernameMap[entry.user_id] || 'Unknown User',
         giveaway_title: entry.giveaways?.title || 'Unknown Giveaway'
       })) || [];
 
@@ -121,6 +136,11 @@ export default function GiveawaysPage() {
         .from('streamelements_connections')
         .select('user_id, se_username');
 
+      // Get Twitch usernames from user_profiles
+      const { data: userProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, twitch_username');
+
       const seUsernameMap = {};
       if (seAccounts) {
         seAccounts.forEach(account => {
@@ -128,10 +148,20 @@ export default function GiveawaysPage() {
         });
       }
 
-      // Enrich winners with SE usernames
+      // Create Twitch username map from user_profiles
+      const twitchUsernameMap = {};
+      if (userProfiles) {
+        userProfiles.forEach(profile => {
+          if (profile.twitch_username) {
+            twitchUsernameMap[profile.user_id] = profile.twitch_username;
+          }
+        });
+      }
+
+      // Enrich winners with SE usernames or Twitch usernames
       const enriched = data?.map(winner => ({
         ...winner,
-        username: seUsernameMap[winner.user_id] || 'Unknown User',
+        username: seUsernameMap[winner.user_id] || twitchUsernameMap[winner.user_id] || 'Unknown User',
         giveaway_title: winner.giveaways?.title || 'Unknown Giveaway'
       })) || [];
 
@@ -379,23 +409,33 @@ export default function GiveawaysPage() {
           {allParticipants.length > 0 && (
             <div className="participants-footer">
               <h2>🎟️ Recent Entries</h2>
-              <div className="participants-list">
-                {allParticipants.slice(0, 20).map((entry, index) => (
-                  <div key={index} className="participant-item">
-                    <div className="participant-avatar">
-                      {entry.username.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="participant-info">
-                      <div className="participant-name">{entry.username}</div>
-                      <div className="participant-details">
-                        bought {entry.tickets_count} ticket{entry.tickets_count > 1 ? 's' : ''} for "{entry.giveaway_title}"
+              <div className="participants-table">
+                <div className="table-header">
+                  <div className="table-cell">Entry</div>
+                  <div className="table-cell">Nickname</div>
+                  <div className="table-cell">Giveaway</div>
+                  <div className="table-cell">Date</div>
+                </div>
+                <div className="table-body">
+                  {allParticipants.slice(0, 20).map((entry, index) => (
+                    <div key={index} className="table-row">
+                      <div className="table-cell">
+                        {entry.tickets_count} ticket{entry.tickets_count > 1 ? 's' : ''}
+                      </div>
+                      <div className="table-cell username">{entry.username}</div>
+                      <div className="table-cell">{entry.giveaway_title}</div>
+                      <div className="table-cell date">
+                        {new Date(entry.entered_at).toLocaleDateString('en-US', { 
+                          month: '2-digit', 
+                          day: '2-digit', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
                       </div>
                     </div>
-                    <div className="participant-time">
-                      {new Date(entry.entered_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}

@@ -72,3 +72,43 @@
   font-size: 1.1rem;
   line-height: 1.6;
 }
+
+@media (max-width: 768px) {
+  .tournaments-page {
+    padding: 60px 15px 30px;
+  }
+
+  .tournaments-header h1 {
+    font-size: 2rem;
+  }
+
+  .tournaments-subtitle {
+    font-size: 1rem;
+  }
+
+  .coming-soon-banner {
+    padding: 40px 25px;
+  }
+
+  .banner-icon {
+    font-size: 3rem;
+  }
+
+  .coming-soon-banner h2 {
+    font-size: 1.5rem;
+  }
+
+  .coming-soon-banner p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tournaments-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .coming-soon-banner {
+    padding: 30px 20px;
+  }
+}

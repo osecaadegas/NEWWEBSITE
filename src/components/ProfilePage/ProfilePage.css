@@ -438,6 +438,10 @@
 }
 
 @media (max-width: 768px) {
+  .profile-page {
+    padding: 60px 15px 30px;
+  }
+
   .profile-container h1 {
     font-size: 2rem;
   }
@@ -459,9 +463,28 @@
 
   .avatar-grid {
     grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
 
   .profile-avatar-actions {
     flex-direction: column;
+  }
+
+  .profile-card {
+    padding: 25px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-container h1 {
+    font-size: 1.75rem;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-card {
+    padding: 20px 15px;
   }
 }

@@ -207,20 +207,44 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .games-page {
+    padding: 60px 15px 30px;
+  }
+
   .games-container h1 {
     font-size: 2rem;
   }
 
   .games-subtitle {
     font-size: 1rem;
+    margin-bottom: 30px;
+  }
+
+  .games-login-notice {
+    padding: 30px 20px;
+    margin-bottom: 30px;
+  }
+
+  .login-notice-icon {
+    font-size: 3rem;
+  }
+
+  .games-login-notice h3 {
+    font-size: 1.5rem;
+  }
+
+  .games-login-notice p {
+    font-size: 1rem;
   }
 
   .games-grid {
     grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   .game-modal {
     margin: 20px;
+    max-height: calc(100vh - 40px);
   }
 
   .game-modal-header {
@@ -229,5 +253,27 @@
 
   .game-modal-content {
     padding: 30px 20px;
+  }
+
+  .game-card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .games-container h1 {
+    font-size: 1.75rem;
+  }
+
+  .games-login-notice {
+    padding: 25px 15px;
+  }
+
+  .game-card {
+    padding: 15px;
+  }
+
+  .game-modal {
+    margin: 10px;
   }
 }

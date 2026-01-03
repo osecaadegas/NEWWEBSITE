@@ -39,6 +39,22 @@ export default function ProfilePage() {
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
+      
+      // Ensure user_profiles has twitch_username stored
+      const twitchUsername = user?.user_metadata?.twitch_username;
+      if (twitchUsername) {
+        await supabase
+          .from('user_profiles')
+          .upsert({
+            user_id: user.id,
+            twitch_username: twitchUsername,
+            avatar_url: data?.avatar_url || user?.user_metadata?.avatar_url,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+      }
+
       if (data?.avatar_url) {
         setAvatarUrl(data.avatar_url);
         setSelectedAvatar(data.avatar_url);
@@ -114,6 +130,7 @@ export default function ProfilePage() {
         .upsert({
           user_id: user.id,
           avatar_url: avatar,
+          twitch_username: user?.user_metadata?.twitch_username,
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'

@@ -13,6 +13,7 @@ export default function DailyWheel() {
   const [showModal, setShowModal] = useState(false);
   const [wonPrize, setWonPrize] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [recentSpins, setRecentSpins] = useState([]);
   
   const canvasRef = useRef(null);
   const audioContextRef = useRef(null);
@@ -24,6 +25,7 @@ export default function DailyWheel() {
     if (user) {
       checkSpinAvailability();
     }
+    fetchRecentSpins();
   }, [user]);
 
   const loadPrizes = async () => {
@@ -129,6 +131,53 @@ export default function DailyWheel() {
       updateTimer();
     } catch (error) {
       console.error('Error getting next spin time:', error);
+    }
+  };
+
+  const fetchRecentSpins = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_wheel_spins')
+        .select('*')
+        .order('spun_at', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      // Get SE usernames
+      const { data: seAccounts } = await supabase
+        .from('streamelements_connections')
+        .select('user_id, se_username');
+
+      // Get Twitch usernames
+      const { data: userProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, twitch_username');
+
+      const seUsernameMap = {};
+      if (seAccounts) {
+        seAccounts.forEach(account => {
+          seUsernameMap[account.user_id] = account.se_username;
+        });
+      }
+
+      const twitchUsernameMap = {};
+      if (userProfiles) {
+        userProfiles.forEach(profile => {
+          if (profile.twitch_username) {
+            twitchUsernameMap[profile.user_id] = profile.twitch_username;
+          }
+        });
+      }
+
+      const enriched = data?.map(spin => ({
+        ...spin,
+        username: seUsernameMap[spin.user_id] || twitchUsernameMap[spin.user_id] || 'Unknown User'
+      })) || [];
+
+      setRecentSpins(enriched);
+    } catch (error) {
+      console.error('Error fetching recent spins:', error);
     }
   };
 
@@ -286,75 +335,96 @@ export default function DailyWheel() {
 
   const spin = async () => {
     console.log('=== SPIN FUNCTION CALLED ===');
-    console.log('Spin state:', { 
-      isSpinning, 
-      canSpin, 
-      hasUser: !!user, 
-      userId: user?.id,
-      prizesCount: prizes.length,
-      canvasExists: !!canvasRef.current
-    });
     
-    if (isSpinning) {
-      console.log('BLOCKED: Already spinning');
-      return;
-    }
-    if (!canSpin) {
-      console.log('BLOCKED: Cannot spin (cooldown)');
-      return;
-    }
-    if (!user) {
-      console.log('BLOCKED: No user logged in');
-      return;
-    }
-    if (prizes.length === 0) {
-      console.log('BLOCKED: No prizes loaded');
+    if (isSpinning || !canSpin || !user || prizes.length === 0) {
+      console.log('BLOCKED: Cannot spin');
       return;
     }
 
-    console.log('✅ All checks passed - starting spin!');
+    console.log('✅ Starting spin!');
     setIsSpinning(true);
     playSpinSound();
 
-    const segmentAngle = 360 / prizes.length;
-    const extraSpins = 8 + Math.random() * 5;
+    // Get current wheel position
+    const currentRotation = currentRotationRef.current;
     
+    // Select the winning prize
     const winningIndex = selectPrizeWeighted();
-    const winningSegmentCenter = winningIndex * segmentAngle + segmentAngle / 2;
-    const finalRotation = (270 - winningSegmentCenter + 360) % 360;
-    const targetRotation = extraSpins * 360 + finalRotation;
-    const startRotation = currentRotationRef.current;
+    const winningPrize = prizes[winningIndex];
+    
+    console.log('🎯 Selected prize:', winningPrize.label, 'at index', winningIndex);
+    
+    // Calculate spin parameters
+    const numSegments = prizes.length;
+    const degreesPerSegment = 360 / numSegments;
+    
+    // The canvas draws segments starting at 0° (pointing right/east)
+    // Segment i occupies angles: [i * degreesPerSegment, (i+1) * degreesPerSegment]
+    // Segment i's CENTER is at: i * degreesPerSegment + degreesPerSegment/2
+    
+    // The pointer is at the TOP of the screen (12 o'clock)
+    // In our rotation system, top = 270° (or -90°)
+    
+    // When wheel rotates by angle R (clockwise), 
+    // a point at canvas position P ends up at screen position (P + R) mod 360
+    
+    // We want the winning segment's CENTER to align with the pointer at 270°
+    const segmentCenter = winningIndex * degreesPerSegment + degreesPerSegment / 2;
+    
+    // We need: (segmentCenter + totalRotation) mod 360 = 270
+    // So: totalRotation = 270 - segmentCenter (plus any multiple of 360)
+    
+    let baseRotation = 270 - segmentCenter;
+    
+    // Normalize to positive
+    while (baseRotation < 0) baseRotation += 360;
+    
+    // We're adding rotation to currentRotation, so we need to account for where we currently are
+    // Current position puts things at: (angle + currentRotation) mod 360
+    // We want to end at: (angle + currentRotation + additionalRotation) mod 360 = 270
+    // For segment center: (segmentCenter + currentRotation + additionalRotation) mod 360 = 270
+    // additionalRotation = 270 - segmentCenter - currentRotation
+    
+    let rotationToAdd = 270 - segmentCenter - (currentRotation % 360);
+    
+    // Make sure we rotate forward (always positive, at least 360°)
+    while (rotationToAdd < 360) rotationToAdd += 360;
+    
+    // Add extra spins for effect (7-12 full rotations beyond the minimum)
+    const extraFullSpins = 7 + Math.floor(Math.random() * 5);
+    rotationToAdd += extraFullSpins * 360;
+    
+    const targetRotation = currentRotation + rotationToAdd;
+    
+    console.log('Segment center:', segmentCenter, '°');
+    console.log('Current rotation:', currentRotation, '°');
+    console.log('Rotation to add:', rotationToAdd, '°');
+    console.log('Target rotation:', targetRotation, '°');
+    console.log('Target mod 360:', targetRotation % 360, '°');
+    
+    // Animate
     const duration = 5000;
     const startTime = performance.now();
+    const startRotation = currentRotation;
 
     const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
-    const customEasing = (t) => {
-      if (t < 0.1) return t * 10;
-      return easeOutCubic(t);
-    };
 
     lastSegmentIndexRef.current = -1;
-
-    console.log('Starting animation:', {
-      startRotation,
-      targetRotation,
-      winningIndex,
-      duration
-    });
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const ease = customEasing(progress);
-      const currentPos = startRotation + (targetRotation - startRotation) * ease;
+      const eased = easeOutCubic(progress);
+      const currentPos = startRotation + rotationToAdd * eased;
 
       if (canvasRef.current) {
         canvasRef.current.style.transform = `rotate(${currentPos}deg)`;
       }
 
-      const segAngle = 360 / prizes.length;
-      const angleAtPointer = (270 - currentPos % 360 + 360) % 360;
-      const currentSegmentIndex = Math.floor(angleAtPointer / segAngle);
+      // Tick sound on segment changes
+      const currentAngle = currentPos % 360;
+      const angleAtPointer = (270 - currentAngle + 360) % 360;
+      const currentSegmentIndex = Math.floor(angleAtPointer / degreesPerSegment) % numSegments;
 
       if (currentSegmentIndex !== lastSegmentIndexRef.current) {
         const pointer = document.querySelector('.wheel-pointer');
@@ -363,7 +433,6 @@ export default function DailyWheel() {
           void pointer.offsetWidth;
           pointer.classList.add('wiggle');
         }
-
         if (lastSegmentIndexRef.current !== -1) playTickSound();
         lastSegmentIndexRef.current = currentSegmentIndex;
       }
@@ -371,14 +440,27 @@ export default function DailyWheel() {
       if (progress < 1) {
         requestAnimationFrame(animate);
       } else {
+        // Animation complete
         if (canvasRef.current) {
           canvasRef.current.style.transform = `rotate(${targetRotation}deg)`;
         }
         currentRotationRef.current = targetRotation;
         setIsSpinning(false);
         
+        // Verify
+        const finalAngle = targetRotation % 360;
+        const finalAngleAtPointer = (270 - finalAngle + 360) % 360;
+        const landedSegment = Math.floor(finalAngleAtPointer / degreesPerSegment) % numSegments;
+        
+        console.log('🎯 LANDED:');
+        console.log('Final rotation:', finalAngle, '°');
+        console.log('Angle at pointer:', finalAngleAtPointer, '°');
+        console.log('Landed on segment:', landedSegment);
+        console.log('Expected segment:', winningIndex);
+        console.log('Match:', landedSegment === winningIndex ? '✅' : '❌');
+        
         setTimeout(() => {
-          handleWin(prizes[winningIndex]);
+          handleWin(winningPrize);
         }, 300);
       }
     };
@@ -418,6 +500,7 @@ export default function DailyWheel() {
 
       setCanSpin(false);
       startCountdown();
+      fetchRecentSpins();
     } catch (error) {
       console.error('Error recording spin:', error);
     }
@@ -480,7 +563,7 @@ export default function DailyWheel() {
 
   return (
     <div className="daily-wheel-container">
-      <header className="text-center mb-8">
+      <header className="wheel-header text-center">
         <h1 className="goldman text-5xl md:text-6xl text-yellow-400 tracking-tighter drop-shadow-lg mb-2">
           DAILY WHEEL
         </h1>
@@ -489,7 +572,7 @@ export default function DailyWheel() {
         </p>
       </header>
 
-      <div className="wheel-section">
+      <div className="wheel-section" style={{ padding: '0 1rem 2rem' }}>
         <div className="wheel-container-inner">
           {/* LED Lights */}
           <div className="led-container">
@@ -596,6 +679,41 @@ export default function DailyWheel() {
             >
               CLOSE
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Spins */}
+      {recentSpins.length > 0 && (
+        <div className="recent-spins-section">
+          <h2>🎡 Recent Spins</h2>
+          <div className="spins-table">
+            <div className="table-header">
+              <div className="table-cell">Prize</div>
+              <div className="table-cell">Nickname</div>
+              <div className="table-cell">Points</div>
+              <div className="table-cell">Date</div>
+            </div>
+            <div className="table-body">
+              {recentSpins.map((spin, index) => (
+                <div key={index} className="table-row">
+                  <div className="table-cell prize">{spin.prize_label}</div>
+                  <div className="table-cell username">{spin.username}</div>
+                  <div className="table-cell points">
+                    {spin.se_points_won > 0 ? `+${spin.se_points_won.toLocaleString()} pts` : '-'}
+                  </div>
+                  <div className="table-cell date">
+                    {new Date(spin.spun_at).toLocaleDateString('en-US', { 
+                      month: '2-digit', 
+                      day: '2-digit', 
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

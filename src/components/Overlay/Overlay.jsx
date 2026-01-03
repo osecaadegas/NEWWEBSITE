@@ -4,12 +4,15 @@ import './Overlay.css';
 import BonusHuntDisplay from '../OBSDisplays/BonusHunt/BonusHuntDisplay';
 import TournamentDisplay from '../OBSDisplays/Tournament/TournamentDisplay';
 import SessionStatsDisplay from '../OBSDisplays/SessionStats/SessionStatsDisplay';
+import NavbarDisplay from '../OBSDisplays/Navbar/NavbarDisplay';
+import ChatDisplay from '../OBSDisplays/Chat/ChatDisplay';
 
 export default function Overlay() {
   const [searchParams] = useSearchParams();
   const publicId = searchParams.get('id');
   
   const [settings, setSettings] = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -37,6 +40,7 @@ export default function Overlay() {
 
       const data = await response.json();
       setSettings(data.settings);
+      setUser(data.user);
       setError(null);
     } catch (err) {
       console.error('Error loading overlay:', err);
@@ -202,23 +206,18 @@ export default function Overlay() {
 
       {/* Navbar */}
       {widgets.navbar?.enabled && (
-        <div 
-          className="overlay-widget navbar"
-          style={{
-            left: widgets.navbar.position?.x || 0,
-            top: widgets.navbar.position?.y || 0,
-            width: '100%'
-          }}
-        >
-          <div className="navbar-content">
-            <div className="navbar-logo">🎮 Stream</div>
-            <div className="navbar-links">
-              <span>Home</span>
-              <span>About</span>
-              <span>Contact</span>
-            </div>
-          </div>
-        </div>
+        <NavbarDisplay 
+          navbarData={widgets.navbar}
+          user={user}
+        />
+      )}
+
+      {/* Twitch Chat */}
+      {widgets.chat?.enabled && (
+        <ChatDisplay 
+          chatData={widgets.chat}
+          position={widgets.chat.position}
+        />
       )}
 
       {/* Customization */}
@@ -238,6 +237,14 @@ export default function Overlay() {
             <div className="empty-state">Custom widget content</div>
           </div>
         </div>
+      )}
+
+      {/* Twitch Chat */}
+      {widgets.chat?.enabled && (
+        <ChatDisplay 
+          chatData={widgets.chat}
+          position={widgets.chat.position}
+        />
       )}
     </div>
   );

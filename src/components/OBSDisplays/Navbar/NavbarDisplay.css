@@ -1,0 +1,281 @@
+/* Navbar Display */
+.navbar-display {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20000;
+  pointer-events: none;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  margin: 0.75rem;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  border: 2px solid rgba(59, 130, 246, 0.4);
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 40px rgba(59, 130, 246, 0.1);
+  pointer-events: auto;
+  position: relative;
+}
+
+/* Left Section - Twitch Badge + Mode */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.twitch-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(145, 70, 255, 0.15);
+  border: 2px solid rgba(145, 70, 255, 0.5);
+  border-radius: 50px;
+  box-shadow: 0 0 20px rgba(145, 70, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.twitch-badge:hover {
+  background: rgba(145, 70, 255, 0.25);
+  box-shadow: 0 0 30px rgba(145, 70, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.twitch-icon {
+  width: 24px;
+  height: 24px;
+  color: #9146ff;
+  filter: drop-shadow(0 0 8px rgba(145, 70, 255, 0.6));
+}
+
+.twitch-username {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 8px rgba(145, 70, 255, 0.5);
+}
+
+.mode-display {
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: 2px solid #60a5fa;
+  border-radius: 50px;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.motto-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: rgba(139, 92, 246, 0.15);
+  border: 2px solid rgba(139, 92, 246, 0.4);
+  border-radius: 50px;
+  max-width: 300px;
+}
+
+.motto-icon {
+  font-size: 1rem;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+}
+
+.motto-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Center Section - Time */
+.navbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  z-index: 10;
+}
+
+.time-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  border-radius: 50px;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+/* Right Section - Crypto Carousel */
+.navbar-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  overflow: hidden;
+  max-width: 500px;
+}
+
+.crypto-carousel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.crypto-track {
+  display: flex;
+  gap: 2rem;
+  animation: scroll-crypto 30s linear infinite;
+  width: fit-content;
+}
+
+@keyframes scroll-crypto {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.crypto-track:hover {
+  animation-play-state: paused;
+}
+
+.crypto-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 50px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.crypto-symbol {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #60a5fa;
+  letter-spacing: 0.5px;
+}
+
+.crypto-price {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+}
+
+.crypto-change {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+}
+
+.crypto-change.positive {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+}
+
+.crypto-change.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.clock-icon {
+  width: 20px;
+  height: 20px;
+  color: #60a5fa;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.6));
+  animation: clock-tick 1s linear infinite;
+}
+
+@keyframes clock-tick {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(6deg);
+  }
+}
+
+.time-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+  min-width: 75px;
+}
+
+/* Responsive Design */
+@media (max-width: 1600px) {
+  .navbar-container {
+    padding: 0.75rem 1.5rem;
+  }
+  
+  .mode-display {
+    padding: 0.4rem 1.2rem;
+    font-size: 0.8rem;
+  }
+  
+  .twitch-username,
+  .time-text {
+    font-size: 0.9rem;
+  }
+  
+  .motto-display {
+    max-width: 200px;
+  }
+  
+  .motto-text {
+    font-size: 0.75rem;
+  }
+  
+  .navbar-right {
+    max-width: 400px;
+  }
+}
+
+/* Animation */
+.navbar-display {
+  animation: slideDownNavbar 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDownNavbar {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

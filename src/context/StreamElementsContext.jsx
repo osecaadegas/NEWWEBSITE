@@ -116,29 +116,62 @@ export function StreamElementsProvider({ children }) {
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        console.log('✅ Auto-connect successful! Points:', data.points);
-        
-        // Save connection to database
-        await supabase
-          .from('streamelements_connections')
-          .insert({
-            user_id: user.id,
-            se_channel_id: streamerChannelId,
-            se_jwt_token: streamerJwtToken,
-            se_username: twitchUsername,
-            connected_at: new Date().toISOString()
-          });
+      let pointsData = null;
 
-        setSeAccount({
+      if (response.ok) {
+        pointsData = await response.json();
+        console.log('✅ Auto-connect successful! Points:', pointsData.points);
+      } else if (response.status === 404) {
+        // User doesn't exist in SE yet - create them with 0 points
+        console.log('📝 User not found in SE, creating with 0 points...');
+        
+        const createResponse = await fetch(
+          `https://api.streamelements.com/kappa/v2/points/${streamerChannelId}/${twitchUsername}/0`,
+          {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${streamerJwtToken}`,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (createResponse.ok) {
+          pointsData = await createResponse.json();
+          console.log('✅ User created in SE with 0 points');
+        } else {
+          console.error('❌ Failed to create user in SE:', createResponse.status);
+          // Still proceed with 0 points locally
+          pointsData = { points: 0 };
+        }
+      } else {
+        console.error('❌ SE API error:', response.status);
+        setAutoConnecting(false);
+        return;
+      }
+
+      // Save connection to database
+      const { error: insertError } = await supabase
+        .from('streamelements_connections')
+        .insert({
+          user_id: user.id,
           se_channel_id: streamerChannelId,
           se_jwt_token: streamerJwtToken,
-          se_username: twitchUsername
+          se_username: twitchUsername,
+          connected_at: new Date().toISOString()
         });
-        setPoints(data.points || 0);
+
+      if (insertError) {
+        console.error('Error saving SE connection:', insertError);
       }
+
+      setSeAccount({
+        se_channel_id: streamerChannelId,
+        se_jwt_token: streamerJwtToken,
+        se_username: twitchUsername
+      });
+      setPoints(pointsData?.points || 0);
+      console.log('✅ Auto-connect complete! Connected with', pointsData?.points || 0, 'points');
     } catch (err) {
       console.error('Auto-connect failed:', err);
       // Silently fail - user can manually connect if needed

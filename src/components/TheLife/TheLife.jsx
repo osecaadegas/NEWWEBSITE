@@ -23,6 +23,9 @@ export default function TheLife() {
   const [jailTimeRemaining, setJailTimeRemaining] = useState(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [marketSubTab, setMarketSubTab] = useState('store');
+  const [showEventPopup, setShowEventPopup] = useState(false);
+  const [eventPopupData, setEventPopupData] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -233,6 +236,28 @@ export default function TheLife() {
     }
   };
 
+  const showEventMessage = async (eventType) => {
+    try {
+      const { data, error } = await supabase
+        .from('the_life_event_messages')
+        .select('*')
+        .eq('event_type', eventType)
+        .eq('is_active', true);
+
+      if (!error && data && data.length > 0) {
+        const randomMessage = data[Math.floor(Math.random() * data.length)];
+        setEventPopupData(randomMessage);
+        setShowEventPopup(true);
+        
+        setTimeout(() => {
+          setShowEventPopup(false);
+        }, 5000);
+      }
+    } catch (err) {
+      console.error('Error loading event message:', err);
+    }
+  };
+
   const attemptRobbery = async (robbery) => {
     if (player.tickets < robbery.ticket_cost) {
       setMessage({ type: 'error', text: 'Not enough tickets!' });
@@ -260,6 +285,14 @@ export default function TheLife() {
         successChance += (levelDifference * 10); // This will subtract
       }
       
+      // HP affects success rate - low HP reduces success chance
+      const hpPercentage = player.hp / player.max_hp;
+      if (hpPercentage < 0.5) {
+        // Below 50% HP: reduce success by up to 15%
+        const hpPenalty = (0.5 - hpPercentage) * 30; // 0-15% penalty
+        successChance -= hpPenalty;
+      }
+      
       // Cap success chance between 5% and 95%
       successChance = Math.max(5, Math.min(95, successChance));
       
@@ -284,7 +317,7 @@ export default function TheLife() {
           text: `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP! (${Math.round(successChance)}% chance)` 
         });
       } else {
-        // Failed - jail time increases if you're underleveled
+        // Failed - jail time increases if you're underleveled OR low HP
         const levelDifference = player.level - robbery.min_level_required;
         let jailMultiplier = 1;
         
@@ -293,11 +326,23 @@ export default function TheLife() {
           jailMultiplier = 1 + (Math.abs(levelDifference) * 0.5);
         }
         
+        // Low HP increases jail time - you're weak and easier to catch
+        const hpPercentage = player.hp / player.max_hp;
+        if (hpPercentage < 0.5) {
+          // Below 50% HP: jail time increases by up to 50%
+          const hpPenalty = (0.5 - hpPercentage) * 1.0; // 0-0.5 multiplier
+          jailMultiplier += hpPenalty;
+        }
+        
         const jailTime = Math.floor(robbery.jail_time_minutes * jailMultiplier);
         const jailUntil = new Date();
         jailUntil.setMinutes(jailUntil.getMinutes() + jailTime);
         updates.jail_until = jailUntil.toISOString();
         updates.hp = Math.max(0, player.hp - robbery.hp_loss_on_fail);
+        
+        // Show event popup for jail
+        showEventMessage('jail_crime');
+        
         setMessage({ 
           type: 'error', 
           text: `Failed! You're in jail for ${jailTime} minutes and lost ${robbery.hp_loss_on_fail} HP (${Math.round(successChance)}% chance)` 
@@ -591,6 +636,73 @@ export default function TheLife() {
     return Math.min(baseSlots + bonusSlots, 7);
   };
 
+  // Calculate business upgrade cost
+  const getUpgradeCost = (business, currentLevel) => {
+    // Base cost is 2x the purchase price
+    const baseCost = (business.purchase_price || 5000) * 2;
+    // Each level multiplies cost by 1.8 (exponential scaling)
+    return Math.floor(baseCost * Math.pow(1.8, currentLevel - 1));
+  };
+
+  // Upgrade a business
+  const upgradeBusiness = async (business) => {
+    const ownedBusiness = ownedBusinesses.find(ob => ob.business_id === business.id);
+    if (!ownedBusiness) {
+      setMessage({ type: 'error', text: 'You need to own this business first!' });
+      return;
+    }
+
+    const currentLevel = ownedBusiness.upgrade_level || 1;
+    if (currentLevel >= 10) {
+      setMessage({ type: 'error', text: 'Business is already at max level!' });
+      return;
+    }
+
+    const upgradeCost = getUpgradeCost(business, currentLevel);
+    if (player.cash < upgradeCost) {
+      setMessage({ type: 'error', text: `Need $${upgradeCost.toLocaleString()} to upgrade!` });
+      return;
+    }
+
+    try {
+      // Update business level
+      const { error: upgradeError } = await supabase
+        .from('the_life_player_businesses')
+        .update({ upgrade_level: currentLevel + 1 })
+        .eq('id', ownedBusiness.id);
+
+      if (upgradeError) throw upgradeError;
+
+      // Deduct cost
+      const { error: cashError } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - upgradeCost })
+        .eq('user_id', user.id);
+
+      if (cashError) throw cashError;
+
+      // Update local state immediately
+      setOwnedBusinesses(prev => 
+        prev.map(ob => 
+          ob.id === ownedBusiness.id 
+            ? { ...ob, upgrade_level: currentLevel + 1 }
+            : ob
+        )
+      );
+      setPlayer(prev => ({ ...prev, cash: prev.cash - upgradeCost }));
+
+      setMessage({ 
+        type: 'success', 
+        text: `${business.name} upgraded to level ${currentLevel + 1}!` 
+      });
+      loadPlayer();
+      loadOwnedBusinesses();
+    } catch (err) {
+      console.error('Error upgrading business:', err);
+      setMessage({ type: 'error', text: `Failed to upgrade: ${err.message}` });
+    }
+  };
+
   // Buy a business
   const buyBusiness = async (business) => {
     if (player.cash < business.purchase_price) {
@@ -633,6 +745,7 @@ export default function TheLife() {
       if (error) throw error;
       setPlayer(data);
       loadOwnedBusinesses();
+      loadDrugOps();
       setMessage({ type: 'success', text: `Purchased ${business.name}!` });
     } catch (err) {
       console.error('Error buying business:', err);
@@ -652,6 +765,12 @@ export default function TheLife() {
     const productionCost = business.production_cost || business.cost;
     if (player.cash < productionCost) {
       setMessage({ type: 'error', text: 'Not enough cash!' });
+      return;
+    }
+
+    const requiredTickets = business.ticket_cost || 5;
+    if (player.tickets < requiredTickets) {
+      setMessage({ type: 'error', text: `Need ${requiredTickets} tickets to start production!` });
       return;
     }
 
@@ -693,17 +812,21 @@ export default function TheLife() {
 
       setDrugOps(prev => ({ ...prev, ...opData }));
 
-      // Deduct production cost
+      // Deduct production cost and tickets
+      const requiredTickets = business.ticket_cost || 5;
       const { data: updatedPlayer, error: costError } = await supabase
         .from('the_life_players')
-        .update({ cash: player.cash - productionCost })
+        .update({ 
+          cash: player.cash - productionCost,
+          tickets: player.tickets - requiredTickets
+        })
         .eq('user_id', user.id)
         .select()
         .single();
 
       if (costError) throw costError;
       setPlayer(updatedPlayer);
-      setMessage({ type: 'success', text: `Started ${business.name}! Wait ${business.duration_minutes} minutes.` });
+      setMessage({ type: 'success', text: `Started ${business.name}! Wait ${business.duration_minutes} minutes. (-${requiredTickets} tickets)` });
     } catch (err) {
       console.error('Error running business:', err);
       setMessage({ type: 'error', text: `Error: ${err.message}` });
@@ -762,6 +885,80 @@ export default function TheLife() {
     }
   };
 
+  // Calculate bribe amount based on remaining jail time
+  const calculateBribeAmount = () => {
+    if (!player?.jail_until) return { bribeAmount: 0, percentage: 0, remainingMinutes: 0 };
+    
+    const now = new Date();
+    const jailEnd = new Date(player.jail_until);
+    const remainingMinutes = Math.max(0, Math.ceil((jailEnd - now) / 1000 / 60));
+    
+    // Base percentage starts at 5% and increases by 2% per 30 minutes of jail time
+    // Cap at 50% for very long sentences
+    const basePercentage = 5;
+    const increasePerHalfHour = 2;
+    const percentageIncrease = Math.floor(remainingMinutes / 30) * increasePerHalfHour;
+    const totalPercentage = Math.min(50, basePercentage + percentageIncrease);
+    
+    const totalWealth = (player.cash || 0) + (player.bank_balance || 0);
+    const bribeAmount = Math.floor(totalWealth * (totalPercentage / 100));
+    
+    return { bribeAmount, percentage: totalPercentage, remainingMinutes };
+  };
+
+  // Pay bribe to escape jail
+  const payBribe = async () => {
+    try {
+      const { bribeAmount, percentage } = calculateBribeAmount();
+      const totalWealth = (player.cash || 0) + (player.bank_balance || 0);
+      
+      if (totalWealth < bribeAmount) {
+        setMessage({ type: 'error', text: 'You don\'t have enough money to pay the bribe!' });
+        return;
+      }
+
+      if (bribeAmount === 0) {
+        setMessage({ type: 'error', text: 'Invalid bribe amount!' });
+        return;
+      }
+
+      // Deduct from cash first, then bank if needed
+      let newCash = player.cash;
+      let newBank = player.bank_balance;
+      let remaining = bribeAmount;
+
+      if (newCash >= remaining) {
+        newCash -= remaining;
+      } else {
+        remaining -= newCash;
+        newCash = 0;
+        newBank -= remaining;
+      }
+
+      // Update player - free from jail and deduct money
+      const { data, error } = await supabase
+        .from('the_life_players')
+        .update({ 
+          jail_until: null,
+          cash: newCash,
+          bank_balance: newBank
+        })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      setPlayer(data);
+      setMessage({ 
+        type: 'success', 
+        text: `💰 You bribed the cops with $${bribeAmount.toLocaleString()} (${percentage}% of your wealth) and escaped jail!` 
+      });
+    } catch (err) {
+      console.error('Error paying bribe:', err);
+      setMessage({ type: 'error', text: 'Failed to pay bribe!' });
+    }
+  };
+
   const collectBusiness = async (business) => {
     try {
       const { data: playerData } = await supabase
@@ -772,9 +969,21 @@ export default function TheLife() {
 
       if (!playerData) return;
 
+      // Get the owned business with upgrade level
+      const ownedBusiness = ownedBusinesses.find(ob => ob.business_id === business.id);
+      const upgradeLevel = ownedBusiness?.upgrade_level || 1;
+
       // Get stored reward info from drugOps
       const rewardItemId = drugOps[`${business.id}_reward_item_id`];
-      const rewardQuantity = drugOps[`${business.id}_reward_item_quantity`];
+      const baseRewardQuantity = drugOps[`${business.id}_reward_item_quantity`];
+
+      // Calculate multipliers based on upgrade level
+      // Each level adds 50% to quantity (1.5x per level)
+      const quantityMultiplier = 1 + ((upgradeLevel - 1) * 0.5);
+      const rewardQuantity = Math.floor(baseRewardQuantity * quantityMultiplier);
+
+      // Each level adds 30% to cash (1.3x per level)
+      const cashMultiplier = 1 + ((upgradeLevel - 1) * 0.3);
 
       // Check reward type: items or cash
       if (business.reward_type === 'items' && rewardItemId && rewardQuantity) {
@@ -812,11 +1021,13 @@ export default function TheLife() {
         await loadTheLifeInventory();
         setMessage({ 
           type: 'success', 
-          text: `Collected ${rewardQuantity}x items!` 
+          text: `Collected ${rewardQuantity}x items! ${upgradeLevel > 1 ? `(Lvl ${upgradeLevel} bonus!)` : ''}` 
         });
       } else {
-        // Give cash reward
-        const cashProfit = business.profit || 0;
+        // Give cash reward with upgrade multiplier
+        const baseCashProfit = business.profit || 0;
+        const cashProfit = Math.floor(baseCashProfit * cashMultiplier);
+        
         const { data: updatedPlayer, error: cashError } = await supabase
           .from('the_life_players')
           .update({ cash: player.cash + cashProfit })
@@ -828,7 +1039,7 @@ export default function TheLife() {
         setPlayer(updatedPlayer);
         setMessage({ 
           type: 'success', 
-          text: `Collected $${cashProfit.toLocaleString()}!` 
+          text: `Collected $${cashProfit.toLocaleString()}! ${upgradeLevel > 1 ? `(Lvl ${upgradeLevel} bonus!)` : ''}` 
         });
       }
 
@@ -1344,8 +1555,7 @@ export default function TheLife() {
   return (
     <div className="the-life-container">
       <div className="the-life-header">
-        <h1>🔫 The Life</h1>
-        <p className="tagline">Crime RPG</p>
+        <img src="/thelife/thelife.png" alt="The Life" className="game-logo" />
       </div>
 
       {message.text && (
@@ -1390,6 +1600,30 @@ export default function TheLife() {
           </div>
         </div>
 
+        {/* Quick Access Buttons Inside Stats Card */}
+        <div className="quick-access-tabs-inline">
+          <button 
+            className={`quick-tab-inline ${activeTab === 'leaderboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('leaderboard')}
+          >
+            🏆 Leaderboard
+          </button>
+          <button 
+            className={`quick-tab-inline ${activeTab === 'bank' ? 'active' : ''}`}
+            onClick={() => !isInJail && setActiveTab('bank')}
+            disabled={isInJail}
+            style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+          >
+            🏦 Bank
+          </button>
+          <button 
+            className={`quick-tab-inline ${activeTab === 'stats' ? 'active' : ''}`}
+            onClick={() => setActiveTab('stats')}
+          >
+            📊 Stats
+          </button>
+        </div>
+
         <div className="cash-display">
           <div className="cash-item">
             <span className="cash-icon">💵</span>
@@ -1420,70 +1654,62 @@ export default function TheLife() {
       {/* Tab Navigation */}
       <div className="game-tabs">
         <button 
-          className={`tab ${activeTab === 'crimes' ? 'active' : ''}`}
+          className={`tab tab-image ${activeTab === 'crimes' ? 'active' : ''}`}
           onClick={() => !isInJail && setActiveTab('crimes')}
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          💰 Crimes
+          <img src="/thelife/crimes.png" alt="Crimes" />
         </button>
         <button 
-          className={`tab ${activeTab === 'bank' ? 'active' : ''}`}
-          onClick={() => !isInJail && setActiveTab('bank')}
-          disabled={isInJail}
-          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
-        >
-          🏦 Bank
-        </button>
-        <button 
-          className={`tab ${activeTab === 'pvp' ? 'active' : ''}`}
+          className={`tab tab-image ${activeTab === 'pvp' ? 'active' : ''}`}
           onClick={() => !isInJail && setActiveTab('pvp')}
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          🥊 PvP
+          <img src="/thelife/pvp.png" alt="PvP" />
         </button>
         <button
-          className={`tab ${activeTab === 'businesses' ? 'active' : ''}`}
+          className={`tab tab-image ${activeTab === 'businesses' ? 'active' : ''}`}
           onClick={() => !isInJail && setActiveTab('businesses')}
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          💼 Businesses
+          <img src="/thelife/businesses.png" alt="Businesses" />
         </button>
         <button 
-          className={`tab ${activeTab === 'brothel' ? 'active' : ''}`}
+          className={`tab tab-image ${activeTab === 'brothel' ? 'active' : ''}`}
           onClick={() => !isInJail && setActiveTab('brothel')}
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          💃 Brothel
+          <img src="/thelife/brothel.png" alt="Brothel" />
         </button>
         <button 
-          className={`tab ${activeTab === 'inventory' ? 'active' : ''}`}
+          className={`tab tab-image ${activeTab === 'inventory' ? 'active' : ''}`}
           onClick={() => !isInJail && setActiveTab('inventory')}
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          🎒 Inventory
+          <img src="/thelife/Inventory.png" alt="Inventory" />
         </button>
         <button 
-          className={`tab ${activeTab === 'leaderboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('leaderboard')}
-        >
-          🏆 Leaderboard
-        </button>
-        <button 
-          className={`tab ${activeTab === 'jail' ? 'active' : ''}`}
+          className={`tab tab-image ${activeTab === 'jail' ? 'active' : ''}`}
           onClick={() => setActiveTab('jail')}
         >
-          🔒 Jail
+          <img src="/thelife/Jail.png" alt="Jail" />
         </button>
         <button 
-          className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}
+          className={`tab tab-image ${activeTab === 'hospital' ? 'active' : ''}`}
+          onClick={() => setActiveTab('hospital')}
         >
-          📊 Stats
+          <img src="/thelife/Hospital.png" alt="Hospital" />
+        </button>
+        <button 
+          className={`tab tab-image ${activeTab === 'market' ? 'active' : ''}`}
+          onClick={() => !isInJail && !isInHospital && setActiveTab('market')}
+        >
+          <img src="/thelife/BlackMarket.png" alt="Black Market" />
         </button>
       </div>
 
@@ -1519,6 +1745,48 @@ export default function TheLife() {
                 <p>🎯 Be more careful next time!</p>
               </div>
 
+              {/* Escape Options */}
+              <div className="jail-escape-options">
+                {/* Jail Free Card Option */}
+                {theLifeInventory.some(inv => inv.item?.name === 'Jail Free Card' && inv.quantity > 0) && (
+                  <div className="jail-escape-option">
+                    <h4>🔓 Jail Free Card</h4>
+                    <p>Use your legendary card to escape instantly!</p>
+                    <p className="escape-cost">Cost: 1 Jail Free Card</p>
+                    <button onClick={useJailFreeCard} className="escape-jail-btn card-btn">
+                      Use Jail Free Card
+                    </button>
+                  </div>
+                )}
+
+                {/* Bribe Option */}
+                {(() => {
+                  const { bribeAmount, percentage } = calculateBribeAmount();
+                  const totalWealth = (player.cash || 0) + (player.bank_balance || 0);
+                  const canAfford = totalWealth >= bribeAmount;
+                  
+                  return (
+                    <div className="jail-escape-option">
+                      <h4>💰 Bribe the Cops</h4>
+                      <p>Pay off the police to look the other way...</p>
+                      <p className="escape-cost">
+                        Cost: ${bribeAmount.toLocaleString()} ({percentage}% of your wealth)
+                      </p>
+                      <p className="escape-info">
+                        💡 Longer jail time = Higher bribe cost
+                      </p>
+                      <button 
+                        onClick={payBribe} 
+                        className={`escape-jail-btn bribe-btn ${!canAfford ? 'disabled' : ''}`}
+                        disabled={!canAfford}
+                      >
+                        {canAfford ? 'Pay Bribe' : 'Not Enough Money'}
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+
               <div className="jail-release-time">
                 Release time: {new Date(player.jail_until).toLocaleString()}
               </div>
@@ -1542,6 +1810,14 @@ export default function TheLife() {
                 } else {
                   displaySuccessChance += (levelDifference * 10);
                 }
+                
+                // HP affects success rate
+                const hpPercentage = player.hp / player.max_hp;
+                if (hpPercentage < 0.5) {
+                  const hpPenalty = (0.5 - hpPercentage) * 30;
+                  displaySuccessChance -= hpPenalty;
+                }
+                
                 displaySuccessChance = Math.max(5, Math.min(95, displaySuccessChance));
                 
                 return (
@@ -1556,26 +1832,12 @@ export default function TheLife() {
                           <span>🔒 Level {robbery.min_level_required} Required</span>
                         </div>
                       )}
-                    </div>
-                    <div className="crime-content">
-                      <h3 className="crime-title">{robbery.name}</h3>
-                      <p className="crime-desc">{robbery.description}</p>
-                      <div className="crime-stats">
-                        <div className="stat-item">
-                          <span className="stat-icon">🎫</span>
-                          <span>{robbery.ticket_cost}</span>
+                      <div className="crime-overlay-top">
+                        <h3 className="crime-title">{robbery.name}</h3>
+                        <div className="crime-inline-stats">
+                          <span className="inline-stat">🎫 {robbery.ticket_cost}</span>
+                          <span className="inline-stat">✅ {Math.round(displaySuccessChance)}%</span>
                         </div>
-                        <div className="stat-item">
-                          <span className="stat-icon">✅</span>
-                          <span>{Math.round(displaySuccessChance)}%</span>
-                        </div>
-                        <div className="stat-item">
-                          <span className="stat-icon">⭐</span>
-                          <span>+{robbery.xp_reward} XP</span>
-                        </div>
-                      </div>
-                      <div className="crime-reward">
-                        <span className="reward-amount">${robbery.base_reward.toLocaleString()} - ${robbery.max_reward.toLocaleString()}</span>
                       </div>
                       <button 
                         className="crime-button"
@@ -1752,46 +2014,97 @@ export default function TheLife() {
                       </>
                     ) : (
                       <>
-                        <p>Production Cost: ${productionCost.toLocaleString()}</p>
-                    <p>
-                      {business.reward_item_id ? 
-                        `Reward: ${business.reward_item_quantity || 1}x Items` :
-                        `Profit: $${business.profit?.toLocaleString() || '0'}`
-                      } | Time: {business.duration_minutes}m
-                    </p>
-                    {meetsLevel ? (
-                      <>
-                        {isRunning ? (
-                          <>
-                            <p>Status: {isReady ? 'Ready!' : 'Producing...'}</p>
-                            {isReady ? (
-                              <button 
-                                onClick={() => collectBusiness(business)} 
-                                className="collect-btn"
-                              >
-                                {business.reward_item_id ?
-                                  `Collect Items` :
-                                  `Collect $${business.profit?.toLocaleString() || '0'}`
-                                }
-                              </button>
-                            ) : (
-                              <p className="timer">
-                                {Math.ceil((new Date(completedAt) - new Date()) / 60000)} min left
+                        {(() => {
+                          const ownedBusiness = ownedBusinesses.find(ob => ob.business_id === business.id);
+                          const upgradeLevel = ownedBusiness?.upgrade_level || 1;
+                          const upgradeCost = getUpgradeCost(business, upgradeLevel);
+                          const quantityMultiplier = 1 + ((upgradeLevel - 1) * 0.5);
+                          const cashMultiplier = 1 + ((upgradeLevel - 1) * 0.3);
+                          
+                          return (
+                            <>
+                              <div className="business-level-badge">Level {upgradeLevel}/10</div>
+                              <p>Production Cost: ${productionCost.toLocaleString()} + 5 tickets</p>
+                              <p>
+                                {business.reward_item_id ? 
+                                  `Reward: ${Math.floor((business.reward_item_quantity || 1) * quantityMultiplier)}x Items` :
+                                  `Profit: $${Math.floor((business.profit || 0) * cashMultiplier).toLocaleString()}`
+                                } | Time: {business.duration_minutes}m
                               </p>
-                            )}
-                          </>
-                        ) : (
-                          <button 
-                            onClick={() => startBusiness(business)} 
-                            disabled={player?.cash < productionCost}
-                          >
-                            Start Production (${productionCost.toLocaleString()})
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <p className="locked">🔒 Level {business.min_level_required} Required</p>
-                    )}
+                              {meetsLevel ? (
+                                <>
+                                  {isRunning ? (
+                                    <>
+                                      <p>Status: {isReady ? 'Ready!' : 'Producing...'}</p>
+                                      {isReady ? (
+                                        <button 
+                                          onClick={() => collectBusiness(business)} 
+                                          className="collect-btn"
+                                        >
+                                          {business.reward_item_id ?
+                                            `Collect Items` :
+                                            `Collect $${Math.floor((business.profit || 0) * cashMultiplier).toLocaleString()}`
+                                          }
+                                        </button>
+                                      ) : (
+                                        <p className="timer">
+                                          {Math.ceil((new Date(completedAt) - new Date()) / 60000)} min left
+                                        </p>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <button 
+                                      onClick={() => startBusiness(business)} 
+                                      disabled={player?.cash < productionCost || player?.tickets < 5}
+                                    >
+                                      Start Production (${productionCost.toLocaleString()})
+                                    </button>
+                                  )}
+                                  {upgradeLevel < 10 && (
+                                    <button 
+                                      onClick={() => upgradeBusiness(business)}
+                                      disabled={player?.cash < upgradeCost}
+                                      className="upgrade-business-btn"
+                                    >
+                                      Upgrade to Lvl {upgradeLevel + 1} (${upgradeCost.toLocaleString()})
+                                    </button>
+                                  )}
+                                  <button 
+                                    onClick={async () => {
+                                      const sellPrice = Math.floor((business.purchase_price || 5000) / 3);
+                                      if (window.confirm(`Sell ${business.name} for $${sellPrice.toLocaleString()}? (1/3 of purchase price)`)) {
+                                        const ownedBusiness = ownedBusinesses.find(ob => ob.business_id === business.id);
+                                        if (ownedBusiness) {
+                                          const { error } = await supabase
+                                            .from('the_life_player_businesses')
+                                            .delete()
+                                            .eq('id', ownedBusiness.id);
+                                          
+                                          if (!error) {
+                                            await supabase
+                                              .from('the_life_players')
+                                              .update({ cash: player.cash + sellPrice })
+                                              .eq('user_id', user.id);
+                                            
+                                            setMessage({ type: 'success', text: `Sold ${business.name} for $${sellPrice.toLocaleString()}!` });
+                                            loadPlayer();
+                                            loadOwnedBusinesses();
+                                            loadDrugOps();
+                                          }
+                                        }
+                                      }
+                                    }}
+                                    className="sell-business-btn"
+                                  >
+                                    Sell Business (${Math.floor((business.purchase_price || 5000) / 3).toLocaleString()})
+                                  </button>
+                                </>
+                              ) : (
+                                <p className="locked">🔒 Level {business.min_level_required} Required</p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </>
                     )}
                   </div>
@@ -2003,7 +2316,7 @@ export default function TheLife() {
               </div>
             ) : (
               <div className="brothel-init">
-                <img src="https://images.unsplash.com/photo-1519671845924-1fd18db430b8?w=600" alt="Start Brothel" className="brothel-init-image" />
+                <img src="https://imagens.publico.pt/imagens.aspx/1352137?tp=UH&db=IMAGENS&type=JPG" alt="Start Brothel" className="brothel-init-image" />
                 <h3>Start Your Brothel Empire</h3>
                 <p>Initial investment: $5,000</p>
                 <p>Hire unique workers with different income rates and rarities</p>
@@ -2073,15 +2386,46 @@ export default function TheLife() {
                   <p>Time Remaining: {jailTimeRemaining ? `${jailTimeRemaining.minutes}m ${jailTimeRemaining.seconds}s` : 'Loading...'}</p>
                 </div>
                 
-                {theLifeInventory.some(inv => inv.item?.name === 'Jail Free Card' && inv.quantity > 0) && (
-                  <div className="jail-escape-option">
-                    <h4>🔓 Escape Option Available!</h4>
-                    <p>You have a Jail Free Card in your inventory</p>
-                    <button onClick={useJailFreeCard} className="escape-jail-btn">
-                      Use Jail Free Card
-                    </button>
-                  </div>
-                )}
+                <div className="jail-escape-options">
+                  {/* Jail Free Card Option */}
+                  {theLifeInventory.some(inv => inv.item?.name === 'Jail Free Card' && inv.quantity > 0) && (
+                    <div className="jail-escape-option">
+                      <h4>🔓 Jail Free Card</h4>
+                      <p>Use your legendary card to escape instantly!</p>
+                      <p className="escape-cost">Cost: 1 Jail Free Card</p>
+                      <button onClick={useJailFreeCard} className="escape-jail-btn card-btn">
+                        Use Jail Free Card
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Bribe Option */}
+                  {(() => {
+                    const { bribeAmount, percentage } = calculateBribeAmount();
+                    const totalWealth = (player.cash || 0) + (player.bank_balance || 0);
+                    const canAfford = totalWealth >= bribeAmount;
+                    
+                    return (
+                      <div className="jail-escape-option">
+                        <h4>💰 Bribe the Cops</h4>
+                        <p>Pay off the police to look the other way...</p>
+                        <p className="escape-cost">
+                          Cost: ${bribeAmount.toLocaleString()} ({percentage}% of your wealth)
+                        </p>
+                        <p className="escape-info">
+                          💡 Longer jail time = Higher bribe cost
+                        </p>
+                        <button 
+                          onClick={payBribe} 
+                          className={`escape-jail-btn bribe-btn ${!canAfford ? 'disabled' : ''}`}
+                          disabled={!canAfford}
+                        >
+                          {canAfford ? 'Pay Bribe' : 'Not Enough Money'}
+                        </button>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             ) : (
               <div className="jail-info">
@@ -2091,7 +2435,11 @@ export default function TheLife() {
                     <li>🎲 Failing crimes can send you to jail</li>
                     <li>⏰ Jail time varies by crime severity</li>
                     <li>🚫 You can't do anything while in jail</li>
-                    <li>🔓 Wait for timer or use Jail Free Card</li>
+                    <li>🔓 Two ways to escape early:</li>
+                    <ul>
+                      <li>💳 Use a Jail Free Card (instant)</li>
+                      <li>💰 Bribe the cops (costs % of wealth)</li>
+                    </ul>
                   </ul>
                 </div>
 
@@ -2100,6 +2448,14 @@ export default function TheLife() {
                   <p>This legendary item instantly releases you from jail!</p>
                   <p>You currently have: {theLifeInventory.find(inv => inv.item?.name === 'Jail Free Card')?.quantity || 0} cards</p>
                   <p className="hint">💡 These are rare - use them wisely!</p>
+                </div>
+
+                <div className="info-card">
+                  <h3>💰 Bribe System</h3>
+                  <p>You can always pay a bribe to escape jail early.</p>
+                  <p>💸 Cost: 5% - 50% of your total wealth (cash + bank)</p>
+                  <p>⏱️ Longer sentences require higher bribes</p>
+                  <p className="hint">💡 Formula: 5% base + 2% per 30 minutes (max 50%)</p>
                 </div>
               </div>
             )}
@@ -2134,6 +2490,484 @@ export default function TheLife() {
                     <span>{player.pvp_wins}</span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'hospital' && (
+          <div className="hospital-section">
+            <h2>🏥 Hospital</h2>
+            {player?.hp === 0 ? (
+              <div className="hospital-emergency">
+                <div className="hospital-status">
+                  <h3>💀 Critical Condition!</h3>
+                  <p>Your HP is at 0. You need immediate medical attention!</p>
+                </div>
+                <div className="recovery-option">
+                  <h4>🚑 Emergency Recovery</h4>
+                  <p>Restore to full HP instantly</p>
+                  {(() => {
+                    const recoveryCost = Math.floor((player.cash + player.bank_balance) * 0.15);
+                    return (
+                      <>
+                        <div className="recovery-cost">
+                          Cost: ${recoveryCost.toLocaleString()} (15% of total wealth)
+                        </div>
+                        <button 
+                          className="recovery-btn"
+                          onClick={async () => {
+                            const totalWealth = player.cash + player.bank_balance;
+                            if (totalWealth < recoveryCost) {
+                              setMessage({ type: 'error', text: 'Not enough money for recovery!' });
+                              return;
+                            }
+                            
+                            let newCash = player.cash;
+                            let newBank = player.bank_balance;
+                            
+                            // Deduct from cash first, then bank if needed
+                            if (player.cash >= recoveryCost) {
+                              newCash -= recoveryCost;
+                            } else {
+                              const remaining = recoveryCost - player.cash;
+                              newCash = 0;
+                              newBank -= remaining;
+                            }
+                            
+                            const { data, error } = await supabase
+                              .from('the_life_players')
+                              .update({
+                                hp: player.max_hp,
+                                cash: newCash,
+                                bank_balance: newBank,
+                                hospital_until: null
+                              })
+                              .eq('user_id', user.id)
+                              .select()
+                              .single();
+                            
+                            if (!error) {
+                              setPlayer(data);
+                              setMessage({ type: 'success', text: 'Fully recovered! You\'re back in action!' });
+                            }
+                          }}
+                          disabled={player.cash + player.bank_balance < recoveryCost}
+                        >
+                          Pay for Recovery
+                        </button>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : isInHospital ? (
+              <div className="hospital-active">
+                <div className="hospital-status">
+                  <h3>🤕 You are recovering...</h3>
+                  <p>You were beaten up or lost all your HP</p>
+                  <div className="hospital-timer">
+                    <span className="timer-label">Release Time:</span>
+                    <span className="timer-value">{new Date(player.hospital_until).toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="hospital-info">
+                  <p>💊 Rest up and recover your strength</p>
+                  <p>⏰ You'll be released automatically when the timer expires</p>
+                </div>
+              </div>
+            ) : (
+              <div className="hospital-info">
+                <h3>💊 Medical Services</h3>
+                <p>Purchase medical services to restore your HP</p>
+                
+                <div className="hospital-services">
+                  <div className="service-item">
+                    <div className="service-icon">💊</div>
+                    <h4>Small Med Kit</h4>
+                    <p>Restores 25 HP</p>
+                    <div className="service-price">$500</div>
+                    <button 
+                      className="service-buy-btn"
+                      onClick={async () => {
+                        if (player.cash < 500) {
+                          setMessage({ type: 'error', text: 'Not enough cash!' });
+                          return;
+                        }
+                        const { data, error } = await supabase
+                          .from('the_life_players')
+                          .update({
+                            cash: player.cash - 500,
+                            hp: Math.min(player.max_hp, player.hp + 25)
+                          })
+                          .eq('user_id', user.id)
+                          .select()
+                          .single();
+                        if (!error) {
+                          setPlayer(data);
+                          setMessage({ type: 'success', text: 'Restored 25 HP!' });
+                        }
+                      }}
+                      disabled={player.cash < 500 || player.hp >= player.max_hp}
+                    >
+                      Buy
+                    </button>
+                  </div>
+
+                  <div className="service-item">
+                    <div className="service-icon">💉</div>
+                    <h4>Large Med Kit</h4>
+                    <p>Restores 50 HP</p>
+                    <div className="service-price">$900</div>
+                    <button 
+                      className="service-buy-btn"
+                      onClick={async () => {
+                        if (player.cash < 900) {
+                          setMessage({ type: 'error', text: 'Not enough cash!' });
+                          return;
+                        }
+                        const { data, error } = await supabase
+                          .from('the_life_players')
+                          .update({
+                            cash: player.cash - 900,
+                            hp: Math.min(player.max_hp, player.hp + 50)
+                          })
+                          .eq('user_id', user.id)
+                          .select()
+                          .single();
+                        if (!error) {
+                          setPlayer(data);
+                          setMessage({ type: 'success', text: 'Restored 50 HP!' });
+                        }
+                      }}
+                      disabled={player.cash < 900 || player.hp >= player.max_hp}
+                    >
+                      Buy
+                    </button>
+                  </div>
+
+                  <div className="service-item">
+                    <div className="service-icon">🧪</div>
+                    <h4>Full Recovery</h4>
+                    <p>Restores to MAX HP</p>
+                    <div className="service-price">$1,500</div>
+                    <button 
+                      className="service-buy-btn"
+                      onClick={async () => {
+                        if (player.cash < 1500) {
+                          setMessage({ type: 'error', text: 'Not enough cash!' });
+                          return;
+                        }
+                        const { data, error } = await supabase
+                          .from('the_life_players')
+                          .update({
+                            cash: player.cash - 1500,
+                            hp: player.max_hp
+                          })
+                          .eq('user_id', user.id)
+                          .select()
+                          .single();
+                        if (!error) {
+                          setPlayer(data);
+                          setMessage({ type: 'success', text: 'Fully restored!' });
+                        }
+                      }}
+                      disabled={player.cash < 1500 || player.hp >= player.max_hp}
+                    >
+                      Buy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'market' && (
+          <div className="market-section">
+            <h2>🛒 Black Market</h2>
+            <p>Illegal operations, supplies, and drug trafficking</p>
+            
+            {/* Market Sub-tabs */}
+            <div className="market-sub-tabs">
+              <button 
+                className={`market-sub-tab ${marketSubTab === 'resell' ? 'active' : ''}`}
+                onClick={() => setMarketSubTab('resell')}
+              >
+                🚶 Street Resell
+              </button>
+              <button 
+                className={`market-sub-tab ${marketSubTab === 'store' ? 'active' : ''}`}
+                onClick={() => setMarketSubTab('store')}
+              >
+                🏪 Monhe Store
+              </button>
+              <button 
+                className={`market-sub-tab ${marketSubTab === 'docks' ? 'active' : ''}`}
+                onClick={() => setMarketSubTab('docks')}
+              >
+                🚢 Docks
+              </button>
+            </div>
+
+            {/* Street Resell */}
+            {marketSubTab === 'resell' && (
+              <div className="market-content">
+                <h3>🚶 Street Resell</h3>
+                <p className="market-warning">⚠️ High risk! Sell drugs one by one for maximum profit, but risk jail time</p>
+                {theLifeInventory.filter(inv => inv.item.type === 'drug').length === 0 ? (
+                  <p className="no-items">You have no drugs to sell on the streets</p>
+                ) : (
+                  <div className="market-items-grid">
+                    {theLifeInventory.filter(inv => inv.item.type === 'drug').map(inv => {
+                      const streetPrice = Math.floor(inv.quantity * 150);
+                      const xpReward = Math.floor(inv.quantity * 10);
+                      const jailRisk = 35;
+                      
+                      return (
+                        <div key={inv.id} className="market-item resell-item">
+                          <img src={inv.item.icon} alt={inv.item.name} className="item-image" />
+                          <h4>{inv.item.name}</h4>
+                          <p>Quantity: {inv.quantity}</p>
+                          <div className="resell-stats">
+                            <div className="stat">💵 ${streetPrice.toLocaleString()}</div>
+                            <div className="stat">⭐ +{xpReward} XP</div>
+                            <div className="stat risk">⚠️ {jailRisk}% Jail Risk</div>
+                          </div>
+                          <button 
+                            className="market-sell-btn resell-btn"
+                            onClick={async () => {
+                              const roll = Math.random() * 100;
+                              const caught = roll < jailRisk;
+                              
+                              if (caught) {
+                                const jailTime = 45;
+                                const jailUntil = new Date();
+                                jailUntil.setMinutes(jailUntil.getMinutes() + jailTime);
+                                
+                                const { error } = await supabase
+                                  .from('the_life_players')
+                                  .update({
+                                    jail_until: jailUntil.toISOString(),
+                                    hp: Math.max(0, player.hp - 15)
+                                  })
+                                  .eq('user_id', user.id);
+                                
+                                if (!error) {
+                                  await supabase
+                                    .from('the_life_player_inventory')
+                                    .delete()
+                                    .eq('id', inv.id);
+                                  
+                                  // Show event popup for street bust
+                                  showEventMessage('jail_street');
+                                  
+                                  setMessage({ type: 'error', text: `Busted! Cops confiscated your drugs. ${jailTime} min in jail, lost 15 HP!` });
+                                  loadPlayer();
+                                  loadTheLifeInventory();
+                                }
+                              } else {
+                                const { error } = await supabase
+                                  .from('the_life_players')
+                                  .update({ 
+                                    cash: player.cash + streetPrice,
+                                    xp: player.xp + xpReward
+                                  })
+                                  .eq('user_id', user.id);
+                                
+                                if (!error) {
+                                  await supabase
+                                    .from('the_life_player_inventory')
+                                    .delete()
+                                    .eq('id', inv.id);
+                                  
+                                  setMessage({ type: 'success', text: `Sold for $${streetPrice.toLocaleString()} and ${xpReward} XP!` });
+                                  loadPlayer();
+                                  loadTheLifeInventory();
+                                }
+                              }
+                            }}
+                          >
+                            Sell on Streets
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Monhe Store */}
+            {marketSubTab === 'store' && (
+              <div className="market-content">
+                <h3>🏪 Monhe Store</h3>
+                <p>Buy items to restore HP and stay in the game</p>
+                <div className="market-items-grid">
+                  <div className="market-item">
+                    <div className="item-icon">💊</div>
+                    <h4>Small Med Kit</h4>
+                    <p>Restores 25 HP</p>
+                    <div className="item-price">$500</div>
+                    <button 
+                      className="market-buy-btn"
+                      onClick={async () => {
+                        if (player.cash < 500) {
+                          setMessage({ type: 'error', text: 'Not enough cash!' });
+                          return;
+                        }
+                        const { error } = await supabase
+                          .from('the_life_players')
+                          .update({
+                            cash: player.cash - 500,
+                            hp: Math.min(player.max_hp, player.hp + 25)
+                          })
+                          .eq('user_id', user.id);
+                        if (!error) {
+                          setMessage({ type: 'success', text: 'Restored 25 HP!' });
+                          loadPlayer();
+                        }
+                      }}
+                      disabled={player.cash < 500}
+                    >
+                      Buy
+                    </button>
+                  </div>
+
+                  <div className="market-item">
+                    <div className="item-icon">💉</div>
+                    <h4>Large Med Kit</h4>
+                    <p>Restores 50 HP</p>
+                    <div className="item-price">$900</div>
+                    <button 
+                      className="market-buy-btn"
+                      onClick={async () => {
+                        if (player.cash < 900) {
+                          setMessage({ type: 'error', text: 'Not enough cash!' });
+                          return;
+                        }
+                        const { error } = await supabase
+                          .from('the_life_players')
+                          .update({
+                            cash: player.cash - 900,
+                            hp: Math.min(player.max_hp, player.hp + 50)
+                          })
+                          .eq('user_id', user.id);
+                        if (!error) {
+                          setMessage({ type: 'success', text: 'Restored 50 HP!' });
+                          loadPlayer();
+                        }
+                      }}
+                      disabled={player.cash < 900}
+                    >
+                      Buy
+                    </button>
+                  </div>
+
+                  <div className="market-item">
+                    <div className="item-icon">🧪</div>
+                    <h4>Full Recovery</h4>
+                    <p>Restores to MAX HP</p>
+                    <div className="item-price">$1,500</div>
+                    <button 
+                      className="market-buy-btn"
+                      onClick={async () => {
+                        if (player.cash < 1500) {
+                          setMessage({ type: 'error', text: 'Not enough cash!' });
+                          return;
+                        }
+                        const { error } = await supabase
+                          .from('the_life_players')
+                          .update({
+                            cash: player.cash - 1500,
+                            hp: player.max_hp
+                          })
+                          .eq('user_id', user.id);
+                        if (!error) {
+                          setMessage({ type: 'success', text: 'Fully restored!' });
+                          loadPlayer();
+                        }
+                      }}
+                      disabled={player.cash < 1500}
+                    >
+                      Buy
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Docks */}
+            {marketSubTab === 'docks' && (
+              <div className="market-content">
+                <h3>🚢 The Docks</h3>
+                <p>Ship drugs in bulk - 0 risk, cheaper prices, 2 shipments per day</p>
+                {(() => {
+                  const today = new Date().toDateString();
+                  const lastDockUse = player?.last_dock_date ? new Date(player.last_dock_date).toDateString() : null;
+                  const usesToday = (lastDockUse === today) ? (player?.dock_uses_today || 0) : 0;
+                  const usesRemaining = 2 - usesToday;
+                  
+                  return (
+                    <>
+                      <div className="dock-info">
+                        <span className="dock-uses">📦 Shipments Today: {usesToday}/2</span>
+                        <span className="dock-remaining">Remaining: {usesRemaining}</span>
+                      </div>
+                      {theLifeInventory.filter(inv => inv.item.type === 'drug').length === 0 ? (
+                        <p className="no-items">You have no drugs to ship</p>
+                      ) : usesRemaining <= 0 ? (
+                        <p className="no-items">No more shipments available today. Come back tomorrow!</p>
+                      ) : (
+                        <div className="market-items-grid">
+                          {theLifeInventory.filter(inv => inv.item.type === 'drug').map(inv => {
+                            const dockPrice = Math.floor(inv.quantity * 80);
+                            
+                            return (
+                              <div key={inv.id} className="market-item dock-item">
+                                <img src={inv.item.icon} alt={inv.item.name} className="item-image" />
+                                <h4>{inv.item.name}</h4>
+                                <p>Quantity: {inv.quantity}</p>
+                                <div className="dock-stats">
+                                  <div className="stat">💵 ${dockPrice.toLocaleString()}</div>
+                                  <div className="stat safe">✅ 0% Risk</div>
+                                </div>
+                                <button 
+                                  className="market-sell-btn dock-btn"
+                                  onClick={async () => {
+                                    const newUsesToday = (lastDockUse === today ? usesToday : 0) + 1;
+                                    
+                                    const { error } = await supabase
+                                      .from('the_life_players')
+                                      .update({ 
+                                        cash: player.cash + dockPrice,
+                                        dock_uses_today: newUsesToday,
+                                        last_dock_date: new Date().toISOString()
+                                      })
+                                      .eq('user_id', user.id);
+                                    
+                                    if (!error) {
+                                      await supabase
+                                        .from('the_life_player_inventory')
+                                        .delete()
+                                        .eq('id', inv.id);
+                                      
+                                      setMessage({ type: 'success', text: `Shipped for $${dockPrice.toLocaleString()}! Safe delivery confirmed.` });
+                                      loadPlayer();
+                                      loadTheLifeInventory();
+                                    }
+                                  }}
+                                >
+                                  Ship Cargo
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -2177,6 +3011,21 @@ export default function TheLife() {
         </>
         )}
       </div>
+
+      {/* Event Popup Modal */}
+      {showEventPopup && eventPopupData && (
+        <div className="event-popup-overlay" onClick={() => setShowEventPopup(false)}>
+          <div className="event-popup-content" onClick={(e) => e.stopPropagation()}>
+            <button className="event-popup-close" onClick={() => setShowEventPopup(false)}>×</button>
+            <div className="event-popup-image">
+              <img src={eventPopupData.image_url} alt="Event" />
+            </div>
+            <div className="event-popup-message">
+              <p>{eventPopupData.message}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
