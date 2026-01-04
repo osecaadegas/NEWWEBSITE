@@ -92,21 +92,20 @@ export default function TheLifeCrimes({
         const jailTime = Math.floor(robbery.jail_time_minutes * jailMultiplier);
         const jailUntil = new Date();
         jailUntil.setMinutes(jailUntil.getMinutes() + jailTime);
-        updates.jail_until = jailUntil.toISOString();
-        
         const newHP = Math.max(0, player.hp - robbery.hp_loss_on_fail);
         updates.hp = newHP;
         
-        // If HP reaches 0, send to hospital for 30 minutes
+        // If HP reaches 0, send to hospital instead of jail
         if (newHP === 0) {
           const hospitalUntil = new Date();
           hospitalUntil.setMinutes(hospitalUntil.getMinutes() + 30);
           updates.hospital_until = hospitalUntil.toISOString();
           setMessage({ 
             type: 'error', 
-            text: `Failed! You're in jail for ${jailTime} minutes, lost ${robbery.hp_loss_on_fail} HP, and sent to hospital for 30 minutes! (${Math.round(successChance)}% chance)` 
+            text: `Failed! You ran out of HP and are sent to hospital for 30 minutes! (${Math.round(successChance)}% chance)` 
           });
         } else {
+          updates.jail_until = jailUntil.toISOString();
           setMessage({ 
             type: 'error', 
             text: `Failed! You're in jail for ${jailTime} minutes and lost ${robbery.hp_loss_on_fail} HP (${Math.round(successChance)}% chance)` 
