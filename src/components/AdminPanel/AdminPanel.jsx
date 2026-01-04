@@ -44,22 +44,25 @@ export default function AdminPanel() {
   });
 
   // The Life Management State
-  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'businesses', 'items', 'workers'
+  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'businesses', 'items', 'workers', 'messages', 'categories'
   const [crimes, setCrimes] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [items, setItems] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [eventMessages, setEventMessages] = useState([]);
+  const [categoryInfoList, setCategoryInfoList] = useState([]);
   const [showCrimeModal, setShowCrimeModal] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [showEventMessageModal, setShowEventMessageModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCrime, setEditingCrime] = useState(null);
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [editingWorker, setEditingWorker] = useState(null);
   const [editingEventMessage, setEditingEventMessage] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [crimeFormData, setCrimeFormData] = useState({
     name: '',
     description: '',
@@ -115,6 +118,13 @@ export default function AdminPanel() {
     image_url: '',
     is_active: true
   });
+  const [categoryFormData, setCategoryFormData] = useState({
+    category_key: '',
+    category_name: '',
+    description: '',
+    image_url: ''
+  });
+  const [uploadingCategoryImage, setUploadingCategoryImage] = useState(false);
   const [availableItems, setAvailableItems] = useState([]);
 
   // Stream Highlights State
@@ -161,6 +171,7 @@ export default function AdminPanel() {
     loadHighlights();
     loadWheelPrizes();
     loadEventMessages();
+    loadCategoryInfo();
   }, []);
 
   const loadUsers = async () => {
@@ -1101,6 +1112,149 @@ export default function AdminPanel() {
     }
   };
 
+  // === CATEGORY INFO MANAGEMENT ===
+
+  const loadCategoryInfo = async () => {
+    const { data, error } = await supabase
+      .from('the_life_category_info')
+      .select('*')
+      .order('category_key', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading category info:', error);
+    } else {
+      setCategoryInfoList(data || []);
+    }
+  };
+
+  const openCategoryModal = (category = null) => {
+    if (category) {
+      setCategoryFormData({
+        category_key: category.category_key,
+        category_name: category.category_name,
+        description: category.description,
+        image_url: category.image_url
+      });
+      setEditingCategory(category);
+    } else {
+      setCategoryFormData({
+        category_key: '',
+        category_name: '',
+        description: '',
+        image_url: ''
+      });
+      setEditingCategory(null);
+    }
+    setShowCategoryModal(true);
+  };
+
+  const closeCategoryModal = () => {
+    setShowCategoryModal(false);
+    setEditingCategory(null);
+  };
+
+  const saveCategory = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!categoryFormData.category_key || !categoryFormData.category_name || !categoryFormData.description) {
+      setError('Category key, name, and description are required');
+      return;
+    }
+
+    try {
+      if (editingCategory) {
+        const { error } = await supabase
+          .from('the_life_category_info')
+          .update({
+            category_name: categoryFormData.category_name,
+            description: categoryFormData.description,
+            image_url: categoryFormData.image_url,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingCategory.id);
+
+        if (error) throw error;
+        setSuccess('Category info updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('the_life_category_info')
+          .insert([categoryFormData]);
+
+        if (error) throw error;
+        setSuccess('Category info created successfully!');
+      }
+
+      closeCategoryModal();
+      loadCategoryInfo();
+    } catch (err) {
+      setError('Failed to save category info: ' + err.message);
+    }
+  };
+
+  const deleteCategory = async (categoryId) => {
+    if (!confirm('Are you sure you want to delete this category info?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('the_life_category_info')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+      setSuccess('Category info deleted successfully!');
+      loadCategoryInfo();
+    } catch (err) {
+      setError('Failed to delete category info: ' + err.message);
+    }
+  };
+
+  const handleCategoryImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be smaller than 5MB');
+      return;
+    }
+
+    setUploadingCategoryImage(true);
+    setError('');
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `thelife/categories/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('public-assets')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('public-assets')
+        .getPublicUrl(filePath);
+
+      setCategoryFormData({...categoryFormData, image_url: publicUrl});
+      setSuccess('Image uploaded successfully!');
+    } catch (err) {
+      setError('Failed to upload image: ' + err.message);
+    } finally {
+      setUploadingCategoryImage(false);
+    }
+  };
+
   // === STREAM HIGHLIGHTS MANAGEMENT ===
 
   const loadHighlights = async () => {
@@ -1993,6 +2147,12 @@ export default function AdminPanel() {
               >
                 📸 Event Messages
               </button>
+              <button 
+                className={`thelife-tab ${theLifeTab === 'categories' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('categories')}
+              >
+                📚 Category Info
+              </button>
             </div>
 
             {/* Crimes Section */}
@@ -2302,6 +2462,50 @@ export default function AdminPanel() {
                           ✏️ Edit
                         </button>
                         <button onClick={() => deleteEventMessage(msg.id)} className="btn-delete">
+                          🗑️ Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Category Info Section */}
+            {theLifeTab === 'categories' && (
+              <div className="categories-management">
+                <div className="section-header">
+                  <h3>📚 Category Info Management</h3>
+                  <button onClick={() => openCategoryModal()} className="btn-primary">
+                    ➕ Add New Category
+                  </button>
+                </div>
+                <p style={{color: '#a0aec0', marginBottom: '20px'}}>
+                  Manage the images and descriptions shown for each category in The Life stats bar
+                </p>
+
+                <div className="categories-grid">
+                  {categoryInfoList.map(cat => (
+                    <div key={cat.id} className="category-admin-card">
+                      <div className="category-preview-image">
+                        {cat.image_url ? (
+                          <img src={cat.image_url} alt={cat.category_name} />
+                        ) : (
+                          <div className="no-image">No Image</div>
+                        )}
+                      </div>
+                      <div className="category-info">
+                        <div className="category-header-row">
+                          <h4>{cat.category_name}</h4>
+                          <span className="category-key-badge">{cat.category_key}</span>
+                        </div>
+                        <p className="category-desc">{cat.description}</p>
+                      </div>
+                      <div className="category-actions">
+                        <button onClick={() => openCategoryModal(cat)} className="btn-edit">
+                          ✏️ Edit
+                        </button>
+                        <button onClick={() => deleteCategory(cat.id)} className="btn-delete">
                           🗑️ Delete
                         </button>
                       </div>
@@ -2974,6 +3178,120 @@ export default function AdminPanel() {
                     {editingEventMessage ? 'Update Message' : 'Create Message'}
                   </button>
                   <button onClick={closeEventMessageModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Category Info Modal */}
+          {showCategoryModal && (
+            <div className="modal-overlay" onClick={closeCategoryModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingCategory ? 'Edit Category Info' : 'Add New Category Info'}</h2>
+                  <button onClick={closeCategoryModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-group">
+                    <label>Category Key * <small>(e.g., 'crimes', 'pvp', 'businesses')</small></label>
+                    <input
+                      type="text"
+                      value={categoryFormData.category_key}
+                      onChange={(e) => setCategoryFormData({...categoryFormData, category_key: e.target.value})}
+                      placeholder="e.g., crimes"
+                      disabled={!!editingCategory}
+                      style={{opacity: editingCategory ? 0.6 : 1}}
+                    />
+                    {editingCategory && (
+                      <small style={{color: '#a0aec0', display: 'block', marginTop: '5px'}}>
+                        Category key cannot be changed after creation
+                      </small>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>Category Name *</label>
+                    <input
+                      type="text"
+                      value={categoryFormData.category_name}
+                      onChange={(e) => setCategoryFormData({...categoryFormData, category_name: e.target.value})}
+                      placeholder="e.g., Crimes"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Description *</label>
+                    <textarea
+                      value={categoryFormData.description}
+                      onChange={(e) => setCategoryFormData({...categoryFormData, description: e.target.value})}
+                      placeholder="Describe this category to help players understand what it offers..."
+                      rows="4"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Image URL or Upload *</label>
+                    <input
+                      type="text"
+                      value={categoryFormData.image_url}
+                      onChange={(e) => setCategoryFormData({...categoryFormData, image_url: e.target.value})}
+                      placeholder="https://images.unsplash.com/... or upload below"
+                    />
+                    <div style={{marginTop: '10px'}}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCategoryImageUpload}
+                        style={{display: 'none'}}
+                        id="category-image-upload"
+                      />
+                      <label 
+                        htmlFor="category-image-upload" 
+                        className="btn-upload"
+                        style={{
+                          display: 'inline-block',
+                          padding: '8px 16px',
+                          background: 'linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.1))',
+                          border: '1px solid rgba(212, 175, 55, 0.3)',
+                          borderRadius: '6px',
+                          color: '#d4af37',
+                          cursor: uploadingCategoryImage ? 'not-allowed' : 'pointer',
+                          fontSize: '0.9rem',
+                          fontWeight: '600',
+                          opacity: uploadingCategoryImage ? 0.5 : 1
+                        }}
+                      >
+                        {uploadingCategoryImage ? '📤 Uploading...' : '📁 Upload Image'}
+                      </label>
+                      <small style={{display: 'block', color: '#a0aec0', marginTop: '5px'}}>
+                        Max 5MB. Supported: JPG, PNG, WebP, GIF
+                      </small>
+                    </div>
+                    {categoryFormData.image_url && (
+                      <div style={{marginTop: '10px'}}>
+                        <img 
+                          src={categoryFormData.image_url} 
+                          alt="Preview" 
+                          style={{
+                            width: '100%', 
+                            maxHeight: '200px', 
+                            objectFit: 'cover', 
+                            borderRadius: '8px'
+                          }} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={saveCategory} className="btn-save">
+                    {editingCategory ? 'Update Category' : 'Create Category'}
+                  </button>
+                  <button onClick={closeCategoryModal} className="btn-cancel">
                     Cancel
                   </button>
                 </div>

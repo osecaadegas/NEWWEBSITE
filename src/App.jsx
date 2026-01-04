@@ -21,15 +21,12 @@ import BonusHuntStats from './components/BonusHuntStats/BonusHuntStats';
 import ModernCardLayout from './components/ModernCardLayout/ModernCardLayout';
 import ModernSidebarLayout from './components/ModernSidebarLayout/ModernSidebarLayout';
 import GiveawayPanel from './components/GiveawayPanel/GiveawayPanel';
-import ArtAdPanel from './components/ArtAdPanel/ArtAdPanel';
 import TwitchChat from './components/TwitchChat/TwitchChat';
 import BlackjackPremium from './components/Blackjack/BlackjackPremium';
 import Mines from './components/Mines/Mines';
-import TheThugas from './components/TheThugas/TheThugas';
-import TheLife from './components/TheLife/TheLife';
+import TheLife from './components/TheLife/TheLifeNew';
 import SlotManagerPage from './components/SlotManager/SlotManagerPage';
 import GiveawayPage from './components/GiveawayPanel/GiveawayPage';
-import ArtAdPage from './components/ArtAdPanel/ArtAdPage';
 import { useStreamElements } from './context/StreamElementsContext';
 import ProtectedAdminRoute from './components/ProtectedRoute/ProtectedAdminRoute';
 import VoucherManager from './components/VoucherManager/VoucherManager';
@@ -395,9 +392,6 @@ function AppContent({ isAdminOverlay = false }) {
       case 'giveaway':
         setShowGiveaway(!showGiveaway); // Toggle instead of just opening
         break;
-      case 'artAd':
-        setShowArtAd(!showArtAd); // Toggle instead of just opening
-        break;
       default:
         break;
     }
@@ -459,7 +453,6 @@ function AppContent({ isAdminOverlay = false }) {
       {showTournament && <TournamentPanel onClose={() => setShowTournament(false)} />}
       {showGiveaway && <GiveawayPanel onClose={() => setShowGiveaway(false)} />}
       {showRandomSlot && <RandomSlotPicker onClose={() => setShowRandomSlot(false)} />}
-      {showArtAd && <ArtAdPanel onClose={() => setShowArtAd(false)} />}
       
       {/* Slot Machine Overlay */}
       {showSlotMachine && <SlotMachineOverlay onClose={() => setShowSlotMachine(false)} />}
@@ -612,7 +605,6 @@ function App() {
                 <Route path="/games/roulette" element={<GamesPage gameType="roulette" />} />
                 <Route path="/games/blackjack" element={<BlackjackPremium />} />
                 <Route path="/games/mines" element={<Mines />} />
-                <Route path="/games/thethugas" element={<TheThugas />} />
                 <Route path="/games/thelife" element={<TheLife />} />
                 <Route path="/points" element={<StreamElementsPanel />} />
                 <Route path="/streamelements" element={<StreamElementsPanel />} />
