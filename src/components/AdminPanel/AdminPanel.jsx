@@ -1162,12 +1162,7 @@ export default function AdminPanel() {
       return;
     }
 
-    if (!categoryFormData.image_url) {
-      setError('Image URL is required');
-      return;
-    }
-
-    try {
+    try{
       if (editingCategory) {
         const { error } = await supabase
           .from('the_life_category_info')
@@ -1190,8 +1185,8 @@ export default function AdminPanel() {
         setSuccess('Category info created successfully!');
       }
 
-      await loadCategoryInfo();
       closeCategoryModal();
+      loadCategoryInfo();
     } catch (err) {
       setError('Failed to save category info: ' + err.message);
     }

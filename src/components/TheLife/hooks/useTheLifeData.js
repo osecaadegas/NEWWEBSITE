@@ -233,13 +233,57 @@ export const useTheLifeData = (user) => {
     try {
       const { data, error } = await supabase
         .from('the_life_players')
-        .select('id, user_id, level, xp, cash, pvp_wins, pvp_losses')
+        .select('id, user_id, level, xp, cash, bank_balance, pvp_wins, pvp_losses')
         .neq('user_id', user.id)
         .gte('updated_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
         .limit(20);
 
       if (error) throw error;
-      setOnlinePlayers(data || []);
+
+      // Enrich with usernames
+      if (data && data.length > 0) {
+        const enrichedData = await Promise.all(
+          data.map(async (playerData) => {
+            let metadata = null;
+            try {
+              const result = await supabase
+                .rpc('get_user_metadata', { user_id: playerData.user_id });
+              metadata = result.data;
+            } catch (err) {
+              console.error('Error fetching metadata:', err);
+            }
+            
+            let twitchUsername = 'Player';
+            
+            if (metadata) {
+              if (metadata.identities && metadata.identities.length > 0) {
+                const twitchIdentity = metadata.identities.find(i => i.provider === 'twitch');
+                if (twitchIdentity?.identity_data) {
+                  twitchUsername = twitchIdentity.identity_data.preferred_username || 
+                                  twitchIdentity.identity_data.user_name ||
+                                  twitchIdentity.identity_data.full_name;
+                }
+              }
+              if (twitchUsername === 'Player' && metadata.user_metadata) {
+                twitchUsername = metadata.user_metadata.preferred_username || 
+                                metadata.user_metadata.user_name ||
+                                metadata.user_metadata.full_name ||
+                                metadata.email?.split('@')[0] ||
+                                'Player';
+              }
+            }
+            
+            return {
+              ...playerData,
+              username: twitchUsername,
+              net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
+            };
+          })
+        );
+        setOnlinePlayers(enrichedData);
+      } else {
+        setOnlinePlayers([]);
+      }
     } catch (err) {
       console.error('Error loading online players:', err);
     }

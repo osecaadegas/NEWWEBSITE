@@ -128,12 +128,15 @@ export default function TheLifePVP({
               <div className="players-grid">
                 {onlinePlayers.map(target => {
                   const winChance = Math.min(95, Math.max(5, 50 + ((player?.level || 0) - target.level) * 5));
+                  const targetWealth = (target.cash || 0) + (target.bank_balance || 0);
                   return (
                     <div key={target.id} className="pvp-card">
                       <div className="pvp-player-info">
-                        <h4>Level {target.level}</h4>
-                        <p>Cash: ${target.cash?.toLocaleString()}</p>
-                        <p>HP: 100</p>
+                        <h4>{target.username || 'Player'}</h4>
+                        <p>Level {target.level} | PvP Wins: {target.pvp_wins || 0}</p>
+                        <p>💰 Wealth: ${targetWealth.toLocaleString()}</p>
+                        <p>💵 Cash: ${target.cash?.toLocaleString()}</p>
+                        <p>❤️ HP: 100</p>
                       </div>
                       <div className="pvp-action">
                         <p className="win-chance">Win Chance: {winChance}%</p>
@@ -142,7 +145,7 @@ export default function TheLifePVP({
                           disabled={player?.hp < 20}
                           className="attack-btn"
                         >
-                          Attack
+                          ⚔️ Attack (3 🎫)
                         </button>
                       </div>
                     </div>
