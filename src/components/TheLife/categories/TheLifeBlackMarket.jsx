@@ -152,33 +152,29 @@ export default function TheLifeBlackMarket({
 
   return (
     <div className="market-section">
-      <h2>🛒 Black Market</h2>
-      <p>Illegal operations, supplies, and drug trafficking</p>
-      
       <div className="market-sub-tabs">
         <button 
           className={`market-sub-tab ${marketSubTab === 'resell' ? 'active' : ''}`}
           onClick={() => setMarketSubTab('resell')}
         >
-          🚶 Street Resell
+          <img src="/thelife/subcategories/Streets.png" alt="Street Resell" className="tab-image" />
         </button>
         <button 
           className={`market-sub-tab ${marketSubTab === 'store' ? 'active' : ''}`}
           onClick={() => setMarketSubTab('store')}
         >
-          🏪 Monhe Store
+          <img src="/thelife/subcategories/Monhe.png" alt="Monhe Store" className="tab-image" />
         </button>
         <button 
           className={`market-sub-tab ${marketSubTab === 'docks' ? 'active' : ''}`}
           onClick={() => setMarketSubTab('docks')}
         >
-          🚢 Docks
+          <img src="/thelife/subcategories/Docks.png" alt="Docks" className="tab-image" />
         </button>
       </div>
 
       {marketSubTab === 'resell' && (
         <div className="market-content">
-          <h3>🚶 Street Resell</h3>
           <p className="market-warning">⚠️ High risk! Sell drugs one by one for maximum profit, but risk jail time</p>
           {drugItems.length === 0 ? (
             <p className="no-items">You have no drugs to sell on the streets</p>
@@ -215,7 +211,6 @@ export default function TheLifeBlackMarket({
 
       {marketSubTab === 'store' && (
         <div className="market-content">
-          <h3>🏪 Monhe Store</h3>
           <p>Buy items to restore HP and stay in the game</p>
           <div className="market-items-grid">
             <div className="market-item">
@@ -265,7 +260,6 @@ export default function TheLifeBlackMarket({
 
       {marketSubTab === 'docks' && (
         <div className="market-content">
-          <h3>🚢 The Docks</h3>
           <p>Ship drugs in bulk - 0 risk, cheaper prices, 2 shipments per day</p>
           <div className="dock-info">
             <span className="dock-uses">📦 Shipments Today: {usesToday}/2</span>

@@ -99,9 +99,11 @@ export default function TheLife() {
         </div>
       )}
 
-      {/* Player Stats Bar */}
-      <div className="player-stats-bar">
-        <div className="stats-left-section">
+      {/* Player Stats and Category Info Container */}
+      <div className="stats-and-info-container">
+        {/* Player Stats Bar */}
+        <div className="player-stats-bar">
+          <div className="stats-left-section">
           <div className="stat-group">
             <span className="stat-label">Level {player?.level}</span>
             <div className="stat-bar">
@@ -134,7 +136,44 @@ export default function TheLife() {
               <span className="stat-text">{player?.tickets} / {player?.max_tickets}</span>
             </div>
           </div>
+        </div>
 
+        <div className="stats-right-section">
+          <div className="stat-group">
+            <span className="stat-label">Power</span>
+            <div className="stat-bar">
+              <div 
+                className="stat-fill power-fill" 
+                style={{ width: `${((player?.power || 0) / 100) * 100}%` }}
+              />
+              <span className="stat-text">{player?.power || 0} / 100</span>
+            </div>
+          </div>
+
+          <div className="stat-group">
+            <span className="stat-label">Intelligence</span>
+            <div className="stat-bar">
+              <div 
+                className="stat-fill intelligence-fill" 
+                style={{ width: `${((player?.intelligence || 0) / 100) * 100}%` }}
+              />
+              <span className="stat-text">{player?.intelligence || 0} / 100</span>
+            </div>
+          </div>
+
+          <div className="stat-group">
+            <span className="stat-label">Defense</span>
+            <div className="stat-bar">
+              <div 
+                className="stat-fill defense-fill" 
+                style={{ width: `${((player?.defense || 0) / 100) * 100}%` }}
+              />
+              <span className="stat-text">{player?.defense || 0} / 100</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-bottom-section">
           {/* Quick Access Buttons Inside Stats Card */}
           <div className="quick-access-tabs-inline">
             <button 
@@ -172,6 +211,7 @@ export default function TheLife() {
             </div>
           </div>
         </div>
+        </div>
 
         {/* Category Info Display */}
         {currentCategoryInfo && (
@@ -208,7 +248,7 @@ export default function TheLife() {
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          <img src="/thelife/crimes.png" alt="Crimes" />
+          <img src="/thelife/categories/crimes.png" alt="Crimes" />
         </button>
         <button 
           className={`tab tab-image ${activeTab === 'pvp' ? 'active' : ''}`}
@@ -216,7 +256,7 @@ export default function TheLife() {
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          <img src="/thelife/pvp.png" alt="PvP" />
+          <img src="/thelife/categories/pvp.png" alt="PvP" />
         </button>
         <button
           className={`tab tab-image ${activeTab === 'businesses' ? 'active' : ''}`}
@@ -224,7 +264,7 @@ export default function TheLife() {
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          <img src="/thelife/businesses.png" alt="Businesses" />
+          <img src="/thelife/categories/businesses.png" alt="Businesses" />
         </button>
         <button 
           className={`tab tab-image ${activeTab === 'brothel' ? 'active' : ''}`}
@@ -232,7 +272,7 @@ export default function TheLife() {
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          <img src="/thelife/brothel.png" alt="Brothel" />
+          <img src="/thelife/categories/brothel.png" alt="Brothel" />
         </button>
         <button 
           className={`tab tab-image ${activeTab === 'inventory' ? 'active' : ''}`}
@@ -240,19 +280,19 @@ export default function TheLife() {
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          <img src="/thelife/Inventory.png" alt="Inventory" />
+          <img src="/thelife/categories/Inventory.png" alt="Inventory" />
         </button>
         <button 
           className={`tab tab-image ${activeTab === 'jail' ? 'active' : ''}`}
           onClick={() => setActiveTab('jail')}
         >
-          <img src="/thelife/Jail.png" alt="Jail" />
+          <img src="/thelife/categories/Jail.png" alt="Jail" />
         </button>
         <button 
           className={`tab tab-image ${activeTab === 'hospital' ? 'active' : ''}`}
           onClick={() => setActiveTab('hospital')}
         >
-          <img src="/thelife/Hospital.png" alt="Hospital" />
+          <img src="/thelife/categories/Hospital.png" alt="Hospital" />
         </button>
         <button 
           className={`tab tab-image ${activeTab === 'market' ? 'active' : ''}`}
@@ -260,7 +300,7 @@ export default function TheLife() {
           disabled={isInJail}
           style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
         >
-          <img src="/thelife/BlackMarket.png" alt="Market" />
+          <img src="/thelife/categories/BlackMarket.png" alt="Market" />
         </button>
       </div>
 

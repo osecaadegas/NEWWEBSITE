@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from '../../hooks/useAdmin';
 import { getAllUsers, updateUserRole, revokeUserAccess, deleteUser, MODERATOR_PERMISSIONS, getUserRoles, addUserRole, removeUserRole } from '../../utils/adminUtils';
@@ -82,8 +82,13 @@ export default function AdminPanel() {
     type: 'item',
     icon: '📦',
     rarity: 'common',
-    tradeable: false
+    tradeable: false,
+    usable: false,
+    effect: ''
   });
+  const [itemEffectType, setItemEffectType] = useState('');
+  const [itemEffectValue, setItemEffectValue] = useState(0);
+  const [itemResellPrice, setItemResellPrice] = useState(0);
   const [businessFormData, setBusinessFormData] = useState({
     name: '',
     description: '',
@@ -126,6 +131,13 @@ export default function AdminPanel() {
   });
   const [uploadingCategoryImage, setUploadingCategoryImage] = useState(false);
   const [availableItems, setAvailableItems] = useState([]);
+
+  // Scroll refs for arrow navigation
+  const businessesScrollRef = useRef(null);
+  const crimesScrollRef = useRef(null);
+  const itemsScrollRef = useRef(null);
+  const workersScrollRef = useRef(null);
+  const categoriesScrollRef = useRef(null);
 
   // Stream Highlights State
   const [highlights, setHighlights] = useState([]);
@@ -660,6 +672,57 @@ export default function AdminPanel() {
     }
   };
 
+  // Scroll Functions for Business Grid
+  const scrollBusinesses = (direction) => {
+    if (businessesScrollRef.current) {
+      const scrollAmount = 300;
+      businessesScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollCrimes = (direction) => {
+    if (crimesScrollRef.current) {
+      const scrollAmount = 300;
+      crimesScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollItems = (direction) => {
+    if (itemsScrollRef.current) {
+      const scrollAmount = 300;
+      itemsScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollWorkers = (direction) => {
+    if (workersScrollRef.current) {
+      const scrollAmount = 300;
+      workersScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollCategories = (direction) => {
+    if (categoriesScrollRef.current) {
+      const scrollAmount = 300;
+      categoriesScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // Business Management Functions
   const loadBusinesses = async () => {
     try {
@@ -802,6 +865,22 @@ export default function AdminPanel() {
         usable: item.usable ?? true,
         effect: item.effect || ''
       });
+      // Parse effect JSON to populate form fields
+      try {
+        if (item.effect) {
+          const effectObj = JSON.parse(item.effect);
+          setItemEffectType(effectObj.type || '');
+          setItemEffectValue(effectObj.value || 0);
+        } else {
+          setItemEffectType('');
+          setItemEffectValue(0);
+        }
+      } catch {
+        setItemEffectType('');
+        setItemEffectValue(0);
+      }
+      // Parse resell price if exists
+      setItemResellPrice(item.resell_price || 0);
       setEditingItem(item);
     } else {
       setItemFormData({
@@ -814,6 +893,9 @@ export default function AdminPanel() {
         usable: true,
         effect: ''
       });
+      setItemEffectType('');
+      setItemEffectValue(0);
+      setItemResellPrice(0);
       setEditingItem(null);
     }
     setShowItemModal(true);
@@ -833,11 +915,23 @@ export default function AdminPanel() {
       return;
     }
 
+    // Build effect JSON from form fields
+    let effectJson = '';
+    if (itemEffectType && itemEffectValue) {
+      effectJson = JSON.stringify({ type: itemEffectType, value: itemEffectValue });
+    }
+
+    const itemData = {
+      ...itemFormData,
+      effect: effectJson,
+      resell_price: itemResellPrice || null
+    };
+
     try {
       if (editingItem) {
         const { error } = await supabase
           .from('the_life_items')
-          .update(itemFormData)
+          .update(itemData)
           .eq('id', editingItem.id);
 
         if (error) throw error;
@@ -845,7 +939,7 @@ export default function AdminPanel() {
       } else {
         const { error } = await supabase
           .from('the_life_items')
-          .insert([itemFormData]);
+          .insert([itemData]);
 
         if (error) throw error;
         setSuccess('Item created successfully!');
@@ -2165,7 +2259,15 @@ export default function AdminPanel() {
                   </button>
                 </div>
 
-                <div className="crimes-grid">
+                <div className="scroll-container-wrapper">
+                  <button 
+                    className="scroll-arrow scroll-arrow-left" 
+                    onClick={() => scrollCrimes('left')}
+                    aria-label="Scroll left"
+                  >
+                    ←
+                  </button>
+                  <div className="crimes-grid-scroll" ref={crimesScrollRef}>
                   {crimes.map(crime => (
                     <div key={crime.id} className="crime-admin-card">
                       <div className="crime-preview-image">
@@ -2239,6 +2341,14 @@ export default function AdminPanel() {
                       </div>
                     </div>
                   ))}
+                  </div>
+                  <button 
+                    className="scroll-arrow scroll-arrow-right" 
+                    onClick={() => scrollCrimes('right')}
+                    aria-label="Scroll right"
+                  >
+                    →
+                  </button>
                 </div>
               </div>
             )}
@@ -2253,8 +2363,16 @@ export default function AdminPanel() {
                   </button>
                 </div>
 
-                <div className="businesses-grid">
-                  {businesses.map(business => (
+                <div className="scroll-container-wrapper">
+                  <button 
+                    className="scroll-arrow scroll-arrow-left" 
+                    onClick={() => scrollBusinesses('left')}
+                    aria-label="Scroll left"
+                  >
+                    ←
+                  </button>
+                  <div className="businesses-grid-scroll" ref={businessesScrollRef}>
+                    {businesses.map(business => (
                     <div key={business.id} className="business-admin-card">
                       <div className="business-preview-image">
                         {business.image_url ? (
@@ -2312,6 +2430,14 @@ export default function AdminPanel() {
                       </div>
                     </div>
                   ))}
+                  </div>
+                  <button 
+                    className="scroll-arrow scroll-arrow-right" 
+                    onClick={() => scrollBusinesses('right')}
+                    aria-label="Scroll right"
+                  >
+                    →
+                  </button>
                 </div>
               </div>
             )}
@@ -2326,7 +2452,15 @@ export default function AdminPanel() {
                   </button>
                 </div>
 
-                <div className="items-grid">
+                <div className="scroll-container-wrapper">
+                  <button 
+                    className="scroll-arrow scroll-arrow-left" 
+                    onClick={() => scrollItems('left')}
+                    aria-label="Scroll left"
+                  >
+                    ←
+                  </button>
+                  <div className="items-grid-scroll" ref={itemsScrollRef}>
                   {items.map(item => (
                     <div key={item.id} className="item-admin-card">
                       <div className="item-image-preview">
@@ -2351,6 +2485,14 @@ export default function AdminPanel() {
                       </div>
                     </div>
                   ))}
+                  </div>
+                  <button 
+                    className="scroll-arrow scroll-arrow-right" 
+                    onClick={() => scrollItems('right')}
+                    aria-label="Scroll right"
+                  >
+                    →
+                  </button>
                 </div>
               </div>
             )}
@@ -2365,7 +2507,15 @@ export default function AdminPanel() {
                   </button>
                 </div>
 
-                <div className="workers-grid">
+                <div className="scroll-container-wrapper">
+                  <button 
+                    className="scroll-arrow scroll-arrow-left" 
+                    onClick={() => scrollWorkers('left')}
+                    aria-label="Scroll left"
+                  >
+                    ←
+                  </button>
+                  <div className="workers-grid-scroll" ref={workersScrollRef}>
                   {workers.map(worker => (
                     <div key={worker.id} className="worker-admin-card">
                       <div className="worker-preview-image">
@@ -2415,6 +2565,14 @@ export default function AdminPanel() {
                       </div>
                     </div>
                   ))}
+                  </div>
+                  <button 
+                    className="scroll-arrow scroll-arrow-right" 
+                    onClick={() => scrollWorkers('right')}
+                    aria-label="Scroll right"
+                  >
+                    →
+                  </button>
                 </div>
               </div>
             )}
@@ -2484,7 +2642,15 @@ export default function AdminPanel() {
                   Manage the images and descriptions shown for each category in The Life stats bar
                 </p>
 
-                <div className="categories-grid">
+                <div className="scroll-container-wrapper">
+                  <button 
+                    className="scroll-arrow scroll-arrow-left" 
+                    onClick={() => scrollCategories('left')}
+                    aria-label="Scroll left"
+                  >
+                    ←
+                  </button>
+                  <div className="categories-grid-scroll" ref={categoriesScrollRef}>
                   {categoryInfoList.map(cat => (
                     <div key={cat.id} className="category-admin-card">
                       <div className="category-preview-image">
@@ -2511,6 +2677,14 @@ export default function AdminPanel() {
                       </div>
                     </div>
                   ))}
+                  </div>
+                  <button 
+                    className="scroll-arrow scroll-arrow-right" 
+                    onClick={() => scrollCategories('right')}
+                    aria-label="Scroll right"
+                  >
+                    →
+                  </button>
                 </div>
               </div>
             )}
@@ -2976,14 +3150,49 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="form-group">
-                    <label>Effect (JSON)</label>
-                    <textarea
-                      value={itemFormData.effect}
-                      onChange={(e) => setItemFormData({...itemFormData, effect: e.target.value})}
-                      placeholder='{"type": "heal", "value": 50}'
-                      rows="3"
+                    <label>Effect Type</label>
+                    <select
+                      value={itemEffectType}
+                      onChange={(e) => setItemEffectType(e.target.value)}
+                    >
+                      <option value="">None</option>
+                      <option value="heal">Heal HP</option>
+                      <option value="tickets">Add Tickets</option>
+                      <option value="jail_free">Get Out of Jail Free</option>
+                      <option value="xp_boost">XP Boost</option>
+                      <option value="cash">Add Cash</option>
+                    </select>
+                  </div>
+
+                  {itemEffectType && itemEffectType !== 'jail_free' && (
+                    <div className="form-group">
+                      <label>Effect Value</label>
+                      <input
+                        type="number"
+                        value={itemEffectValue}
+                        onChange={(e) => setItemEffectValue(parseInt(e.target.value) || 0)}
+                        placeholder="e.g., 50 for heal, 5 for tickets"
+                        min="0"
+                      />
+                      <small style={{color: '#888', fontSize: '0.85rem'}}>
+                        {itemEffectType === 'heal' && 'Amount of HP to restore'}
+                        {itemEffectType === 'tickets' && 'Number of tickets to add'}
+                        {itemEffectType === 'xp_boost' && 'XP amount to add'}
+                        {itemEffectType === 'cash' && 'Cash amount to add'}
+                      </small>
+                    </div>
+                  )}
+
+                  <div className="form-group">
+                    <label>Resell Price ($)</label>
+                    <input
+                      type="number"
+                      value={itemResellPrice}
+                      onChange={(e) => setItemResellPrice(parseInt(e.target.value) || 0)}
+                      placeholder="0 for non-sellable"
+                      min="0"
                     />
-                    <small style={{color: '#888', fontSize: '0.85rem'}}>Optional JSON string describing the item's effect</small>
+                    <small style={{color: '#888', fontSize: '0.85rem'}}>Price player gets when selling this item (0 = cannot sell)</small>
                   </div>
                 </div>
 

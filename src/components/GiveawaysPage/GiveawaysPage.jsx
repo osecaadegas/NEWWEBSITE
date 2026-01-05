@@ -442,9 +442,14 @@ export default function GiveawaysPage() {
         </div>
 
         {/* Winners Sidebar */}
-        {recentWinners.length > 0 && (
-          <div className="winners-sidebar">
-            <h2>🏆 Recent Winners</h2>
+        <div className="winners-sidebar">
+          <h2>🏆 Recent Winners</h2>
+          {recentWinners.length === 0 ? (
+            <div className="no-winners">
+              <div className="no-winners-icon">🎁</div>
+              <p>No winners yet</p>
+            </div>
+          ) : (
             <div className="winners-list">
               {recentWinners.map((winner, index) => (
                 <div key={index} className="winner-item">
@@ -459,8 +464,8 @@ export default function GiveawaysPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
         </div>
       </div>
     </div>

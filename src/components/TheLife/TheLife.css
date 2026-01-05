@@ -114,48 +114,65 @@
   padding: 0 10px;
 }
 
+/* Stats and Info Container */
+.stats-and-info-container {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+  align-items: stretch;
+}
+
 /* Player Stats Bar */
 .player-stats-bar {
   background: rgba(26, 31, 46, 0.8);
   border-radius: 10px;
-  padding: 8px 15px 8px 15px;
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: row;
-  gap: 20px;
+  padding: 6px 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 8px 15px;
   border: 1px solid rgba(212, 175, 55, 0.3);
-  max-width: 100%;
-  align-items: stretch;
-  justify-content: space-between;
+  flex: 1;
+  max-width: 50%;
 }
 
 .stats-left-section {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  flex: 1;
-  max-width: 50%;
+  gap: 4px;
+}
+
+.stats-right-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stats-bottom-section {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .stat-group {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-width: 50%;
 }
 
 .stat-label {
   color: #d4af37;
   font-weight: 600;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
 }
 
 .stat-bar {
   position: relative;
   background: rgba(0, 0, 0, 0.5);
-  border-radius: 6px;
-  height: 12px;
+  border-radius: 4px;
+  height: 10px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -180,12 +197,24 @@
   background: linear-gradient(90deg, #d4af37, #f0c674);
 }
 
+.power-fill {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.intelligence-fill {
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+}
+
+.defense-fill {
+  background: linear-gradient(90deg, #059669, #10b981);
+}
+
 .stat-text {
   position: relative;
   z-index: 1;
   color: white;
   font-weight: 700;
-  font-size: 0.6rem;
+  font-size: 0.55rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -195,15 +224,15 @@
 
 .cash-display {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
 }
 
 .cash-item {
   flex: 1;
   background: rgba(0, 0, 0, 0.4);
-  padding: 4px 6px;
-  border-radius: 6px;
+  padding: 3px 5px;
+  border-radius: 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -260,12 +289,12 @@
 
 .quick-tab-inline {
   flex: 1;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(212, 175, 55, 0.08));
   border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 5px;
+  border-radius: 4px;
   color: #cbd5e0;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -305,13 +334,10 @@
   background: rgba(0, 0, 0, 0.4);
   border-radius: 8px;
   border: 1px solid rgba(212, 175, 55, 0.2);
-  flex-shrink: 0;
-  max-width: 500px;
+  flex: 1;
+  max-width: 50%;
   align-items: stretch;
   overflow: hidden;
-  margin-right: -15px;
-  margin-top: -8px;
-  margin-bottom: -8px;
 }
 
 .category-info-text {
@@ -321,7 +347,7 @@
   flex-direction: column;
   gap: 10px;
   justify-content: flex-start;
-  padding: 15px 0 15px 15px;
+  padding: 10px 0 10px 15px;
 }
 
 .category-info-text h3 {
@@ -344,13 +370,13 @@
 
 
 .category-info-image {
-  width: 180px;
-  height: auto;
+  width: 220px;
+  height: 100%;
   flex-shrink: 0;
   border-radius: 0;
   overflow: hidden;
   border: none;
-  margin: -1px -1px -1px 0;
+  margin: 0;
 }
 
 .category-info-image img {
@@ -3036,32 +3062,43 @@
 .market-sub-tabs {
   display: flex;
   gap: 10px;
-  margin: 20px 0 30px 0;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  margin: 10px 0 20px 0;
   justify-content: center;
 }
 
 .market-sub-tab {
-  padding: 12px 24px;
-  background: rgba(255, 255, 255, 0.05);
-  border: none;
-  border-radius: 8px 8px 0 0;
-  color: white;
-  font-size: 1em;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(26, 31, 46, 0.6);
+  border: 2px solid rgba(212, 175, 55, 0.3);
+  border-radius: 10px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100px;
+  height: 60px;
+  overflow: hidden;
+}
+
+.market-sub-tab .tab-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
   transition: all 0.3s ease;
 }
 
 .market-sub-tab:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(212, 175, 55, 0.2);
+  border-color: rgba(212, 175, 55, 0.5);
   transform: translateY(-2px);
 }
 
 .market-sub-tab.active {
-  background: linear-gradient(135deg, #d4af37, #f4c430);
-  color: #1a1a2e;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  background: rgba(212, 175, 55, 0.3);
+  border-color: #d4af37;
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
 }
 
 .market-content {

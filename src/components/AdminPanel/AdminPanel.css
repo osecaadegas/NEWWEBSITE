@@ -1448,6 +1448,21 @@
 }
 
 /* Crime Cards */
+.crimes-grid-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 5px;
+  flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.crimes-grid-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .crimes-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1460,6 +1475,9 @@
   overflow: hidden;
   border: 2px solid rgba(212, 175, 55, 0.3);
   transition: all 0.3s;
+  min-width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
 }
 
 .crime-admin-card:hover {
@@ -1576,6 +1594,29 @@
 }
 
 /* Business Cards */
+.scroll-container-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.businesses-grid-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 5px;
+  flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.businesses-grid-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .businesses-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1589,6 +1630,9 @@
   border: 2px solid rgba(34, 197, 94, 0.3);
   transition: all 0.3s;
   position: relative;
+  min-width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
 }
 
 .business-admin-card:hover {
@@ -1693,6 +1737,21 @@
 }
 
 /* Item Cards */
+.items-grid-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 5px;
+  flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.items-grid-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .items-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1706,6 +1765,9 @@
   border: 2px solid rgba(212, 175, 55, 0.3);
   text-align: center;
   transition: all 0.3s;
+  min-width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
 }
 
 .item-admin-card:hover {
@@ -1834,6 +1896,21 @@
 }
 
 /* Workers Management */
+.workers-grid-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 5px;
+  flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.workers-grid-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .workers-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1847,6 +1924,9 @@
   border: 2px solid rgba(236, 72, 153, 0.3);
   transition: all 0.3s;
   position: relative;
+  min-width: 280px;
+  max-width: 280px;
+  flex-shrink: 0;
 }
 
 .worker-admin-card:hover {
@@ -2166,6 +2246,21 @@
 
 
 /* Categories Grid */
+.categories-grid-scroll {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px 5px;
+  flex: 1;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.categories-grid-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .categories-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -2180,6 +2275,9 @@
   border: 2px solid rgba(212, 175, 55, 0.2);
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  min-width: 350px;
+  max-width: 350px;
+  flex-shrink: 0;
 }
 
 .category-admin-card:hover {
