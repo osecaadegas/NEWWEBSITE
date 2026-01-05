@@ -189,7 +189,12 @@ const SlotManager = () => {
               <div className="form-col-actions">
                 {formData.image && (
                   <div className="mini-preview">
-                    <img src={formData.image} alt="Preview" onError={(e) => e.target.src = DEFAULT_SLOT_IMAGE} />
+                    <img 
+                      src={formData.image} 
+                      alt="Preview" 
+                      loading="lazy"
+                      onError={(e) => e.target.src = DEFAULT_SLOT_IMAGE} 
+                    />
                   </div>
                 )}
                 <button type="submit" className="btn-submit">
@@ -236,7 +241,12 @@ const SlotManager = () => {
         {filteredSlots.map(slot => (
           <div key={slot.id} className="slot-card">
             <div className="slot-card-image">
-              <img src={slot.image} alt={slot.name} />
+              <img 
+                src={slot.image} 
+                alt={slot.name} 
+                loading="lazy"
+                onError={(e) => e.target.src = DEFAULT_SLOT_IMAGE}
+              />
               <div className="slot-card-overlay">
                 <button
                   className="action-btn edit-btn"
