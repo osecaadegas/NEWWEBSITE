@@ -1,6 +1,59 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { getAllSlots, addSlot, updateSlot, deleteSlot, getAllProviders, DEFAULT_SLOT_IMAGE } from '../../utils/slotUtils';
 import './SlotManager.css';
+
+// Debounce helper
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
+// Memoized SlotCard component to prevent unnecessary re-renders
+const SlotCard = memo(({ slot, onEdit, onDelete }) => {
+  return (
+    <div className="slot-card">
+      <div className="slot-card-image">
+        <img 
+          src={slot.image} 
+          alt={slot.name} 
+          loading="lazy"
+          onError={(e) => e.target.src = DEFAULT_SLOT_IMAGE}
+        />
+        <div className="slot-card-overlay">
+          <button
+            className="action-btn edit-btn"
+            onClick={() => onEdit(slot)}
+            title="Edit"
+          >
+            ✏️
+          </button>
+          <button
+            className="action-btn delete-btn"
+            onClick={() => onDelete(slot.id, slot.name)}
+            title="Delete"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+      <div className="slot-card-info">
+        <h4 title={slot.name}>{slot.name}</h4>
+        <span className="provider-tag">{slot.provider}</span>
+      </div>
+    </div>
+  );
+});
 
 const SlotManager = () => {
   const [slots, setSlots] = useState([]);
@@ -8,6 +61,9 @@ const SlotManager = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('all');
+  
+  // Debounce search for better performance
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -25,7 +81,7 @@ const SlotManager = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [slotsData, providersData] = await Promise.all([
@@ -39,17 +95,19 @@ const SlotManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Filter slots
-  const filteredSlots = slots.filter(slot => {
-    const matchesSearch = slot.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesProvider = selectedProvider === 'all' || slot.provider === selectedProvider;
-    return matchesSearch && matchesProvider;
-  });
+  // Memoized filtered slots - only recalculate when dependencies change
+  const filteredSlots = useMemo(() => {
+    return slots.filter(slot => {
+      const matchesSearch = slot.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      const matchesProvider = selectedProvider === 'all' || slot.provider === selectedProvider;
+      return matchesSearch && matchesProvider;
+    });
+  }, [slots, debouncedSearchTerm, selectedProvider]);
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
+  // Handle form submission - useCallback to prevent recreation
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess('');
@@ -80,10 +138,10 @@ const SlotManager = () => {
     } catch (error) {
       setFormError('An error occurred: ' + error.message);
     }
-  };
+  }, [editingSlot, formData, loadData]);
 
-  // Handle edit
-  const handleEdit = (slot) => {
+  // Handle edit - useCallback to prevent recreation
+  const handleEdit = useCallback((slot) => {
     setEditingSlot(slot);
     setFormData({
       name: slot.name,
@@ -93,10 +151,10 @@ const SlotManager = () => {
     setShowForm(true);
     setFormError('');
     setFormSuccess('');
-  };
+  }, []);
 
-  // Handle delete
-  const handleDelete = async (slotId, slotName) => {
+  // Handle delete - useCallback to prevent recreation
+  const handleDelete = useCallback(async (slotId, slotName) => {
     if (!confirm(`Are you sure you want to delete "${slotName}"?`)) {
       return;
     }
@@ -113,16 +171,16 @@ const SlotManager = () => {
     } catch (error) {
       setFormError('Error deleting slot: ' + error.message);
     }
-  };
+  }, [loadData]);
 
-  // Cancel form
-  const handleCancel = () => {
+  // Cancel form - useCallback to prevent recreation
+  const handleCancel = useCallback(() => {
     setShowForm(false);
     setEditingSlot(null);
     setFormData({ name: '', provider: '', image: '' });
     setFormError('');
     setFormSuccess('');
-  };
+  }, []);
 
   if (loading) {
     return <div className="slot-manager-loading">Loading slots...</div>;
@@ -239,36 +297,12 @@ const SlotManager = () => {
       {/* Compact Grid List */}
       <div className="slots-grid-compact">
         {filteredSlots.map(slot => (
-          <div key={slot.id} className="slot-card">
-            <div className="slot-card-image">
-              <img 
-                src={slot.image} 
-                alt={slot.name} 
-                loading="lazy"
-                onError={(e) => e.target.src = DEFAULT_SLOT_IMAGE}
-              />
-              <div className="slot-card-overlay">
-                <button
-                  className="action-btn edit-btn"
-                  onClick={() => handleEdit(slot)}
-                  title="Edit"
-                >
-                  ✏️
-                </button>
-                <button
-                  className="action-btn delete-btn"
-                  onClick={() => handleDelete(slot.id, slot.name)}
-                  title="Delete"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-            <div className="slot-card-info">
-              <h4 title={slot.name}>{slot.name}</h4>
-              <span className="provider-tag">{slot.provider}</span>
-            </div>
-          </div>
+          <SlotCard 
+            key={slot.id} 
+            slot={slot} 
+            onEdit={handleEdit} 
+            onDelete={handleDelete} 
+          />
         ))}
         {filteredSlots.length === 0 && (
           <div className="empty-state">
