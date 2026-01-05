@@ -299,6 +299,7 @@ export default function TheLife() {
           loadOnlinePlayers={loadOnlinePlayers}
           setMessage={setMessage}
           isInHospital={isInHospital}
+          setActiveTab={setActiveTab}
           user={user}
         />
       )}

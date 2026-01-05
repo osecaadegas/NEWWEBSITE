@@ -11,8 +11,14 @@ export default function TheLifePVP({
   loadOnlinePlayers,
   setMessage,
   isInHospital,
+  setActiveTab,
   user 
 }) {
+  // Generate avatar URL based on username
+  const getAvatarUrl = (username, userId) => {
+    const seed = userId || username || 'player';
+    return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+  };
   const attackPlayer = async (targetPlayer) => {
     if (player.tickets < 3) {
       setMessage({ type: 'error', text: 'Need 3 tickets to attack!' });
@@ -76,8 +82,12 @@ export default function TheLifePVP({
           updates.hospital_until = new Date(Date.now() + 30 * 60 * 1000).toISOString();
           setMessage({ 
             type: 'error', 
-            text: `Defeated! You lost and are in hospital for 30 minutes` 
+            text: `💀 Defeated! You're in hospital for 30 minutes` 
           });
+          // Redirect to hospital tab after a short delay
+          setTimeout(() => {
+            if (setActiveTab) setActiveTab('hospital');
+          }, 1500);
         } else {
           setMessage({ 
             type: 'error', 
@@ -129,23 +139,70 @@ export default function TheLifePVP({
                 {onlinePlayers.map(target => {
                   const winChance = Math.min(95, Math.max(5, 50 + ((player?.level || 0) - target.level) * 5));
                   const targetWealth = (target.cash || 0) + (target.bank_balance || 0);
+                  const potential = Math.floor(target.cash * 0.1);
                   return (
-                    <div key={target.id} className="pvp-card">
-                      <div className="pvp-player-info">
-                        <h4>{target.username || 'Player'}</h4>
-                        <p>Level {target.level} | PvP Wins: {target.pvp_wins || 0}</p>
-                        <p>💰 Wealth: ${targetWealth.toLocaleString()}</p>
-                        <p>💵 Cash: ${target.cash?.toLocaleString()}</p>
-                        <p>❤️ HP: 100</p>
+                    <div key={target.id} className="pvp-card-modern">
+                      <div className="pvp-card-header">
+                        <img 
+                          src={getAvatarUrl(target.username, target.user_id)} 
+                          alt={target.username || 'Player'}
+                          className="pvp-avatar"
+                        />
+                        <div className="pvp-player-details">
+                          <h4>{target.username || 'Player'}</h4>
+                          <div className="pvp-level-badge">Lvl {target.level}</div>
+                        </div>
                       </div>
-                      <div className="pvp-action">
-                        <p className="win-chance">Win Chance: {winChance}%</p>
+                      
+                      <div className="pvp-stats-grid">
+                        <div className="pvp-stat">
+                          <span className="stat-icon">🏆</span>
+                          <div>
+                            <div className="stat-value">{target.pvp_wins || 0}</div>
+                            <div className="stat-label">Wins</div>
+                          </div>
+                        </div>
+                        <div className="pvp-stat">
+                          <span className="stat-icon">💰</span>
+                          <div>
+                            <div className="stat-value">${targetWealth.toLocaleString()}</div>
+                            <div className="stat-label">Wealth</div>
+                          </div>
+                        </div>
+                        <div className="pvp-stat">
+                          <span className="stat-icon">💵</span>
+                          <div>
+                            <div className="stat-value">${target.cash?.toLocaleString()}</div>
+                            <div className="stat-label">Cash</div>
+                          </div>
+                        </div>
+                        <div className="pvp-stat">
+                          <span className="stat-icon">❤️</span>
+                          <div>
+                            <div className="stat-value">100</div>
+                            <div className="stat-label">HP</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pvp-card-footer">
+                        <div className="win-chance-modern">
+                          <div className="chance-bar-container">
+                            <div className="chance-bar" style={{width: `${winChance}%`}}></div>
+                          </div>
+                          <span className="chance-text">{winChance}% Win Chance</span>
+                        </div>
+                        <div className="pvp-rewards">
+                          <span className="potential-reward">💸 ${potential.toLocaleString()} potential</span>
+                        </div>
                         <button 
                           onClick={() => attackPlayer(target)}
                           disabled={player?.hp < 20}
-                          className="attack-btn"
+                          className="attack-btn-modern"
                         >
-                          ⚔️ Attack (3 🎫)
+                          <span className="btn-icon">⚔️</span>
+                          <span>Attack</span>
+                          <span className="btn-cost">3 🎫</span>
                         </button>
                       </div>
                     </div>
