@@ -195,7 +195,17 @@ export default function TheLifeBrothel({
     const lastCollection = new Date(brothel.last_collection);
     const now = new Date();
     const hoursPassed = (now - lastCollection) / 1000 / 60 / 60;
-    const income = Math.floor(hoursPassed * brothel.income_per_hour);
+
+    // Only allow collection if at least 1 full hour has passed
+    if (hoursPassed < 1) {
+      const minutesLeft = Math.ceil((1 - hoursPassed) * 60);
+      setMessage({ type: 'error', text: `Collection available in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}!` });
+      return;
+    }
+
+    // Calculate income for full hours only
+    const fullHours = Math.floor(hoursPassed);
+    const income = fullHours * brothel.income_per_hour;
 
     if (income <= 0) {
       setMessage({ type: 'error', text: 'No income to collect yet!' });
@@ -221,7 +231,7 @@ export default function TheLifeBrothel({
       if (error) throw error;
       setPlayer(data);
       loadBrothel();
-      setMessage({ type: 'success', text: `Collected $${income.toLocaleString()}!` });
+      setMessage({ type: 'success', text: `Collected $${income.toLocaleString()} (${fullHours} hour${fullHours !== 1 ? 's' : ''})!` });
     } catch (err) {
       console.error('Error collecting income:', err);
     }
@@ -322,7 +332,9 @@ export default function TheLifeBrothel({
                   const lastCollection = new Date(brothel.last_collection);
                   const now = new Date();
                   const hoursPassed = (now - lastCollection) / 1000 / 60 / 60;
-                  const income = Math.floor(hoursPassed * brothel.income_per_hour);
+                  // Only show income for full hours
+                  const fullHours = Math.floor(hoursPassed);
+                  const income = fullHours * brothel.income_per_hour;
                   return income.toLocaleString();
                 })()}
               </span>

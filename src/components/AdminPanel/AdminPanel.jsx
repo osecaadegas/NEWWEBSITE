@@ -44,37 +44,56 @@ export default function AdminPanel() {
   });
 
   // The Life Management State
-  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'businesses', 'items', 'workers', 'messages', 'categories'
+  const [theLifeTab, setTheLifeTab] = useState('crimes'); // 'crimes', 'businesses', 'items', 'workers', 'messages', 'categories', 'boats'
   const [crimes, setCrimes] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [items, setItems] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [eventMessages, setEventMessages] = useState([]);
   const [categoryInfoList, setCategoryInfoList] = useState([]);
+  const [boats, setBoats] = useState([]);
   const [showCrimeModal, setShowCrimeModal] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [showEventMessageModal, setShowEventMessageModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showBoatModal, setShowBoatModal] = useState(false);
   const [editingCrime, setEditingCrime] = useState(null);
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [editingWorker, setEditingWorker] = useState(null);
   const [editingEventMessage, setEditingEventMessage] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [editingBoat, setEditingBoat] = useState(null);
+  const [boatFormData, setBoatFormData] = useState({
+    name: '',
+    image_url: '',
+    item_id: '',
+    arrival_time: '',
+    departure_time: '',
+    max_shipments: 100,
+    is_active: true
+  });
   const [crimeFormData, setCrimeFormData] = useState({
     name: '',
     description: '',
     image_url: '',
     min_level_required: 1,
-    ticket_cost: 1,
+    stamina_cost: 1,
     base_reward: 100,
     max_reward: 500,
     success_rate: 50,
     jail_time_minutes: 30,
     hp_loss_on_fail: 10,
     xp_reward: 10
+  });
+  const [crimeDrops, setCrimeDrops] = useState([]);
+  const [newDrop, setNewDrop] = useState({
+    item_id: '',
+    drop_chance: 10,
+    min_quantity: 1,
+    max_quantity: 1
   });
   const [itemFormData, setItemFormData] = useState({
     name: '',
@@ -89,6 +108,13 @@ export default function AdminPanel() {
   const [itemEffectType, setItemEffectType] = useState('');
   const [itemEffectValue, setItemEffectValue] = useState(0);
   const [itemResellPrice, setItemResellPrice] = useState(0);
+  const [itemBoostType, setItemBoostType] = useState(''); // 'power', 'defense', 'intelligence', ''
+  const [itemBoostAmount, setItemBoostAmount] = useState(0);
+  const [itemMaxDurability, setItemMaxDurability] = useState(0); // 0 = infinite
+  const [itemSellableOnStreets, setItemSellableOnStreets] = useState(false);
+  const [itemSellableAtDocks, setItemSellableAtDocks] = useState(false);
+  const [itemFilterType, setItemFilterType] = useState('all');
+  const [itemFilterRarity, setItemFilterRarity] = useState('all');
   const [businessFormData, setBusinessFormData] = useState({
     name: '',
     description: '',
@@ -180,6 +206,7 @@ export default function AdminPanel() {
     loadBusinesses();
     loadItems();
     loadWorkers();
+    loadBoats();
     loadHighlights();
     loadWheelPrizes();
     loadEventMessages();
@@ -487,14 +514,14 @@ export default function AdminPanel() {
     }
   };
 
-  const openCrimeModal = (crime = null) => {
+  const openCrimeModal = async (crime = null) => {
     if (crime) {
       setCrimeFormData({
         name: crime.name,
         description: crime.description || '',
         image_url: crime.image_url || '',
         min_level_required: crime.min_level_required,
-        ticket_cost: crime.ticket_cost,
+        stamina_cost: crime.stamina_cost || crime.ticket_cost || 1,
         base_reward: crime.base_reward,
         max_reward: crime.max_reward,
         success_rate: crime.success_rate,
@@ -503,13 +530,23 @@ export default function AdminPanel() {
         xp_reward: crime.xp_reward
       });
       setEditingCrime(crime);
+      
+      // Load crime drops
+      const { data: drops } = await supabase
+        .from('the_life_crime_drops')
+        .select(`
+          *,
+          item:the_life_items(id, name, icon)
+        `)
+        .eq('crime_id', crime.id);
+      setCrimeDrops(drops || []);
     } else {
       setCrimeFormData({
         name: '',
         description: '',
         image_url: '',
         min_level_required: 1,
-        ticket_cost: 1,
+        stamina_cost: 1,
         base_reward: 100,
         max_reward: 500,
         success_rate: 50,
@@ -518,7 +555,14 @@ export default function AdminPanel() {
         xp_reward: 10
       });
       setEditingCrime(null);
+      setCrimeDrops([]);
     }
+    setNewDrop({
+      item_id: '',
+      drop_chance: 10,
+      min_quantity: 1,
+      max_quantity: 1
+    });
     setShowCrimeModal(true);
   };
 
@@ -546,7 +590,7 @@ export default function AdminPanel() {
             description: crimeFormData.description,
             image_url: crimeFormData.image_url,
             min_level_required: parseInt(crimeFormData.min_level_required),
-            ticket_cost: parseInt(crimeFormData.ticket_cost),
+            stamina_cost: parseInt(crimeFormData.stamina_cost),
             base_reward: parseInt(crimeFormData.base_reward),
             max_reward: parseInt(crimeFormData.max_reward),
             success_rate: parseInt(crimeFormData.success_rate),
@@ -573,7 +617,7 @@ export default function AdminPanel() {
             description: crimeFormData.description,
             image_url: crimeFormData.image_url,
             min_level_required: parseInt(crimeFormData.min_level_required),
-            ticket_cost: parseInt(crimeFormData.ticket_cost),
+            stamina_cost: parseInt(crimeFormData.stamina_cost),
             base_reward: parseInt(crimeFormData.base_reward),
             max_reward: parseInt(crimeFormData.max_reward),
             success_rate: parseInt(crimeFormData.success_rate),
@@ -632,6 +676,61 @@ export default function AdminPanel() {
     } catch (err) {
       console.error('Delete crime error:', err);
       setError('Failed to delete crime: ' + err.message);
+    }
+  };
+
+  const addCrimeDrop = async () => {
+    if (!editingCrime || !newDrop.item_id) {
+      setError('Please select an item');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('the_life_crime_drops')
+        .insert({
+          crime_id: editingCrime.id,
+          item_id: newDrop.item_id,
+          drop_chance: parseInt(newDrop.drop_chance),
+          min_quantity: parseInt(newDrop.min_quantity),
+          max_quantity: parseInt(newDrop.max_quantity)
+        })
+        .select(`
+          *,
+          item:the_life_items(id, name, icon)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setCrimeDrops([...crimeDrops, data]);
+      setNewDrop({
+        item_id: '',
+        drop_chance: 10,
+        min_quantity: 1,
+        max_quantity: 1
+      });
+      setSuccess('Drop added successfully!');
+    } catch (err) {
+      console.error('Error adding drop:', err);
+      setError('Failed to add drop: ' + err.message);
+    }
+  };
+
+  const removeCrimeDrop = async (dropId) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_crime_drops')
+        .delete()
+        .eq('id', dropId);
+
+      if (error) throw error;
+
+      setCrimeDrops(crimeDrops.filter(d => d.id !== dropId));
+      setSuccess('Drop removed successfully!');
+    } catch (err) {
+      console.error('Error removing drop:', err);
+      setError('Failed to remove drop: ' + err.message);
     }
   };
 
@@ -881,6 +980,13 @@ export default function AdminPanel() {
       }
       // Parse resell price if exists
       setItemResellPrice(item.resell_price || 0);
+      // Parse boost fields
+      setItemBoostType(item.boost_type || '');
+      setItemBoostAmount(item.boost_amount || 0);
+      setItemMaxDurability(item.max_durability || 0);
+      // Parse sellable locations
+      setItemSellableOnStreets(item.sellable_on_streets || false);
+      setItemSellableAtDocks(item.sellable_at_docks || false);
       setEditingItem(item);
     } else {
       setItemFormData({
@@ -896,6 +1002,11 @@ export default function AdminPanel() {
       setItemEffectType('');
       setItemEffectValue(0);
       setItemResellPrice(0);
+      setItemBoostType('');
+      setItemBoostAmount(0);
+      setItemMaxDurability(0);
+      setItemSellableOnStreets(false);
+      setItemSellableAtDocks(false);
       setEditingItem(null);
     }
     setShowItemModal(true);
@@ -924,7 +1035,12 @@ export default function AdminPanel() {
     const itemData = {
       ...itemFormData,
       effect: effectJson,
-      resell_price: itemResellPrice || null
+      resell_price: itemResellPrice || null,
+      boost_type: itemBoostType || null,
+      boost_amount: itemBoostAmount || 0,
+      max_durability: itemMaxDurability || 0,
+      sellable_on_streets: itemSellableOnStreets,
+      sellable_at_docks: itemSellableAtDocks
     };
 
     try {
@@ -1087,6 +1203,135 @@ export default function AdminPanel() {
       loadWorkers();
     } catch (err) {
       setError('Failed to toggle worker status: ' + err.message);
+    }
+  };
+
+  // === DOCK BOAT MANAGEMENT ===
+  
+  const loadBoats = async () => {
+    const { data, error } = await supabase
+      .from('the_life_dock_boats')
+      .select(`
+        *,
+        item:the_life_items(name, icon)
+      `)
+      .order('arrival_time', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading boats:', error);
+    } else {
+      setBoats(data || []);
+    }
+  };
+
+  const openBoatModal = (boat = null) => {
+    if (boat) {
+      setBoatFormData({
+        name: boat.name,
+        image_url: boat.image_url || '',
+        item_id: boat.item_id || '',
+        arrival_time: boat.arrival_time ? new Date(boat.arrival_time).toISOString().slice(0, 16) : '',
+        departure_time: boat.departure_time ? new Date(boat.departure_time).toISOString().slice(0, 16) : '',
+        max_shipments: boat.max_shipments || 100,
+        is_active: boat.is_active ?? true
+      });
+      setEditingBoat(boat);
+    } else {
+      setBoatFormData({
+        name: '',
+        image_url: '',
+        item_id: '',
+        arrival_time: '',
+        departure_time: '',
+        max_shipments: 100,
+        is_active: true
+      });
+      setEditingBoat(null);
+    }
+    setShowBoatModal(true);
+  };
+
+  const closeBoatModal = () => {
+    setShowBoatModal(false);
+    setEditingBoat(null);
+  };
+
+  const saveBoat = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!boatFormData.name || !boatFormData.item_id || !boatFormData.arrival_time || !boatFormData.departure_time) {
+      setError('Boat name, item, arrival time, and departure time are required');
+      return;
+    }
+
+    const boatData = {
+      name: boatFormData.name,
+      item_id: boatFormData.item_id,
+      arrival_time: new Date(boatFormData.arrival_time).toISOString(),
+      departure_time: new Date(boatFormData.departure_time).toISOString(),
+      max_shipments: boatFormData.max_shipments || 100,
+      current_shipments: editingBoat?.current_shipments || 0,
+      is_active: boatFormData.is_active,
+      image_url: boatFormData.image_url || null
+    };
+
+    try {
+      if (editingBoat) {
+        const { error } = await supabase
+          .from('the_life_dock_boats')
+          .update(boatData)
+          .eq('id', editingBoat.id);
+
+        if (error) throw error;
+        setSuccess('Boat updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('the_life_dock_boats')
+          .insert([boatData]);
+
+        if (error) throw error;
+        setSuccess('Boat scheduled successfully!');
+      }
+
+      closeBoatModal();
+      loadBoats();
+    } catch (err) {
+      setError('Failed to save boat: ' + err.message);
+    }
+  };
+
+  const deleteBoat = async (boatId) => {
+    if (!confirm('Are you sure you want to delete this boat schedule?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('the_life_dock_boats')
+        .delete()
+        .eq('id', boatId);
+
+      if (error) throw error;
+      setSuccess('Boat deleted successfully!');
+      loadBoats();
+    } catch (err) {
+      setError('Failed to delete boat: ' + err.message);
+    }
+  };
+
+  const toggleBoatActive = async (boatId, currentStatus) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_dock_boats')
+        .update({ is_active: !currentStatus })
+        .eq('id', boatId);
+
+      if (error) throw error;
+      loadBoats();
+    } catch (err) {
+      setError('Failed to toggle boat status: ' + err.message);
     }
   };
 
@@ -2236,6 +2481,12 @@ export default function AdminPanel() {
                 💃 Brothel Workers
               </button>
               <button 
+                className={`thelife-tab ${theLifeTab === 'boats' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('boats')}
+              >
+                ⚓ Dock Boats
+              </button>
+              <button 
                 className={`thelife-tab ${theLifeTab === 'messages' ? 'active' : ''}`}
                 onClick={() => setTheLifeTab('messages')}
               >
@@ -2452,6 +2703,40 @@ export default function AdminPanel() {
                   </button>
                 </div>
 
+                {/* Filter Controls */}
+                <div className="admin-filters">
+                  <div className="filter-group">
+                    <label>Type:</label>
+                    <select value={itemFilterType} onChange={(e) => setItemFilterType(e.target.value)}>
+                      <option value="all">All Types</option>
+                      <option value="consumable">Consumable</option>
+                      <option value="equipment">Equipment</option>
+                      <option value="special">Special</option>
+                      <option value="collectible">Collectible</option>
+                      <option value="business_reward">Business Reward</option>
+                    </select>
+                  </div>
+
+                  <div className="filter-group">
+                    <label>Rarity:</label>
+                    <select value={itemFilterRarity} onChange={(e) => setItemFilterRarity(e.target.value)}>
+                      <option value="all">All Rarities</option>
+                      <option value="common">Common</option>
+                      <option value="rare">Rare</option>
+                      <option value="epic">Epic</option>
+                      <option value="legendary">Legendary</option>
+                    </select>
+                  </div>
+
+                  <div className="filter-count">
+                    Showing {items.filter(item => {
+                      const typeMatch = itemFilterType === 'all' || item.type === itemFilterType;
+                      const rarityMatch = itemFilterRarity === 'all' || item.rarity === itemFilterRarity;
+                      return typeMatch && rarityMatch;
+                    }).length} of {items.length} items
+                  </div>
+                </div>
+
                 <div className="scroll-container-wrapper">
                   <button 
                     className="scroll-arrow scroll-arrow-left" 
@@ -2461,7 +2746,11 @@ export default function AdminPanel() {
                     ←
                   </button>
                   <div className="items-grid-scroll" ref={itemsScrollRef}>
-                  {items.map(item => (
+                  {items.filter(item => {
+                    const typeMatch = itemFilterType === 'all' || item.type === itemFilterType;
+                    const rarityMatch = itemFilterRarity === 'all' || item.rarity === itemFilterRarity;
+                    return typeMatch && rarityMatch;
+                  }).map(item => (
                     <div key={item.id} className="item-admin-card">
                       <div className="item-image-preview">
                         <img src={item.icon} alt={item.name} style={{width: '100%', height: '120px', objectFit: 'cover', borderRadius: '8px'}} />
@@ -2573,6 +2862,87 @@ export default function AdminPanel() {
                   >
                     →
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Dock Boats Section */}
+            {theLifeTab === 'boats' && (
+              <div className="boats-management">
+                <div className="section-header">
+                  <h3>⚓ Dock Boat Schedules</h3>
+                  <button onClick={() => openBoatModal()} className="btn-primary">
+                    ➕ Schedule New Boat
+                  </button>
+                </div>
+
+                <div className="boats-list">
+                  {boats.map(boat => {
+                    const now = new Date();
+                    const arrival = new Date(boat.arrival_time);
+                    const departure = new Date(boat.departure_time);
+                    const isActive = now >= arrival && now < departure;
+                    const isPast = now >= departure;
+                    const hoursUntil = Math.round((arrival - now) / (1000 * 60 * 60));
+                    
+                    return (
+                      <div key={boat.id} className={`boat-card ${isActive ? 'active' : ''} ${isPast ? 'past' : ''}`}>
+                        {boat.image_url && (
+                          <div className="boat-image">
+                            <img src={boat.image_url} alt={boat.name} />
+                          </div>
+                        )}
+                        <div className="boat-header">
+                          <h4>{boat.name}</h4>
+                          <div className="boat-status">
+                            {isActive && <span className="status-badge active">🟢 At Dock</span>}
+                            {!isActive && !isPast && <span className="status-badge upcoming">🟡 Arriving in {hoursUntil}h</span>}
+                            {isPast && <span className="status-badge past">⚫ Departed</span>}
+                          </div>
+                        </div>
+
+                        <div className="boat-details">
+                          <div className="boat-item">
+                            <img src={boat.item?.icon} alt={boat.item?.name} style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px'}} />
+                            <span>{boat.item?.name || 'No item'}</span>
+                          </div>
+
+                          <div className="boat-times">
+                            <div>📅 Arrives: {new Date(boat.arrival_time).toLocaleString()}</div>
+                            <div>⏱️ Departs: {new Date(boat.departure_time).toLocaleString()}</div>
+                          </div>
+
+                          <div className="boat-capacity">
+                            <span>Capacity: {boat.current_shipments}/{boat.max_shipments}</span>
+                            <div className="capacity-bar">
+                              <div 
+                                className="capacity-fill" 
+                                style={{width: `${(boat.current_shipments / boat.max_shipments) * 100}%`}}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="boat-actions">
+                          <button onClick={() => openBoatModal(boat)} className="btn-edit">
+                            ✏️ Edit
+                          </button>
+                          <button 
+                            onClick={() => toggleBoatActive(boat.id, boat.is_active)} 
+                            className={`btn-toggle ${boat.is_active ? 'active' : 'inactive'}`}
+                          >
+                            {boat.is_active ? '✅ Active' : '❌ Inactive'}
+                          </button>
+                          <button onClick={() => deleteBoat(boat.id)} className="btn-delete">
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {boats.length === 0 && (
+                    <p className="no-items">No boats scheduled yet</p>
+                  )}
                 </div>
               </div>
             )}
@@ -2747,11 +3117,11 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="form-group">
-                      <label>Ticket Cost</label>
+                      <label>⚡ Stamina Cost</label>
                       <input
                         type="number"
-                        value={crimeFormData.ticket_cost}
-                        onChange={(e) => setCrimeFormData({...crimeFormData, ticket_cost: parseInt(e.target.value)})}
+                        value={crimeFormData.stamina_cost}
+                        onChange={(e) => setCrimeFormData({...crimeFormData, stamina_cost: parseInt(e.target.value)})}
                         min="1"
                       />
                     </div>
@@ -2823,6 +3193,113 @@ export default function AdminPanel() {
                       />
                     </div>
                   </div>
+
+                  {/* Item Drops Section */}
+                  {editingCrime && (
+                    <div className="form-section" style={{marginTop: '20px'}}>
+                      <h3 style={{color: '#d4af37', marginBottom: '15px'}}>💎 Item Drops</h3>
+                      
+                      {/* Existing Drops */}
+                      {crimeDrops.length > 0 && (
+                        <div style={{marginBottom: '15px'}}>
+                          {crimeDrops.map(drop => (
+                            <div key={drop.id} style={{
+                              background: 'rgba(0,0,0,0.3)',
+                              padding: '10px',
+                              borderRadius: '8px',
+                              marginBottom: '8px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                <span style={{fontSize: '1.5rem'}}>{drop.item.icon}</span>
+                                <div>
+                                  <div style={{color: '#d4af37', fontWeight: '600'}}>{drop.item.name}</div>
+                                  <div style={{fontSize: '0.85rem', color: '#cbd5e0'}}>
+                                    {drop.drop_chance}% chance • Qty: {drop.min_quantity}-{drop.max_quantity}
+                                  </div>
+                                </div>
+                              </div>
+                              <button 
+                                onClick={() => removeCrimeDrop(drop.id)}
+                                style={{
+                                  background: '#dc2626',
+                                  border: 'none',
+                                  padding: '5px 10px',
+                                  borderRadius: '5px',
+                                  color: 'white',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add New Drop */}
+                      <div className="form-grid">
+                        <div className="form-group">
+                          <label>Item</label>
+                          <select
+                            value={newDrop.item_id}
+                            onChange={(e) => setNewDrop({...newDrop, item_id: e.target.value})}
+                          >
+                            <option value="">Select Item</option>
+                            {items.map(item => (
+                              <option key={item.id} value={item.id}>
+                                {item.icon} {item.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label>Drop Chance (%)</label>
+                          <input
+                            type="number"
+                            value={newDrop.drop_chance}
+                            onChange={(e) => setNewDrop({...newDrop, drop_chance: parseInt(e.target.value)})}
+                            min="1"
+                            max="100"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Min Quantity</label>
+                          <input
+                            type="number"
+                            value={newDrop.min_quantity}
+                            onChange={(e) => setNewDrop({...newDrop, min_quantity: parseInt(e.target.value)})}
+                            min="1"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Max Quantity</label>
+                          <input
+                            type="number"
+                            value={newDrop.max_quantity}
+                            onChange={(e) => setNewDrop({...newDrop, max_quantity: parseInt(e.target.value)})}
+                            min="1"
+                          />
+                        </div>
+                      </div>
+                      <button 
+                        onClick={addCrimeDrop}
+                        style={{
+                          background: '#22c55e',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '5px',
+                          color: 'white',
+                          cursor: 'pointer',
+                          marginTop: '10px'
+                        }}
+                      >
+                        Add Drop
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="modal-actions">
@@ -3057,142 +3534,189 @@ export default function AdminPanel() {
           {/* Item Modal */}
           {showItemModal && (
             <div className="modal-overlay" onClick={closeItemModal}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>{editingItem ? 'Edit Item' : 'Add New Item'}</h2>
                   <button onClick={closeItemModal} className="modal-close">×</button>
                 </div>
 
                 <div className="modal-body">
-                  <div className="form-group">
-                    <label>Item Name *</label>
-                    <input
-                      type="text"
-                      value={itemFormData.name}
-                      onChange={(e) => setItemFormData({...itemFormData, name: e.target.value})}
-                      placeholder="e.g., Golden Trophy"
-                    />
-                  </div>
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Item Name *</label>
+                      <input
+                        type="text"
+                        value={itemFormData.name}
+                        onChange={(e) => setItemFormData({...itemFormData, name: e.target.value})}
+                        placeholder="e.g., Desert Eagle, Riot Shield, Lucky Charm"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Description</label>
-                    <textarea
-                      value={itemFormData.description}
-                      onChange={(e) => setItemFormData({...itemFormData, description: e.target.value})}
-                      placeholder="Describe the item..."
-                      rows="3"
-                    />
-                  </div>
+                    <div className="form-group full-width">
+                      <label>Description</label>
+                      <textarea
+                        value={itemFormData.description}
+                        onChange={(e) => setItemFormData({...itemFormData, description: e.target.value})}
+                        placeholder="Describe what this item does..."
+                        rows="2"
+                      />
+                    </div>
 
-                  <div className="form-group">
-                    <label>Image URL *</label>
-                    <input
-                      type="text"
-                      value={itemFormData.icon}
-                      onChange={(e) => setItemFormData({...itemFormData, icon: e.target.value})}
-                      placeholder="https://images.unsplash.com/..."
-                    />
-                    {itemFormData.icon && (
-                      <div style={{marginTop: '10px'}}>
-                        <img src={itemFormData.icon} alt="Preview" style={{width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px'}} />
+                    <div className="form-group full-width">
+                      <label>Image URL *</label>
+                      <input
+                        type="text"
+                        value={itemFormData.icon}
+                        onChange={(e) => setItemFormData({...itemFormData, icon: e.target.value})}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                      {itemFormData.icon && (
+                        <div style={{marginTop: '12px', textAlign: 'center'}}>
+                          <img src={itemFormData.icon} alt="Preview" style={{width: '100px', height: '100px', objectFit: 'cover', borderRadius: '12px', border: '2px solid rgba(255,255,255,0.1)'}} />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label>Type</label>
+                      <select
+                        value={itemFormData.type}
+                        onChange={(e) => setItemFormData({...itemFormData, type: e.target.value})}
+                      >
+                        <option value="consumable">Consumable</option>
+                        <option value="equipment">Equipment</option>
+                        <option value="special">Special</option>
+                        <option value="collectible">Collectible</option>
+                        <option value="business_reward">Business Reward</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Rarity</label>
+                      <select
+                        value={itemFormData.rarity}
+                        onChange={(e) => setItemFormData({...itemFormData, rarity: e.target.value})}
+                      >
+                        <option value="common">Common</option>
+                        <option value="rare">Rare</option>
+                        <option value="epic">Epic</option>
+                        <option value="legendary">Legendary</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Boost Type</label>
+                      <select
+                        value={itemBoostType}
+                        onChange={(e) => setItemBoostType(e.target.value)}
+                      >
+                        <option value="">None</option>
+                        <option value="power">🔫 Power</option>
+                        <option value="defense">🛡️ Defense</option>
+                        <option value="intelligence">🍀 Intelligence</option>
+                      </select>
+                    </div>
+
+                    {itemBoostType && (
+                      <>
+                        <div className="form-group">
+                          <label>Boost Amount</label>
+                          <input
+                            type="number"
+                            value={itemBoostAmount}
+                            onChange={(e) => setItemBoostAmount(parseInt(e.target.value) || 0)}
+                            placeholder="10"
+                            min="1"
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Durability</label>
+                          <input
+                            type="number"
+                            value={itemMaxDurability}
+                            onChange={(e) => setItemMaxDurability(parseInt(e.target.value) || 0)}
+                            placeholder="0 = ∞"
+                            min="0"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="form-group">
+                      <label>Effect Type</label>
+                      <select
+                        value={itemEffectType}
+                        onChange={(e) => setItemEffectType(e.target.value)}
+                      >
+                        <option value="">None</option>
+                        <option value="heal">❤️ Heal HP</option>
+                        <option value="tickets">🎫 Add Tickets</option>
+                        <option value="xp_boost">⭐ XP Boost</option>
+                        <option value="cash">💰 Add Cash</option>
+                        <option value="jail_free">🔓 Jail Free</option>
+                      </select>
+                    </div>
+
+                    {itemEffectType && itemEffectType !== 'jail_free' && (
+                      <div className="form-group">
+                        <label>Effect Amount</label>
+                        <input
+                          type="number"
+                          value={itemEffectValue}
+                          onChange={(e) => setItemEffectValue(parseInt(e.target.value) || 0)}
+                          placeholder="50"
+                          min="0"
+                        />
                       </div>
                     )}
-                  </div>
 
-                  <div className="form-group">
-                    <label>Type</label>
-                    <select
-                      value={itemFormData.type}
-                      onChange={(e) => setItemFormData({...itemFormData, type: e.target.value})}
-                    >
-                      <option value="consumable">Consumable</option>
-                      <option value="special">Special</option>
-                      <option value="business_reward">Business Reward</option>
-                      <option value="drug">Drug</option>
-                      <option value="equipment">Equipment</option>
-                      <option value="collectible">Collectible</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Rarity</label>
-                    <select
-                      value={itemFormData.rarity}
-                      onChange={(e) => setItemFormData({...itemFormData, rarity: e.target.value})}
-                    >
-                      <option value="common">Common</option>
-                      <option value="rare">Rare</option>
-                      <option value="epic">Epic</option>
-                      <option value="legendary">Legendary</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group checkbox-group">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={itemFormData.tradeable}
-                        onChange={(e) => setItemFormData({...itemFormData, tradeable: e.target.checked})}
-                      />
-                      <span>Tradeable</span>
-                    </label>
-                  </div>
-
-                  <div className="form-group checkbox-group">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={itemFormData.usable}
-                        onChange={(e) => setItemFormData({...itemFormData, usable: e.target.checked})}
-                      />
-                      <span>Usable</span>
-                    </label>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Effect Type</label>
-                    <select
-                      value={itemEffectType}
-                      onChange={(e) => setItemEffectType(e.target.value)}
-                    >
-                      <option value="">None</option>
-                      <option value="heal">Heal HP</option>
-                      <option value="tickets">Add Tickets</option>
-                      <option value="jail_free">Get Out of Jail Free</option>
-                      <option value="xp_boost">XP Boost</option>
-                      <option value="cash">Add Cash</option>
-                    </select>
-                  </div>
-
-                  {itemEffectType && itemEffectType !== 'jail_free' && (
                     <div className="form-group">
-                      <label>Effect Value</label>
+                      <label>Resell Price</label>
                       <input
                         type="number"
-                        value={itemEffectValue}
-                        onChange={(e) => setItemEffectValue(parseInt(e.target.value) || 0)}
-                        placeholder="e.g., 50 for heal, 5 for tickets"
+                        value={itemResellPrice}
+                        onChange={(e) => setItemResellPrice(parseInt(e.target.value) || 0)}
+                        placeholder="0 = can't sell"
                         min="0"
                       />
-                      <small style={{color: '#888', fontSize: '0.85rem'}}>
-                        {itemEffectType === 'heal' && 'Amount of HP to restore'}
-                        {itemEffectType === 'tickets' && 'Number of tickets to add'}
-                        {itemEffectType === 'xp_boost' && 'XP amount to add'}
-                        {itemEffectType === 'cash' && 'Cash amount to add'}
-                      </small>
                     </div>
-                  )}
 
-                  <div className="form-group">
-                    <label>Resell Price ($)</label>
-                    <input
-                      type="number"
-                      value={itemResellPrice}
-                      onChange={(e) => setItemResellPrice(parseInt(e.target.value) || 0)}
-                      placeholder="0 for non-sellable"
-                      min="0"
-                    />
-                    <small style={{color: '#888', fontSize: '0.85rem'}}>Price player gets when selling this item (0 = cannot sell)</small>
+                    <div className="form-group">
+                      <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer'}}>
+                        <input
+                          type="checkbox"
+                          checked={itemFormData.tradeable}
+                          onChange={(e) => setItemFormData({...itemFormData, tradeable: e.target.checked})}
+                          style={{width: 'auto', cursor: 'pointer'}}
+                        />
+                        <span>Tradeable</span>
+                      </label>
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer'}}>
+                        <input
+                          type="checkbox"
+                          checked={itemSellableOnStreets}
+                          onChange={(e) => setItemSellableOnStreets(e.target.checked)}
+                          style={{width: 'auto', cursor: 'pointer'}}
+                        />
+                        <span>🏙️ Sellable on Streets</span>
+                      </label>
+                    </div>
+
+                    <div className="form-group">
+                      <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer'}}>
+                        <input
+                          type="checkbox"
+                          checked={itemSellableAtDocks}
+                          onChange={(e) => setItemSellableAtDocks(e.target.checked)}
+                          style={{width: 'auto', cursor: 'pointer'}}
+                        />
+                        <span>⚓ Sellable at Docks</span>
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -3315,6 +3839,110 @@ export default function AdminPanel() {
                     {editingWorker ? 'Update Worker' : 'Create Worker'}
                   </button>
                   <button onClick={closeWorkerModal} className="btn-cancel">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Boat Modal */}
+          {showBoatModal && (
+            <div className="modal-overlay" onClick={closeBoatModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingBoat ? 'Edit Boat Schedule' : 'Schedule New Boat'}</h2>
+                  <button onClick={closeBoatModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-group">
+                    <label>Boat Name *</label>
+                    <input
+                      type="text"
+                      value={boatFormData.name}
+                      onChange={(e) => setBoatFormData({...boatFormData, name: e.target.value})}
+                      placeholder="e.g., Morning Cargo Ship, Night Runner"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Boat Image URL</label>
+                    <input
+                      type="text"
+                      value={boatFormData.image_url}
+                      onChange={(e) => setBoatFormData({...boatFormData, image_url: e.target.value})}
+                      placeholder="https://images.unsplash.com/..."
+                    />
+                    {boatFormData.image_url && (
+                      <div style={{marginTop: '12px', textAlign: 'center'}}>
+                        <img src={boatFormData.image_url} alt="Boat Preview" style={{width: '150px', height: '100px', objectFit: 'cover', borderRadius: '12px', border: '2px solid rgba(255,255,255,0.1)'}} />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>Item to Pickup *</label>
+                    <select
+                      value={boatFormData.item_id}
+                      onChange={(e) => setBoatFormData({...boatFormData, item_id: e.target.value})}
+                    >
+                      <option value="">Select an item</option>
+                      {items.filter(item => item.sellable_at_docks).map(item => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Arrival Time *</label>
+                    <input
+                      type="datetime-local"
+                      value={boatFormData.arrival_time}
+                      onChange={(e) => setBoatFormData({...boatFormData, arrival_time: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Departure Time *</label>
+                    <input
+                      type="datetime-local"
+                      value={boatFormData.departure_time}
+                      onChange={(e) => setBoatFormData({...boatFormData, departure_time: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Max Shipments</label>
+                    <input
+                      type="number"
+                      value={boatFormData.max_shipments}
+                      onChange={(e) => setBoatFormData({...boatFormData, max_shipments: parseInt(e.target.value) || 100})}
+                      placeholder="100"
+                      min="1"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                      <input
+                        type="checkbox"
+                        checked={boatFormData.is_active}
+                        onChange={(e) => setBoatFormData({...boatFormData, is_active: e.target.checked})}
+                        style={{width: 'auto'}}
+                      />
+                      <span>Active</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="modal-actions">
+                  <button onClick={saveBoat} className="btn-save">
+                    {editingBoat ? 'Update Boat' : 'Schedule Boat'}
+                  </button>
+                  <button onClick={closeBoatModal} className="btn-cancel">
                     Cancel
                   </button>
                 </div>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { supabase } from '../../../config/supabaseClient';
 
 export default function TheLifeInventory({ 
@@ -8,6 +9,9 @@ export default function TheLifeInventory({
   loadTheLifeInventory,
   user
 }) {
+  const [filterType, setFilterType] = useState('all');
+  const [filterRarity, setFilterRarity] = useState('all');
+
   const useJailFreeCard = async () => {
     const jailCard = theLifeInventory.find(inv => inv.item?.name === 'Jail Free Card' && inv.quantity > 0);
     if (!jailCard) {
@@ -47,16 +51,55 @@ export default function TheLifeInventory({
     }
   };
 
+  // Filter inventory
+  const filteredInventory = theLifeInventory.filter(inv => {
+    const typeMatch = filterType === 'all' || inv.item.type === filterType;
+    const rarityMatch = filterRarity === 'all' || inv.item.rarity === filterRarity;
+    return typeMatch && rarityMatch;
+  });
+
   return (
     <div className="inventory-section">
       <h2>🎒 Your Inventory</h2>
-      <p>Items you've collected from businesses and activities</p>
+
+      {/* Filter Controls */}
+      <div className="inventory-filters">
+        <div className="filter-group">
+          <label>Type:</label>
+          <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+            <option value="all">All Types</option>
+            <option value="consumable">Consumable</option>
+            <option value="equipment">Equipment</option>
+            <option value="special">Special</option>
+            <option value="collectible">Collectible</option>
+            <option value="business_reward">Business Reward</option>
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label>Rarity:</label>
+          <select value={filterRarity} onChange={(e) => setFilterRarity(e.target.value)}>
+            <option value="all">All Rarities</option>
+            <option value="common">Common</option>
+            <option value="rare">Rare</option>
+            <option value="epic">Epic</option>
+            <option value="legendary">Legendary</option>
+          </select>
+        </div>
+
+        <div className="filter-count">
+          Showing {filteredInventory.length} of {theLifeInventory.length} items
+        </div>
+      </div>
+
       {theLifeInventory.length === 0 ? (
         <p className="no-items">No items yet. Start businesses to earn items!</p>
+      ) : filteredInventory.length === 0 ? (
+        <p className="no-items">No items match your filters</p>
       ) : (
-        <div className="equipment-grid">
-          {theLifeInventory.map(inv => (
-            <div key={inv.id} className="equipment-card">
+        <div className="equipment-grid compact">
+          {filteredInventory.map(inv => (
+            <div key={inv.id} className="equipment-card compact">
               <div className="item-rarity-badge" style={{
                 backgroundColor: inv.item.rarity === 'legendary' ? '#FFD700' :
                                inv.item.rarity === 'epic' ? '#9C27B0' :

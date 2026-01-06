@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS the_life_pvp_chat (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   player_id UUID REFERENCES the_life_players(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   username TEXT NOT NULL,
   message TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()

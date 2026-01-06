@@ -27,8 +27,8 @@ export default function TheLifeCrimes({
     }
   };
   const attemptRobbery = async (robbery) => {
-    if (player.tickets < robbery.ticket_cost) {
-      setMessage({ type: 'error', text: 'Not enough tickets!' });
+    if (player.stamina < robbery.stamina_cost) {
+      setMessage({ type: 'error', text: 'Not enough stamina!' });
       return;
     }
 
@@ -63,7 +63,7 @@ export default function TheLifeCrimes({
         : 0;
 
       let updates = {
-        tickets: player.tickets - robbery.ticket_cost,
+        stamina: player.stamina - robbery.stamina_cost,
         total_robberies: player.total_robberies + 1,
         xp: player.xp + (success ? robbery.xp_reward : Math.floor(robbery.xp_reward / 2))
       };
@@ -71,9 +71,59 @@ export default function TheLifeCrimes({
       if (success) {
         updates.cash = player.cash + reward;
         updates.successful_robberies = player.successful_robberies + 1;
+        
+        // Check for item drops
+        const { data: drops } = await supabase
+          .from('the_life_crime_drops')
+          .select(`
+            *,
+            item:the_life_items(*)
+          `)
+          .eq('crime_id', robbery.id);
+
+        const droppedItems = [];
+        if (drops && drops.length > 0) {
+          for (const drop of drops) {
+            const dropRoll = Math.random() * 100;
+            if (dropRoll < drop.drop_chance) {
+              const quantity = Math.floor(Math.random() * (drop.max_quantity - drop.min_quantity + 1)) + drop.min_quantity;
+              
+              // Add item to inventory
+              const { data: existingItem } = await supabase
+                .from('the_life_player_inventory')
+                .select('*')
+                .eq('player_id', player.id)
+                .eq('item_id', drop.item_id)
+                .single();
+
+              if (existingItem) {
+                await supabase
+                  .from('the_life_player_inventory')
+                  .update({ quantity: existingItem.quantity + quantity })
+                  .eq('id', existingItem.id);
+              } else {
+                await supabase
+                  .from('the_life_player_inventory')
+                  .insert({
+                    player_id: player.id,
+                    item_id: drop.item_id,
+                    quantity: quantity
+                  });
+              }
+
+              droppedItems.push(`${drop.item.icon} ${drop.item.name} x${quantity}`);
+            }
+          }
+        }
+
+        let successMessage = `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP! (${Math.round(successChance)}% chance)`;
+        if (droppedItems.length > 0) {
+          successMessage += `\n💎 You also found: ${droppedItems.join(', ')}`;
+        }
+        
         setMessage({ 
           type: 'success', 
-          text: `Success! You earned $${reward.toLocaleString()} and ${robbery.xp_reward} XP! (${Math.round(successChance)}% chance)` 
+          text: successMessage
         });
       } else {
         const levelDifference = player.level - robbery.min_level_required;
@@ -199,14 +249,14 @@ export default function TheLifeCrimes({
                 <div className="crime-overlay-top">
                   <h3 className="crime-title">{robbery.name}</h3>
                   <div className="crime-inline-stats">
-                    <span className="inline-stat">🎫 {robbery.ticket_cost}</span>
+                    <span className="inline-stat">⚡ {robbery.stamina_cost}</span>
                     <span className="inline-stat">✅ {Math.round(displaySuccessChance)}%</span>
                   </div>
                 </div>
                 <button 
                   className="crime-button"
                   onClick={() => attemptRobbery(robbery)}
-                  disabled={player.level < robbery.min_level_required || isInJail || isInHospital || player.tickets < robbery.ticket_cost}
+                  disabled={player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost}
                 >
                   {player.level < robbery.min_level_required ? '🔒 Locked' : 'Commit Crime'}
                 </button>

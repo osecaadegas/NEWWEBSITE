@@ -14,6 +14,7 @@ import TheLifeBlackMarket from './categories/TheLifeBlackMarket';
 import TheLifeInventory from './categories/TheLifeInventory';
 import TheLifeLeaderboard from './categories/TheLifeLeaderboard';
 import TheLifeStats from './categories/TheLifeStats';
+import TheLifeSkills from './categories/TheLifeSkills';
 
 /**
  * Main The Life Container Component
@@ -140,35 +141,35 @@ export default function TheLife() {
 
         <div className="stats-right-section">
           <div className="stat-group">
-            <span className="stat-label">Power</span>
+            <span className="stat-label">Power {player?.power || 0}</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill power-fill" 
-                style={{ width: `${((player?.power || 0) / 100) * 100}%` }}
+                style={{ width: `${Math.min(((player?.power || 0) / 100) * 100, 100)}%` }}
               />
-              <span className="stat-text">{player?.power || 0} / 100</span>
+              <span className="stat-text">{(player?.power || 0) >= 100 ? (player?.power || 0) : `${player?.power || 0} / 100`}</span>
             </div>
           </div>
 
           <div className="stat-group">
-            <span className="stat-label">Intelligence</span>
+            <span className="stat-label">Intelligence {player?.intelligence || 0}</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill intelligence-fill" 
-                style={{ width: `${((player?.intelligence || 0) / 100) * 100}%` }}
+                style={{ width: `${Math.min(((player?.intelligence || 0) / 100) * 100, 100)}%` }}
               />
-              <span className="stat-text">{player?.intelligence || 0} / 100</span>
+              <span className="stat-text">{(player?.intelligence || 0) >= 100 ? (player?.intelligence || 0) : `${player?.intelligence || 0} / 100`}</span>
             </div>
           </div>
 
           <div className="stat-group">
-            <span className="stat-label">Defense</span>
+            <span className="stat-label">Defense {player?.defense || 0}</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill defense-fill" 
-                style={{ width: `${((player?.defense || 0) / 100) * 100}%` }}
+                style={{ width: `${Math.min(((player?.defense || 0) / 100) * 100, 100)}%` }}
               />
-              <span className="stat-text">{player?.defense || 0} / 100</span>
+              <span className="stat-text">{(player?.defense || 0) >= 100 ? (player?.defense || 0) : `${player?.defense || 0} / 100`}</span>
             </div>
           </div>
         </div>
@@ -241,66 +242,96 @@ export default function TheLife() {
       )}
 
       {/* Tab Navigation */}
-      <div className="game-tabs">
+      <div className="game-tabs-wrapper">
         <button 
-          className={`tab tab-image ${activeTab === 'crimes' ? 'active' : ''}`}
-          onClick={() => !isInJail && setActiveTab('crimes')}
-          disabled={isInJail}
-          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+          className="tab-scroll-btn left"
+          onClick={() => {
+            const container = document.querySelector('.game-tabs-scroll');
+            container.scrollBy({ left: -150, behavior: 'smooth' });
+          }}
         >
-          <img src="/thelife/categories/crimes.png" alt="Crimes" />
+          ‹
         </button>
+        <div className="game-tabs-scroll">
+          <div className="game-tabs">
+            <button 
+              className={`tab tab-image ${activeTab === 'crimes' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('crimes')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/crimes.png" alt="Crimes" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'pvp' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('pvp')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/pvp.png" alt="PvP" />
+            </button>
+            <button
+              className={`tab tab-image ${activeTab === 'businesses' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('businesses')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/businesses.png" alt="Businesses" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'brothel' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('brothel')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/brothel.png" alt="Brothel" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'inventory' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('inventory')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/Inventory.png" alt="Inventory" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'jail' ? 'active' : ''}`}
+              onClick={() => setActiveTab('jail')}
+            >
+              <img src="/thelife/categories/Jail.png" alt="Jail" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'hospital' ? 'active' : ''}`}
+              onClick={() => setActiveTab('hospital')}
+            >
+              <img src="/thelife/categories/Hospital.png" alt="Hospital" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'market' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('market')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/BlackMarket.png" alt="Market" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'skills' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('skills')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/skills.png" alt="Skills" />
+            </button>
+          </div>
+        </div>
         <button 
-          className={`tab tab-image ${activeTab === 'pvp' ? 'active' : ''}`}
-          onClick={() => !isInJail && setActiveTab('pvp')}
-          disabled={isInJail}
-          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+          className="tab-scroll-btn right"
+          onClick={() => {
+            const container = document.querySelector('.game-tabs-scroll');
+            container.scrollBy({ left: 150, behavior: 'smooth' });
+          }}
         >
-          <img src="/thelife/categories/pvp.png" alt="PvP" />
-        </button>
-        <button
-          className={`tab tab-image ${activeTab === 'businesses' ? 'active' : ''}`}
-          onClick={() => !isInJail && setActiveTab('businesses')}
-          disabled={isInJail}
-          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
-        >
-          <img src="/thelife/categories/businesses.png" alt="Businesses" />
-        </button>
-        <button 
-          className={`tab tab-image ${activeTab === 'brothel' ? 'active' : ''}`}
-          onClick={() => !isInJail && setActiveTab('brothel')}
-          disabled={isInJail}
-          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
-        >
-          <img src="/thelife/categories/brothel.png" alt="Brothel" />
-        </button>
-        <button 
-          className={`tab tab-image ${activeTab === 'inventory' ? 'active' : ''}`}
-          onClick={() => !isInJail && setActiveTab('inventory')}
-          disabled={isInJail}
-          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
-        >
-          <img src="/thelife/categories/Inventory.png" alt="Inventory" />
-        </button>
-        <button 
-          className={`tab tab-image ${activeTab === 'jail' ? 'active' : ''}`}
-          onClick={() => setActiveTab('jail')}
-        >
-          <img src="/thelife/categories/Jail.png" alt="Jail" />
-        </button>
-        <button 
-          className={`tab tab-image ${activeTab === 'hospital' ? 'active' : ''}`}
-          onClick={() => setActiveTab('hospital')}
-        >
-          <img src="/thelife/categories/Hospital.png" alt="Hospital" />
-        </button>
-        <button 
-          className={`tab tab-image ${activeTab === 'market' ? 'active' : ''}`}
-          onClick={() => !isInJail && setActiveTab('market')}
-          disabled={isInJail}
-          style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
-        >
-          <img src="/thelife/categories/BlackMarket.png" alt="Market" />
+          ›
         </button>
       </div>
 
@@ -440,6 +471,16 @@ export default function TheLife() {
       {activeTab === 'stats' && (
         <TheLifeStats
           player={player}
+        />
+      )}
+
+      {activeTab === 'skills' && (
+        <TheLifeSkills
+          player={player}
+          setPlayer={setPlayer}
+          setMessage={setMessage}
+          isInHospital={isInHospital}
+          user={user}
         />
       )}
 

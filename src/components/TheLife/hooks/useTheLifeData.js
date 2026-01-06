@@ -53,10 +53,8 @@ export const useTheLifeData = (user) => {
             level: 1,
             hp: 100,
             max_hp: 100,
-            stamina: 100,
-            max_stamina: 100,
-            tickets: 300,
-            max_tickets: 300,
+            stamina: 300,
+            max_stamina: 300,
             cash: 500,
             bank_balance: 0
           })
@@ -100,7 +98,7 @@ export const useTheLifeData = (user) => {
       const { data, error } = await supabase
         .from('the_life_players')
         .update({
-          tickets: Math.min(player.tickets + 10, player.max_tickets),
+          stamina: Math.min(player.stamina + 10, player.max_stamina),
           last_daily_bonus: new Date().toISOString(),
           consecutive_logins: newStreak
         })
@@ -112,30 +110,30 @@ export const useTheLifeData = (user) => {
       setPlayer(data);
       setMessage({ 
         type: 'success', 
-        text: `Daily bonus claimed! +10 tickets (${newStreak} day streak)` 
+        text: `Daily bonus claimed! +10 stamina (${newStreak} day streak)` 
       });
     } catch (err) {
       console.error('Error claiming daily bonus:', err);
     }
   };
 
-  const startTicketRefill = () => {
+  const startStaminaRefill = () => {
     const interval = setInterval(async () => {
       if (!player) return;
 
-      const lastRefill = new Date(player.last_ticket_refill);
+      const lastRefill = new Date(player.last_stamina_refill);
       const now = new Date();
       const hoursPassed = (now - lastRefill) / 1000 / 60 / 60;
 
-      if (hoursPassed >= 1 && player.tickets < player.max_tickets) {
-        const ticketsToAdd = Math.floor(hoursPassed) * 20;
-        const newTickets = Math.min(player.tickets + ticketsToAdd, player.max_tickets);
+      if (hoursPassed >= 1 && player.stamina < player.max_stamina) {
+        const staminaToAdd = Math.floor(hoursPassed) * 20;
+        const newStamina = Math.min(player.stamina + staminaToAdd, player.max_stamina);
 
         const { data, error } = await supabase
           .from('the_life_players')
           .update({
-            tickets: newTickets,
-            last_ticket_refill: now.toISOString()
+            stamina: newStamina,
+            last_stamina_refill: now.toISOString()
           })
           .eq('user_id', user.id)
           .select()
@@ -231,55 +229,85 @@ export const useTheLifeData = (user) => {
 
   const loadOnlinePlayers = async () => {
     try {
+      // Clean up stale presence first (older than 90 seconds)
+      await supabase.rpc('cleanup_stale_pvp_presence');
+
+      // Get online players from presence system (last heartbeat within 90 seconds)
+      const { data: presenceData, error: presenceError } = await supabase
+        .from('the_life_pvp_presence')
+        .select('player_id, user_id')
+        .gte('last_heartbeat', new Date(Date.now() - 90 * 1000).toISOString());
+
+      if (presenceError) throw presenceError;
+
+      if (!presenceData || presenceData.length === 0) {
+        setOnlinePlayers([]);
+        return;
+      }
+
+      // Get player IDs that are online (excluding current user)
+      const onlinePlayerIds = presenceData
+        .filter(p => p.user_id !== user.id)
+        .map(p => p.player_id);
+
+      if (onlinePlayerIds.length === 0) {
+        setOnlinePlayers([]);
+        return;
+      }
+
+      // Fetch full player data for online players
       const { data, error } = await supabase
         .from('the_life_players')
-        .select('id, user_id, level, xp, cash, bank_balance, pvp_wins, pvp_losses')
-        .neq('user_id', user.id)
-        .gte('updated_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
-        .limit(20);
+        .select('id, user_id, level, xp, cash, bank_balance, pvp_wins, pvp_losses, hp')
+        .in('id', onlinePlayerIds)
+        .limit(50);
 
       if (error) throw error;
 
-      // Enrich with usernames
+      // Enrich with usernames from SE connections and profiles
       if (data && data.length > 0) {
-        const enrichedData = await Promise.all(
-          data.map(async (playerData) => {
-            let metadata = null;
-            try {
-              const result = await supabase
-                .rpc('get_user_metadata', { user_id: playerData.user_id });
-              metadata = result.data;
-            } catch (err) {
-              console.error('Error fetching metadata:', err);
-            }
-            
-            let twitchUsername = 'Player';
-            
-            if (metadata) {
-              if (metadata.identities && metadata.identities.length > 0) {
-                const twitchIdentity = metadata.identities.find(i => i.provider === 'twitch');
-                if (twitchIdentity?.identity_data) {
-                  twitchUsername = twitchIdentity.identity_data.preferred_username || 
-                                  twitchIdentity.identity_data.user_name ||
-                                  twitchIdentity.identity_data.full_name;
-                }
-              }
-              if (twitchUsername === 'Player' && metadata.user_metadata) {
-                twitchUsername = metadata.user_metadata.preferred_username || 
-                                metadata.user_metadata.user_name ||
-                                metadata.user_metadata.full_name ||
-                                metadata.email?.split('@')[0] ||
-                                'Player';
-              }
-            }
-            
-            return {
-              ...playerData,
-              username: twitchUsername,
-              net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
-            };
-          })
-        );
+        const userIds = data.map(p => p.user_id);
+        
+        // Fetch SE usernames in batch
+        const { data: seConnections } = await supabase
+          .from('streamelements_connections')
+          .select('user_id, se_username')
+          .in('user_id', userIds);
+
+        // Fetch Twitch usernames in batch
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, twitch_username')
+          .in('user_id', userIds);
+
+        // Create lookup maps
+        const seUsernameMap = {};
+        seConnections?.forEach(conn => {
+          if (conn.se_username) {
+            seUsernameMap[conn.user_id] = conn.se_username;
+          }
+        });
+
+        const twitchUsernameMap = {};
+        profiles?.forEach(profile => {
+          if (profile.twitch_username) {
+            twitchUsernameMap[profile.user_id] = profile.twitch_username;
+          }
+        });
+
+        // Enrich player data with usernames (priority: SE > Twitch > fallback)
+        const enrichedData = data.map(playerData => {
+          const username = seUsernameMap[playerData.user_id] || 
+                          twitchUsernameMap[playerData.user_id] || 
+                          'Player';
+          
+          return {
+            ...playerData,
+            username,
+            net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
+          };
+        });
+
         setOnlinePlayers(enrichedData);
       } else {
         setOnlinePlayers([]);
@@ -514,12 +542,14 @@ export const useTheLifeData = (user) => {
       loadOnlinePlayers();
       loadLeaderboard();
       loadCategoryInfo();
-      startTicketRefill();
+      startStaminaRefill();
     }
   }, [user]);
 
   // Subscribe to real-time updates
   useEffect(() => {
+    if (!user) return;
+
     const channel = supabase
       .channel('thelife-changes')
       .on('postgres_changes', 
@@ -544,12 +574,23 @@ export const useTheLifeData = (user) => {
           loadCategoryInfo();
         }
       )
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'the_life_player_inventory' 
+        }, 
+        (payload) => {
+          console.log('Inventory changed, reloading...', payload);
+          loadTheLifeInventory();
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [user]);
 
   // Jail countdown timer
   useEffect(() => {
