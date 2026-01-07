@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabaseClient';
+import { useState, useEffect } from 'react';
 
 export default function TheLifeBlackMarket({ 
   player,
@@ -14,69 +14,117 @@ export default function TheLifeBlackMarket({
   isInHospital,
   user
 }) {
-  const [activeBoats, setActiveBoats] = useState([]);
-  const [upcomingBoats, setUpcomingBoats] = useState([]);
+  const [storeItems, setStoreItems] = useState([]);
+  const [storeCategory, setStoreCategory] = useState('all');
+  const [loadingStore, setLoadingStore] = useState(false);
 
+  // Load store items
   useEffect(() => {
-    if (marketSubTab === 'docks') {
-      loadBoats();
-      const interval = setInterval(loadBoats, 60000); // Refresh every minute
-      return () => clearInterval(interval);
+    if (marketSubTab === 'store') {
+      loadStoreItems();
     }
-  }, [marketSubTab]);
+  }, [marketSubTab, storeCategory]);
 
-  const loadBoats = async () => {
-    // Get active boats
-    const { data: active, error: activeError } = await supabase.rpc('get_active_boats');
-    if (activeError) {
-      console.error('Error loading active boats:', activeError);
-    }
-    setActiveBoats(active || []);
+  const loadStoreItems = async () => {
+    setLoadingStore(true);
+    try {
+      let query = supabase
+        .from('the_life_store_items')
+        .select(`
+          *,
+          item:the_life_items(*)
+        `)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
 
-    // Get upcoming boats
-    const { data: upcoming, error: upcomingError } = await supabase.rpc('get_upcoming_boats');
-    if (upcomingError) {
-      console.error('Error loading upcoming boats:', upcomingError);
-    }
-    setUpcomingBoats(upcoming || []);
-  };
-  const buyHPService = async (cost, hpAmount) => {
-    if (player.cash < cost) {
-      setMessage({ type: 'error', text: 'Not enough cash!' });
-      return;
-    }
-    
-    const { error } = await supabase
-      .from('the_life_players')
-      .update({
-        cash: player.cash - cost,
-        hp: Math.min(player.max_hp, player.hp + hpAmount)
-      })
-      .eq('user_id', user.id);
-      
-    if (!error) {
-      setMessage({ type: 'success', text: `Restored ${hpAmount} HP!` });
-      initializePlayer();
+      // Filter by category if not 'all'
+      if (storeCategory !== 'all') {
+        query = query.eq('category', storeCategory);
+      }
+
+      // Filter out expired limited time items
+      const now = new Date().toISOString();
+      query = query.or(`limited_time_until.is.null,limited_time_until.gte.${now}`);
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setStoreItems(data || []);
+    } catch (err) {
+      console.error('Error loading store items:', err);
+    } finally {
+      setLoadingStore(false);
     }
   };
 
-  const buyFullRecovery = async () => {
-    if (player.cash < 1500) {
+  const buyStoreItem = async (storeItem) => {
+    if (player.cash < storeItem.price) {
       setMessage({ type: 'error', text: 'Not enough cash!' });
       return;
     }
-    
-    const { error } = await supabase
-      .from('the_life_players')
-      .update({
-        cash: player.cash - 1500,
-        hp: player.max_hp
-      })
-      .eq('user_id', user.id);
-      
-    if (!error) {
-      setMessage({ type: 'success', text: 'Fully restored!' });
+
+    // Check stock
+    if (storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0) {
+      setMessage({ type: 'error', text: 'Out of stock!' });
+      return;
+    }
+
+    try {
+      // Update player cash
+      const { error: playerError } = await supabase
+        .from('the_life_players')
+        .update({ cash: player.cash - storeItem.price })
+        .eq('user_id', user.id);
+
+      if (playerError) throw playerError;
+
+      // Add item to inventory
+      const { data: playerData } = await supabase
+        .from('the_life_players')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (playerData) {
+        // Check if item exists in inventory
+        const { data: existing } = await supabase
+          .from('the_life_player_inventory')
+          .select('*')
+          .eq('player_id', playerData.id)
+          .eq('item_id', storeItem.item_id)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('the_life_player_inventory')
+            .update({ quantity: existing.quantity + 1 })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('the_life_player_inventory')
+            .insert({
+              player_id: playerData.id,
+              item_id: storeItem.item_id,
+              quantity: 1
+            });
+        }
+      }
+
+      // Update stock if limited
+      if (storeItem.stock_quantity !== null) {
+        await supabase
+          .from('the_life_store_items')
+          .update({ stock_quantity: storeItem.stock_quantity - 1 })
+          .eq('id', storeItem.id);
+      }
+
+      setMessage({ type: 'success', text: `Purchased ${storeItem.item.name}!` });
       initializePlayer();
+      loadTheLifeInventory();
+      loadStoreItems();
+    } catch (err) {
+      console.error('Error buying item:', err);
+      setMessage({ type: 'error', text: 'Failed to purchase item' });
     }
   };
 
@@ -138,61 +186,6 @@ export default function TheLifeBlackMarket({
     }
   };
 
-  const shipDrugs = async (inv, boat) => {
-    if (isInHospital) {
-      setMessage({ type: 'error', text: 'You cannot ship items while in hospital!' });
-      return;
-    }
-
-    // Check if boat is full
-    if (boat.current_shipments >= boat.max_shipments) {
-      setMessage({ type: 'error', text: 'This boat is at full capacity!' });
-      return;
-    }
-    
-    const dockPrice = Math.floor(inv.quantity * 80);
-    
-    const { error } = await supabase
-      .from('the_life_players')
-      .update({ 
-        cash: player.cash + dockPrice
-      })
-      .eq('user_id', user.id);
-    
-    if (!error) {
-      // Delete from inventory
-      await supabase
-        .from('the_life_player_inventory')
-        .delete()
-        .eq('id', inv.id);
-
-      // Record shipment
-      await supabase
-        .from('the_life_dock_shipments')
-        .insert({
-          boat_id: boat.id,
-          player_id: player.id,
-          item_id: inv.item_id,
-          quantity: inv.quantity,
-          payout: dockPrice
-        });
-
-      // Update boat capacity
-      await supabase
-        .from('the_life_dock_boats')
-        .update({ current_shipments: boat.current_shipments + 1 })
-        .eq('id', boat.id);
-      
-      setMessage({ type: 'success', text: `Shipped ${inv.quantity}x ${inv.item.name} for $${dockPrice.toLocaleString()}! Safe delivery confirmed.` });
-      initializePlayer();
-      loadTheLifeInventory();
-      loadBoats();
-    }
-  };
-
-  const today = new Date().toDateString();
-  const lastDockUse = player?.last_dock_date ? new Date(player.last_dock_date).toDateString() : null;
-  const usesToday = (lastDockUse === today) ? (player?.dock_uses_today || 0) : 0;
   const streetItems = theLifeInventory.filter(inv => inv.item.sellable_on_streets);
 
   return (
@@ -209,12 +202,6 @@ export default function TheLifeBlackMarket({
           onClick={() => setMarketSubTab('store')}
         >
           <img src="/thelife/subcategories/Monhe.png" alt="Monhe Store" className="tab-image" />
-        </button>
-        <button 
-          className={`market-sub-tab ${marketSubTab === 'docks' ? 'active' : ''}`}
-          onClick={() => setMarketSubTab('docks')}
-        >
-          <img src="/thelife/subcategories/Docks.png" alt="Docks" className="tab-image" />
         </button>
       </div>
 
@@ -256,151 +243,77 @@ export default function TheLifeBlackMarket({
 
       {marketSubTab === 'store' && (
         <div className="market-content">
-          <p>Buy items to restore HP and stay in the game</p>
-          <div className="market-items-grid">
-            <div className="market-item">
-              <div className="item-icon">💊</div>
-              <h4>Small Med Kit</h4>
-              <p>Restores 25 HP</p>
-              <div className="item-price">$500</div>
-              <button 
-                className="market-buy-btn"
-                onClick={() => buyHPService(500, 25)}
-                disabled={player.cash < 500}
-              >
-                Buy
-              </button>
-            </div>
-
-            <div className="market-item">
-              <div className="item-icon">💉</div>
-              <h4>Large Med Kit</h4>
-              <p>Restores 50 HP</p>
-              <div className="item-price">$900</div>
-              <button 
-                className="market-buy-btn"
-                onClick={() => buyHPService(900, 50)}
-                disabled={player.cash < 900}
-              >
-                Buy
-              </button>
-            </div>
-
-            <div className="market-item">
-              <div className="item-icon">🧪</div>
-              <h4>Full Recovery</h4>
-              <p>Restores to MAX HP</p>
-              <div className="item-price">$1,500</div>
-              <button 
-                className="market-buy-btn"
-                onClick={buyFullRecovery}
-                disabled={player.cash < 1500}
-              >
-                Buy
-              </button>
-            </div>
+          <div className="store-category-filters">
+            <button 
+              className={`category-filter-btn ${storeCategory === 'all' ? 'active' : ''}`}
+              onClick={() => setStoreCategory('all')}
+            >
+              All
+            </button>
+            <button 
+              className={`category-filter-btn ${storeCategory === 'weapons' ? 'active' : ''}`}
+              onClick={() => setStoreCategory('weapons')}
+            >
+              ⚔️ Weapons
+            </button>
+            <button 
+              className={`category-filter-btn ${storeCategory === 'gear' ? 'active' : ''}`}
+              onClick={() => setStoreCategory('gear')}
+            >
+              🛡️ Gear
+            </button>
+            <button 
+              className={`category-filter-btn ${storeCategory === 'healing' ? 'active' : ''}`}
+              onClick={() => setStoreCategory('healing')}
+            >
+              💊 Healing
+            </button>
+            <button 
+              className={`category-filter-btn ${storeCategory === 'valuable' ? 'active' : ''}`}
+              onClick={() => setStoreCategory('valuable')}
+            >
+              💎 Valuable
+            </button>
+            <button 
+              className={`category-filter-btn ${storeCategory === 'limited_time' ? 'active' : ''}`}
+              onClick={() => setStoreCategory('limited_time')}
+            >
+              ⏰ Limited Time
+            </button>
           </div>
-        </div>
-      )}
 
-      {marketSubTab === 'docks' && (
-        <div className="market-content">
-          <h3>⚓ Dock Schedule</h3>
-          
-          {/* Active Boats */}
-          {activeBoats.length > 0 && (
-            <div className="docks-section">
-              <h4 style={{color: '#22c55e', marginBottom: '15px'}}>🟢 Boats Currently At Dock</h4>
-              {activeBoats.map(boat => {
-                const myItems = theLifeInventory.filter(inv => inv.item_id === boat.item_id);
-                const timeRemaining = Math.floor(boat.time_remaining_minutes);
-                
-                return (
-                  <div key={boat.id} className="dock-boat-card active">
-                    {boat.image_url && (
-                      <div className="boat-image">
-                        <img src={boat.image_url} alt={boat.name} />
-                      </div>
-                    )}
-                    <div className="boat-info">
-                      <h4>{boat.name}</h4>
-                      <div className="boat-item-info">
-                        <img src={boat.item_icon} alt={boat.item_name} style={{width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px'}} />
-                        <span>Accepting: {boat.item_name}</span>
-                      </div>
-                      <div className="boat-timer">
-                        ⏱️ Departing in {timeRemaining} minutes
-                      </div>
-                      <div className="boat-capacity">
-                        Capacity: {boat.current_shipments}/{boat.max_shipments}
-                      </div>
+          {loadingStore ? (
+            <div className="loading">Loading store...</div>
+          ) : storeItems.length === 0 ? (
+            <p className="no-items">No items available in this category</p>
+          ) : (
+            <div className="market-items-grid">
+              {storeItems.map(storeItem => (
+                <div key={storeItem.id} className="market-item">
+                  <img src={storeItem.item.icon} alt={storeItem.item.name} className="item-image" />
+                  <h4>{storeItem.item.name}</h4>
+                  <p>{storeItem.item.description || 'No description'}</p>
+                  {storeItem.stock_quantity !== null && (
+                    <div className="stock-info">
+                      Stock: {storeItem.stock_quantity}
                     </div>
-
-                    {myItems.length > 0 ? (
-                      <div className="boat-items-grid">
-                        {myItems.map(inv => {
-                          const dockPrice = Math.floor(inv.quantity * 80);
-                          const isFull = boat.current_shipments >= boat.max_shipments;
-                          
-                          return (
-                            <div key={inv.id} className="market-item dock-item">
-                              <img src={inv.item.icon} alt={inv.item.name} className="item-image" />
-                              <h4>{inv.item.name}</h4>
-                              <p>Quantity: {inv.quantity}</p>
-                              <div className="dock-stats">
-                                <div className="stat">💵 ${dockPrice.toLocaleString()}</div>
-                                <div className="stat safe">✅ 0% Risk</div>
-                              </div>
-                              <button 
-                                className="market-sell-btn dock-btn"
-                                onClick={() => shipDrugs(inv, boat)}
-                                disabled={isFull}
-                              >
-                                {isFull ? 'Boat Full' : 'Ship Cargo'}
-                              </button>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="no-items">You have no {boat.item_name} to ship</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Upcoming Boats */}
-          {upcomingBoats.length > 0 && (
-            <div className="docks-section">
-              <h4 style={{color: '#fbbf24', marginTop: '30px', marginBottom: '15px'}}>🟡 Upcoming Boats</h4>
-              <div className="upcoming-boats-list">
-                {upcomingBoats.map(boat => {
-                  const hoursUntil = Math.floor(boat.hours_until_arrival);
-                  const minutesUntil = Math.floor((boat.hours_until_arrival - hoursUntil) * 60);
-                  
-                  return (
-                    <div key={boat.id} className="upcoming-boat">
-                      {boat.image_url && (
-                        <img src={boat.image_url} alt={boat.name} style={{width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px'}} />
-                      )}
-                      <div className="upcoming-info">
-                        <strong>{boat.name}</strong>
-                        <span>Accepting: {boat.item_name}</span>
-                      </div>
-                      <div className="upcoming-time">
-                        Arrives in {hoursUntil}h {minutesUntil}m
-                      </div>
+                  )}
+                  {storeItem.limited_time_until && (
+                    <div className="limited-time-badge">
+                      ⏰ Limited Time
                     </div>
-                  );
-                })}
-              </div>
+                  )}
+                  <div className="item-price">${storeItem.price.toLocaleString()}</div>
+                  <button 
+                    className="market-buy-btn"
+                    onClick={() => buyStoreItem(storeItem)}
+                    disabled={player.cash < storeItem.price || (storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0)}
+                  >
+                    {storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0 ? 'Out of Stock' : 'Buy'}
+                  </button>
+                </div>
+              ))}
             </div>
-          )}
-
-          {activeBoats.length === 0 && upcomingBoats.length === 0 && (
-            <p className="no-items">No boats scheduled. Check back later!</p>
           )}
         </div>
       )}

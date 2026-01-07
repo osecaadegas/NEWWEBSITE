@@ -284,8 +284,8 @@ export default function TheLifePVP({
     return date.toLocaleDateString();
   };
   const attackPlayer = async (targetPlayer) => {
-    if (player.tickets < 3) {
-      setMessage({ type: 'error', text: 'Need 3 tickets to attack!' });
+    if (player.stamina < 3) {
+      setMessage({ type: 'error', text: 'Need 3 stamina to attack!' });
       return;
     }
 
@@ -316,7 +316,7 @@ export default function TheLifePVP({
       const cashStolen = won ? Math.floor(freshTarget.cash * 0.1) : 0;
 
       let updates = {
-        tickets: player.tickets - 3,
+        stamina: player.stamina - 3,
       };
 
       if (won) {

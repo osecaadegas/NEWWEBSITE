@@ -11,10 +11,12 @@ import TheLifeBank from './categories/TheLifeBank';
 import TheLifeJail from './categories/TheLifeJail';
 import TheLifeHospital from './categories/TheLifeHospital';
 import TheLifeBlackMarket from './categories/TheLifeBlackMarket';
+import TheLifeDocks from './categories/TheLifeDocks';
 import TheLifeInventory from './categories/TheLifeInventory';
 import TheLifeLeaderboard from './categories/TheLifeLeaderboard';
 import TheLifeStats from './categories/TheLifeStats';
 import TheLifeSkills from './categories/TheLifeSkills';
+import TheLifeProfile from './categories/TheLifeProfile';
 
 /**
  * Main The Life Container Component
@@ -106,70 +108,64 @@ export default function TheLife() {
         <div className="player-stats-bar">
           <div className="stats-left-section">
           <div className="stat-group">
-            <span className="stat-label">Level {player?.level}</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill xp-fill" 
                 style={{ width: `${(player?.xp / (player?.level * 100)) * 100}%` }}
               />
-              <span className="stat-text">{player?.xp} / {player?.level * 100} XP</span>
+              <span className="stat-text">LEVEL {player?.level} - {player?.xp} / {player?.level * 100} XP</span>
             </div>
           </div>
 
           <div className="stat-group">
-            <span className="stat-label">HP</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill hp-fill" 
                 style={{ width: `${(player?.hp / player?.max_hp) * 100}%` }}
               />
-              <span className="stat-text">{player?.hp} / {player?.max_hp}</span>
+              <span className="stat-text">HP: {player?.hp} / {player?.max_hp}</span>
             </div>
           </div>
 
           <div className="stat-group">
-            <span className="stat-label">Tickets</span>
             <div className="stat-bar">
               <div 
-                className="stat-fill ticket-fill" 
-                style={{ width: `${(player?.tickets / player?.max_tickets) * 100}%` }}
+                className="stat-fill stamina-fill" 
+                style={{ width: `${(player?.stamina / player?.max_stamina) * 100}%` }}
               />
-              <span className="stat-text">{player?.tickets} / {player?.max_tickets}</span>
+              <span className="stat-text">STAMINA: {player?.stamina} / {player?.max_stamina}</span>
             </div>
           </div>
         </div>
 
         <div className="stats-right-section">
           <div className="stat-group">
-            <span className="stat-label">Power {player?.power || 0}</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill power-fill" 
                 style={{ width: `${Math.min(((player?.power || 0) / 100) * 100, 100)}%` }}
               />
-              <span className="stat-text">{(player?.power || 0) >= 100 ? (player?.power || 0) : `${player?.power || 0} / 100`}</span>
+              <span className="stat-text">POWER: {player?.power || 0}</span>
             </div>
           </div>
 
           <div className="stat-group">
-            <span className="stat-label">Intelligence {player?.intelligence || 0}</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill intelligence-fill" 
                 style={{ width: `${Math.min(((player?.intelligence || 0) / 100) * 100, 100)}%` }}
               />
-              <span className="stat-text">{(player?.intelligence || 0) >= 100 ? (player?.intelligence || 0) : `${player?.intelligence || 0} / 100`}</span>
+              <span className="stat-text">INTELLIGENCE: {player?.intelligence || 0}</span>
             </div>
           </div>
 
           <div className="stat-group">
-            <span className="stat-label">Defense {player?.defense || 0}</span>
             <div className="stat-bar">
               <div 
                 className="stat-fill defense-fill" 
                 style={{ width: `${Math.min(((player?.defense || 0) / 100) * 100, 100)}%` }}
               />
-              <span className="stat-text">{(player?.defense || 0) >= 100 ? (player?.defense || 0) : `${player?.defense || 0} / 100`}</span>
+              <span className="stat-text">DEFENSE: {player?.defense || 0}</span>
             </div>
           </div>
         </div>
@@ -192,10 +188,10 @@ export default function TheLife() {
               🏦 Bank
             </button>
             <button 
-              className={`quick-tab-inline ${activeTab === 'stats' ? 'active' : ''}`}
-              onClick={() => setActiveTab('stats')}
+              className={`quick-tab-inline ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => setActiveTab('profile')}
             >
-              📊 Stats
+              👤 Profile
             </button>
           </div>
 
@@ -313,6 +309,14 @@ export default function TheLife() {
               style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
             >
               <img src="/thelife/categories/BlackMarket.png" alt="Market" />
+            </button>
+            <button 
+              className={`tab tab-image ${activeTab === 'docks' ? 'active' : ''}`}
+              onClick={() => !isInJail && setActiveTab('docks')}
+              disabled={isInJail}
+              style={{opacity: isInJail ? 0.5 : 1, cursor: isInJail ? 'not-allowed' : 'pointer'}}
+            >
+              <img src="/thelife/categories/Docks.png" alt="Docks" />
             </button>
             <button 
               className={`tab tab-image ${activeTab === 'skills' ? 'active' : ''}`}
@@ -468,9 +472,26 @@ export default function TheLife() {
         />
       )}
 
-      {activeTab === 'stats' && (
-        <TheLifeStats
+      {activeTab === 'docks' && (
+        <TheLifeDocks
           player={player}
+          setPlayer={setPlayer}
+          theLifeInventory={theLifeInventory}
+          setMessage={setMessage}
+          loadTheLifeInventory={loadTheLifeInventory}
+          user={user}
+        />
+      )}
+
+      {activeTab === 'profile' && (
+        <TheLifeProfile
+          player={player}
+          setPlayer={setPlayer}
+          theLifeInventory={theLifeInventory}
+          setMessage={setMessage}
+          loadTheLifeInventory={loadTheLifeInventory}
+          initializePlayer={initializePlayer}
+          user={user}
         />
       )}
 

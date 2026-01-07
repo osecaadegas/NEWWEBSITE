@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './App.css';
 import { BonusHuntProvider, useBonusHunt } from './context/BonusHuntContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -636,6 +637,7 @@ function App() {
           </BrowserRouter>
         </BonusHuntProvider>
       </StreamElementsProvider>
+      <SpeedInsights />
     </AuthProvider>
   );
 }

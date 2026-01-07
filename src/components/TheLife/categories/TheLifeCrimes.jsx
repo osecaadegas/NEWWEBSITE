@@ -111,7 +111,7 @@ export default function TheLifeCrimes({
                   });
               }
 
-              droppedItems.push(`${drop.item.icon} ${drop.item.name} x${quantity}`);
+              droppedItems.push(`${drop.item.name} x${quantity}`);
             }
           }
         }

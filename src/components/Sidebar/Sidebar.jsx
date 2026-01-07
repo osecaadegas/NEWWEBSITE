@@ -9,7 +9,7 @@ import { supabase } from '../../config/supabaseClient';
 import './Sidebar.css';
 
 export default function Sidebar() {
-
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [showGamesDropdown, setShowGamesDropdown] = useState(false);
   const [showStreamDropdown, setShowStreamDropdown] = useState(false);
@@ -21,6 +21,23 @@ export default function Sidebar() {
   const { points, loading: pointsLoading } = useStreamElements();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   // Debug logging
   useEffect(() => {
@@ -169,7 +186,26 @@ export default function Sidebar() {
 
   return (
     <>
-    <aside className="sidebar">
+    {/* Mobile Hamburger Button */}
+    <button 
+      className="mobile-menu-toggle"
+      onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      aria-label="Toggle menu"
+    >
+      <span className={`hamburger-line ${isMobileMenuOpen ? 'open' : ''}`}></span>
+      <span className={`hamburger-line ${isMobileMenuOpen ? 'open' : ''}`}></span>
+      <span className={`hamburger-line ${isMobileMenuOpen ? 'open' : ''}`}></span>
+    </button>
+
+    {/* Mobile Overlay */}
+    {isMobileMenuOpen && (
+      <div 
+        className="mobile-menu-overlay"
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+    )}
+
+    <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
         {user ? (
           <div className="sidebar-avatar-section">
             <div className="avatar-container" onClick={() => handleNavigation('/profile')}>

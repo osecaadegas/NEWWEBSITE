@@ -385,3 +385,68 @@
     font-size: 2.2rem;
   }
 }
+
+/* Additional Mobile Improvements */
+@media (max-width: 640px) {
+  .hero-section {
+    padding: 80px 20px 60px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+    margin-bottom: 32px;
+  }
+
+  .hero-cta {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cta-button-primary,
+  .cta-button-secondary {
+    width: 100%;
+    min-height: 48px;
+    padding: 14px 24px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .feature-card {
+    padding: 24px;
+  }
+
+  .section-title {
+    font-size: 1.75rem;
+  }
+
+  .final-cta-title {
+    font-size: 1.75rem;
+  }
+
+  .hero-badge {
+    font-size: 0.8125rem;
+    padding: 6px 16px;
+  }
+}
+
+/* Touch-Friendly Buttons */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  .button,
+  .cta-button-primary,
+  .cta-button-secondary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .feature-card {
+    cursor: default;
+  }
+}

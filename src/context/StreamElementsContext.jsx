@@ -122,11 +122,11 @@ export function StreamElementsProvider({ children }) {
         pointsData = await response.json();
         console.log('✅ Auto-connect successful! Points:', pointsData.points);
       } else if (response.status === 404) {
-        // User doesn't exist in SE yet - create them with 0 points
-        console.log('📝 User not found in SE, creating with 0 points...');
+        // User doesn't exist in SE yet - create them with 500 starting points
+        console.log('📝 User not found in SE, creating with 500 starting points...');
         
         const createResponse = await fetch(
-          `https://api.streamelements.com/kappa/v2/points/${streamerChannelId}/${twitchUsername}/0`,
+          `https://api.streamelements.com/kappa/v2/points/${streamerChannelId}/${twitchUsername}/500`,
           {
             method: 'PUT',
             headers: {
@@ -138,11 +138,11 @@ export function StreamElementsProvider({ children }) {
 
         if (createResponse.ok) {
           pointsData = await createResponse.json();
-          console.log('✅ User created in SE with 0 points');
+          console.log('✅ User created in SE with 500 starting points');
         } else {
           console.error('❌ Failed to create user in SE:', createResponse.status);
-          // Still proceed with 0 points locally
-          pointsData = { points: 0 };
+          // Still proceed with 500 points locally
+          pointsData = { points: 500 };
         }
       } else {
         console.error('❌ SE API error:', response.status);

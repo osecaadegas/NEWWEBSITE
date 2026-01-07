@@ -48,6 +48,7 @@ export default function AdminPanel() {
   const [crimes, setCrimes] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [items, setItems] = useState([]);
+  const [storeItems, setStoreItems] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [eventMessages, setEventMessages] = useState([]);
   const [categoryInfoList, setCategoryInfoList] = useState([]);
@@ -55,6 +56,7 @@ export default function AdminPanel() {
   const [showCrimeModal, setShowCrimeModal] = useState(false);
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showStoreModal, setShowStoreModal] = useState(false);
   const [showWorkerModal, setShowWorkerModal] = useState(false);
   const [showEventMessageModal, setShowEventMessageModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -62,6 +64,7 @@ export default function AdminPanel() {
   const [editingCrime, setEditingCrime] = useState(null);
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [editingStoreItem, setEditingStoreItem] = useState(null);
   const [editingWorker, setEditingWorker] = useState(null);
   const [editingEventMessage, setEditingEventMessage] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -129,9 +132,18 @@ export default function AdminPanel() {
     reward_item_quantity: 1,
     purchase_price: 5000,
     production_cost: 500,
-    ticket_cost: 5,
+    stamina_cost: 5,
     item_quantity: 10,
-    unit_name: 'grams'
+    unit_name: 'grams',
+    conversion_rate: null
+  });
+  const [businessRequiredItems, setBusinessRequiredItems] = useState([]);
+  const [newRequiredItem, setNewRequiredItem] = useState({
+    item_id: '',
+    quantity_required: 1,
+    reward_cash: 0,
+    reward_item_id: null,
+    reward_item_quantity: 1
   });
   const [workerFormData, setWorkerFormData] = useState({
     name: '',
@@ -155,6 +167,15 @@ export default function AdminPanel() {
     description: '',
     image_url: ''
   });
+  const [storeFormData, setStoreFormData] = useState({
+    item_id: '',
+    category: 'healing',
+    price: 0,
+    stock_quantity: null,
+    is_active: true,
+    display_order: 0,
+    limited_time_until: ''
+  });
   const [uploadingCategoryImage, setUploadingCategoryImage] = useState(false);
   const [availableItems, setAvailableItems] = useState([]);
 
@@ -164,6 +185,7 @@ export default function AdminPanel() {
   const itemsScrollRef = useRef(null);
   const workersScrollRef = useRef(null);
   const categoriesScrollRef = useRef(null);
+  const storeScrollRef = useRef(null);
 
   // Stream Highlights State
   const [highlights, setHighlights] = useState([]);
@@ -205,6 +227,7 @@ export default function AdminPanel() {
     loadCrimes();
     loadBusinesses();
     loadItems();
+    loadStoreItems();
     loadWorkers();
     loadBoats();
     loadHighlights();
@@ -498,6 +521,22 @@ export default function AdminPanel() {
     } else {
       setItems(data || []);
       setAvailableItems(data || []);
+    }
+  };
+
+  const loadStoreItems = async () => {
+    const { data, error } = await supabase
+      .from('the_life_store_items')
+      .select(`
+        *,
+        item:the_life_items(*)
+      `)
+      .order('display_order', { ascending: true });
+    
+    if (error) {
+      console.error('Error loading store items:', error);
+    } else {
+      setStoreItems(data || []);
     }
   };
 
@@ -812,6 +851,16 @@ export default function AdminPanel() {
     }
   };
 
+  const scrollStoreItems = (direction) => {
+    if (storeScrollRef.current) {
+      const scrollAmount = 300;
+      storeScrollRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const scrollCategories = (direction) => {
     if (categoriesScrollRef.current) {
       const scrollAmount = 300;
@@ -837,6 +886,25 @@ export default function AdminPanel() {
     }
   };
 
+  const loadBusinessRequiredItems = async (businessId) => {
+    try {
+      const { data, error } = await supabase
+        .from('the_life_business_required_items')
+        .select(`
+          *,
+          item:the_life_items!the_life_business_required_items_item_id_fkey(*),
+          reward_item:the_life_items!the_life_business_required_items_reward_item_id_fkey(*)
+        `)
+        .eq('business_id', businessId);
+
+      if (error) throw error;
+      setBusinessRequiredItems(data || []);
+    } catch (err) {
+      console.error('Error loading business required items:', err);
+      setBusinessRequiredItems([]);
+    }
+  };
+
   const openBusinessModal = (business = null) => {
     if (business) {
       setBusinessFormData({
@@ -853,9 +921,16 @@ export default function AdminPanel() {
         reward_item_quantity: business.reward_item_quantity || 1,
         purchase_price: business.purchase_price || 5000,
         production_cost: business.production_cost || 500,
-        ticket_cost: business.ticket_cost || 5
+        stamina_cost: business.stamina_cost || business.ticket_cost || 5,
+        required_item_id: business.required_item_id || null,
+        required_item_quantity: business.required_item_quantity || 1,
+        consumes_item: business.consumes_item !== false,
+        variable_reward: business.variable_reward || false,
+        conversion_rate: business.conversion_rate || null,
+        is_upgradeable: business.is_upgradeable !== false
       });
       setEditingBusiness(business);
+      loadBusinessRequiredItems(business.id);
     } else {
       setBusinessFormData({
         name: '',
@@ -871,9 +946,16 @@ export default function AdminPanel() {
         reward_item_quantity: 1,
         purchase_price: 5000,
         production_cost: 500,
-        ticket_cost: 5
+        stamina_cost: 5,
+        required_item_id: null,
+        required_item_quantity: 1,
+        consumes_item: true,
+        variable_reward: false,
+        conversion_rate: null,
+        is_upgradeable: true
       });
       setEditingBusiness(null);
+      setBusinessRequiredItems([]);
     }
     setShowBusinessModal(true);
   };
@@ -881,6 +963,77 @@ export default function AdminPanel() {
   const closeBusinessModal = () => {
     setShowBusinessModal(false);
     setEditingBusiness(null);
+    setBusinessRequiredItems([]);
+    setNewRequiredItem({
+      item_id: '',
+      quantity_required: 1,
+      reward_cash: 0,
+      reward_item_id: null,
+      reward_item_quantity: 1
+    });
+  };
+
+  const addRequiredItem = async () => {
+    if (!newRequiredItem.item_id) {
+      setError('Please select an item');
+      return;
+    }
+
+    if (!editingBusiness) {
+      setError('Save the business first before adding required items');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('the_life_business_required_items')
+        .insert({
+          business_id: editingBusiness.id,
+          item_id: newRequiredItem.item_id,
+          quantity_required: newRequiredItem.quantity_required,
+          reward_cash: newRequiredItem.reward_cash,
+          reward_item_id: newRequiredItem.reward_item_id || null,
+          reward_item_quantity: newRequiredItem.reward_item_quantity
+        })
+        .select(`
+          *,
+          item:the_life_items!the_life_business_required_items_item_id_fkey(*),
+          reward_item:the_life_items!the_life_business_required_items_reward_item_id_fkey(*)
+        `)
+        .single();
+
+      if (error) throw error;
+      
+      setBusinessRequiredItems([...businessRequiredItems, data]);
+      setNewRequiredItem({
+        item_id: '',
+        quantity_required: 1,
+        reward_cash: 0,
+        reward_item_id: null,
+        reward_item_quantity: 1
+      });
+      setSuccess('Required item added!');
+    } catch (err) {
+      console.error('Error adding required item:', err);
+      setError('Failed to add required item: ' + err.message);
+    }
+  };
+
+  const removeRequiredItem = async (requiredItemId) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_business_required_items')
+        .delete()
+        .eq('id', requiredItemId);
+
+      if (error) throw error;
+      
+      setBusinessRequiredItems(businessRequiredItems.filter(ri => ri.id !== requiredItemId));
+      setSuccess('Required item removed!');
+    } catch (err) {
+      console.error('Error removing required item:', err);
+      setError('Failed to remove required item');
+    }
   };
 
   const saveBusiness = async () => {
@@ -1085,6 +1238,114 @@ export default function AdminPanel() {
       loadItems();
     } catch (err) {
       setError('Failed to delete item: ' + err.message);
+    }
+  };
+
+  // === MONHE STORE MANAGEMENT ===
+  const openStoreModal = (storeItem = null) => {
+    if (storeItem) {
+      setStoreFormData({
+        item_id: storeItem.item_id,
+        category: storeItem.category,
+        price: storeItem.price,
+        stock_quantity: storeItem.stock_quantity,
+        is_active: storeItem.is_active,
+        display_order: storeItem.display_order,
+        limited_time_until: storeItem.limited_time_until || ''
+      });
+      setEditingStoreItem(storeItem);
+    } else {
+      setStoreFormData({
+        item_id: '',
+        category: 'healing',
+        price: 0,
+        stock_quantity: null,
+        is_active: true,
+        display_order: 0,
+        limited_time_until: ''
+      });
+      setEditingStoreItem(null);
+    }
+    setShowStoreModal(true);
+  };
+
+  const closeStoreModal = () => {
+    setShowStoreModal(false);
+    setEditingStoreItem(null);
+  };
+
+  const saveStoreItem = async () => {
+    setError('');
+    setSuccess('');
+
+    if (!storeFormData.item_id || !storeFormData.price) {
+      setError('Item and price are required');
+      return;
+    }
+
+    const storeData = {
+      ...storeFormData,
+      stock_quantity: storeFormData.stock_quantity === '' ? null : storeFormData.stock_quantity,
+      limited_time_until: storeFormData.limited_time_until || null
+    };
+
+    try {
+      if (editingStoreItem) {
+        const { error } = await supabase
+          .from('the_life_store_items')
+          .update(storeData)
+          .eq('id', editingStoreItem.id);
+
+        if (error) throw error;
+        setSuccess('Store item updated successfully!');
+      } else {
+        const { error } = await supabase
+          .from('the_life_store_items')
+          .insert([storeData]);
+
+        if (error) throw error;
+        setSuccess('Store item added successfully!');
+      }
+
+      closeStoreModal();
+      loadStoreItems();
+    } catch (err) {
+      setError('Failed to save store item: ' + err.message);
+    }
+  };
+
+  const deleteStoreItem = async (storeItemId) => {
+    if (!confirm('Are you sure you want to remove this item from the store?')) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('the_life_store_items')
+        .delete()
+        .eq('id', storeItemId);
+
+      if (error) throw error;
+      setSuccess('Store item removed successfully!');
+      loadStoreItems();
+    } catch (err) {
+      setError('Failed to delete store item: ' + err.message);
+    }
+  };
+
+  const toggleStoreItemActive = async (storeItem) => {
+    try {
+      const { error } = await supabase
+        .from('the_life_store_items')
+        .update({ is_active: !storeItem.is_active })
+        .eq('id', storeItem.id);
+      
+      if (error) throw error;
+      setSuccess(`Store item ${!storeItem.is_active ? 'activated' : 'deactivated'} successfully!`);
+      loadStoreItems();
+    } catch (err) {
+      setError('Failed to toggle store item: ' + err.message);
     }
   };
 
@@ -2475,6 +2736,12 @@ export default function AdminPanel() {
                 🎒 Items
               </button>
               <button 
+                className={`thelife-tab ${theLifeTab === 'store' ? 'active' : ''}`}
+                onClick={() => setTheLifeTab('store')}
+              >
+                🏪 Monhe Store
+              </button>
+              <button 
                 className={`thelife-tab ${theLifeTab === 'workers' ? 'active' : ''}`}
                 onClick={() => setTheLifeTab('workers')}
               >
@@ -2540,8 +2807,8 @@ export default function AdminPanel() {
                             <span className="value">{crime.min_level_required}</span>
                           </div>
                           <div className="stat">
-                            <span className="label">Tickets</span>
-                            <span className="value">{crime.ticket_cost}</span>
+                            <span className="label">Stamina</span>
+                            <span className="value">{crime.stamina_cost || crime.ticket_cost}</span>
                           </div>
                           <div className="stat">
                             <span className="label">Base Success</span>
@@ -2782,6 +3049,100 @@ export default function AdminPanel() {
                   >
                     →
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Monhe Store Section */}
+            {theLifeTab === 'store' && (
+              <div className="store-management">
+                <div className="section-header">
+                  <h3>🏪 Monhe Store Management</h3>
+                  <button onClick={() => openStoreModal()} className="btn-primary">
+                    ➕ Add Store Item
+                  </button>
+                </div>
+
+                <div className="store-items-list">
+                  {storeItems.length === 0 ? (
+                    <p className="no-data">No items in store. Add items from your inventory.</p>
+                  ) : (
+                    <div className="scroll-container-wrapper">
+                      <button 
+                        className="scroll-arrow scroll-arrow-left" 
+                        onClick={() => scrollStoreItems('left')}
+                        aria-label="Scroll left"
+                      >
+                        ←
+                      </button>
+                      <div className="store-items-grid-scroll" ref={storeScrollRef}>
+                        {storeItems.map(storeItem => (
+                          <div key={storeItem.id} className="store-item-card">
+                            <div className="store-item-image">
+                              <img src={storeItem.item.icon} alt={storeItem.item.name} />
+                              {!storeItem.is_active && (
+                                <div className="inactive-badge">INACTIVE</div>
+                              )}
+                            </div>
+                            <div className="store-item-info">
+                              <h4>{storeItem.item.name}</h4>
+                              <span className={`category-badge ${storeItem.category}`}>
+                                {storeItem.category === 'weapons' && '⚔️'}
+                                {storeItem.category === 'gear' && '🛡️'}
+                                {storeItem.category === 'healing' && '💊'}
+                                {storeItem.category === 'valuable' && '💎'}
+                                {storeItem.category === 'limited_time' && '⏰'}
+                                {' '}{storeItem.category}
+                              </span>
+                              <div className="store-item-stats">
+                                <div className="stat">
+                                  <span className="label">Price</span>
+                                  <span className="value">${storeItem.price.toLocaleString()}</span>
+                                </div>
+                                {storeItem.stock_quantity !== null && (
+                                  <div className="stat">
+                                    <span className="label">Stock</span>
+                                    <span className="value">{storeItem.stock_quantity}</span>
+                                  </div>
+                                )}
+                                <div className="stat">
+                                  <span className="label">Order</span>
+                                  <span className="value">{storeItem.display_order}</span>
+                                </div>
+                                {storeItem.limited_time_until && (
+                                  <div className="stat">
+                                    <span className="label">Until</span>
+                                    <span className="value">{new Date(storeItem.limited_time_until).toLocaleDateString()}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="store-item-actions">
+                                <button 
+                                  onClick={() => toggleStoreItemActive(storeItem)} 
+                                  className={`btn-toggle ${storeItem.is_active ? 'active' : 'inactive'}`}
+                                >
+                                  {storeItem.is_active ? '✓' : '✗'}
+                                </button>
+                                <button onClick={() => openStoreModal(storeItem)} className="btn-edit">
+                                  ✏️
+                                </button>
+                                <button onClick={() => deleteStoreItem(storeItem.id)} className="btn-delete">
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <button 
+                        className="scroll-arrow scroll-arrow-right" 
+                        onClick={() => scrollStoreItems('right')}
+                        aria-label="Scroll right"
+                      >
+                        →
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -3212,15 +3573,12 @@ export default function AdminPanel() {
                               justifyContent: 'space-between',
                               alignItems: 'center'
                             }}>
-                              <div style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
-                                <span style={{fontSize: '1.5rem'}}>{drop.item.icon}</span>
-                                <div>
-                                  <div style={{color: '#d4af37', fontWeight: '600'}}>{drop.item.name}</div>
-                                  <div style={{fontSize: '0.85rem', color: '#cbd5e0'}}>
-                                    {drop.drop_chance}% chance • Qty: {drop.min_quantity}-{drop.max_quantity}
-                                  </div>
-                                </div>
+                              <div>
+                              <div style={{color: '#d4af37', fontWeight: '600', marginBottom: '5px'}}>{drop.item.name}</div>
+                              <div style={{fontSize: '0.85rem', color: '#cbd5e0'}}>
+                                {drop.drop_chance}% drop chance • Qty: {drop.min_quantity}-{drop.max_quantity}
                               </div>
+                            </div>
                               <button 
                                 onClick={() => removeCrimeDrop(drop.id)}
                                 style={{
@@ -3250,7 +3608,7 @@ export default function AdminPanel() {
                             <option value="">Select Item</option>
                             {items.map(item => (
                               <option key={item.id} value={item.id}>
-                                {item.icon} {item.name}
+                                {item.name}
                               </option>
                             ))}
                           </select>
@@ -3387,15 +3745,15 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="form-group">
-                      <label>Ticket Cost</label>
+                      <label>Stamina Cost</label>
                       <input
                         type="number"
-                        value={businessFormData.ticket_cost}
-                        onChange={(e) => setBusinessFormData({...businessFormData, ticket_cost: parseInt(e.target.value)})}
+                        value={businessFormData.stamina_cost}
+                        onChange={(e) => setBusinessFormData({...businessFormData, stamina_cost: parseInt(e.target.value)})}
                         min="0"
                       />
                       <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
-                        Number of tickets required to start production
+                        Amount of stamina required to start production
                       </small>
                     </div>
 
@@ -3516,6 +3874,189 @@ export default function AdminPanel() {
                         Is Active
                       </label>
                     </div>
+
+                    <div className="form-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={businessFormData.is_upgradeable}
+                          onChange={(e) => setBusinessFormData({...businessFormData, is_upgradeable: e.target.checked})}
+                        />
+                        Is Upgradeable
+                      </label>
+                      <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                        Allow players to upgrade this business for better production
+                      </small>
+                    </div>
+
+                    {/* Required Items Section - Multiple Items Support */}
+                    <div className="form-group full-width" style={{marginTop: '20px', borderTop: '1px solid rgba(212,175,55,0.2)', paddingTop: '20px'}}>
+                      <label style={{fontSize: '1.1rem', color: '#d4af37', marginBottom: '15px', display: 'block'}}>📦 Required Items (Optional)</label>
+                      <small style={{color: '#a0aec0', fontSize: '0.9rem', display: 'block', marginBottom: '15px'}}>
+                        Add multiple items with different rewards. E.g., Car Stripping accepts: Old Car ($500), Sports Car ($2000), Luxury Car ($5000)
+                      </small>
+
+                      {/* Conversion Rate for Money Laundering type businesses */}
+                      {businessFormData.name.toLowerCase().includes('launder') || businessFormData.name.toLowerCase().includes('wash') ? (
+                        <div className="form-group">
+                          <label>Conversion Fee (%)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={businessFormData.conversion_rate ? businessFormData.conversion_rate * 100 : ''}
+                            onChange={(e) => setBusinessFormData({...businessFormData, conversion_rate: e.target.value ? parseFloat(e.target.value) / 100 : null})}
+                            min="0"
+                            max="100"
+                            placeholder="e.g., 18 for 18% fee"
+                          />
+                          <small style={{color: '#a0aec0', fontSize: '0.85rem', marginTop: '5px', display: 'block'}}>
+                            Fee taken from item value (e.g., 18% fee means player gets 82% of Dirty Money value)
+                          </small>
+                        </div>
+                      ) : null}
+
+                      {/* Existing Required Items */}
+                      {businessRequiredItems.length > 0 && (
+                        <div style={{marginBottom: '20px'}}>
+                          <h4 style={{color: '#d4af37', fontSize: '0.95rem', marginBottom: '10px'}}>Accepted Items:</h4>
+                          {businessRequiredItems.map(reqItem => (
+                            <div key={reqItem.id} style={{
+                              background: 'rgba(0,0,0,0.3)',
+                              padding: '12px',
+                              borderRadius: '8px',
+                              marginBottom: '10px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}>
+                              <div style={{display: 'flex', alignItems: 'center', gap: '12px', flex: 1}}>
+                                <img 
+                                  src={reqItem.item.icon} 
+                                  alt={reqItem.item.name}
+                                  style={{width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px'}}
+                                />
+                                <div>
+                                  <div style={{color: '#d4af37', fontWeight: '600', marginBottom: '5px'}}>
+                                    {reqItem.item.name} x{reqItem.quantity_required}
+                                  </div>
+                                  <div style={{fontSize: '0.85rem', color: '#cbd5e0'}}>
+                                    Reward: ${reqItem.reward_cash.toLocaleString()}
+                                    {reqItem.reward_item_id && ` + ${reqItem.reward_item_quantity}x ${reqItem.reward_item?.name || 'Item'}`}
+                                  </div>
+                                </div>
+                              </div>
+                              <button 
+                                onClick={() => removeRequiredItem(reqItem.id)}
+                                style={{
+                                  background: '#dc2626',
+                                  border: 'none',
+                                  padding: '8px 12px',
+                                  borderRadius: '5px',
+                                  color: 'white',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem'
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add New Required Item */}
+                      {editingBusiness && (
+                        <div style={{background: 'rgba(212,175,55,0.1)', padding: '15px', borderRadius: '8px'}}>
+                          <h4 style={{color: '#d4af37', fontSize: '0.95rem', marginBottom: '15px'}}>Add New Item:</h4>
+                          <div className="form-grid">
+                            <div className="form-group">
+                              <label>Item</label>
+                              <select
+                                value={newRequiredItem.item_id}
+                                onChange={(e) => setNewRequiredItem({...newRequiredItem, item_id: e.target.value})}
+                              >
+                                <option value="">Select Item...</option>
+                                {availableItems.map(item => (
+                                  <option key={item.id} value={item.id}>
+                                    {item.name} ({item.type})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="form-group">
+                              <label>Quantity Required</label>
+                              <input
+                                type="number"
+                                value={newRequiredItem.quantity_required}
+                                onChange={(e) => setNewRequiredItem({...newRequiredItem, quantity_required: parseInt(e.target.value)})}
+                                min="1"
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label>Cash Reward ($)</label>
+                              <input
+                                type="number"
+                                value={newRequiredItem.reward_cash}
+                                onChange={(e) => setNewRequiredItem({...newRequiredItem, reward_cash: parseInt(e.target.value)})}
+                                min="0"
+                              />
+                            </div>
+
+                            <div className="form-group">
+                              <label>Reward Item (Optional)</label>
+                              <select
+                                value={newRequiredItem.reward_item_id || ''}
+                                onChange={(e) => setNewRequiredItem({...newRequiredItem, reward_item_id: e.target.value || null})}
+                              >
+                                <option value="">None</option>
+                                {availableItems.map(item => (
+                                  <option key={item.id} value={item.id}>
+                                    {item.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="form-group">
+                              <label>Item Quantity</label>
+                              <input
+                                type="number"
+                                value={newRequiredItem.reward_item_quantity}
+                                onChange={(e) => setNewRequiredItem({...newRequiredItem, reward_item_quantity: parseInt(e.target.value)})}
+                                min="1"
+                              />
+                            </div>
+
+                            <div className="form-group" style={{display: 'flex', alignItems: 'flex-end'}}>
+                              <button 
+                                onClick={addRequiredItem}
+                                disabled={!newRequiredItem.item_id}
+                                style={{
+                                  background: '#16a34a',
+                                  border: 'none',
+                                  padding: '10px 20px',
+                                  borderRadius: '5px',
+                                  color: 'white',
+                                  cursor: newRequiredItem.item_id ? 'pointer' : 'not-allowed',
+                                  opacity: newRequiredItem.item_id ? 1 : 0.5,
+                                  width: '100%'
+                                }}
+                              >
+                                ➕ Add Item
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {!editingBusiness && (
+                        <div style={{padding: '15px', background: 'rgba(255,165,0,0.1)', borderRadius: '8px', color: '#ffa500'}}>
+                          💡 Save the business first, then you can add required items
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -3563,12 +4104,28 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="form-group full-width">
-                      <label>Image URL *</label>
+                      <label>Item Image *</label>
                       <input
-                        type="text"
-                        value={itemFormData.icon}
-                        onChange={(e) => setItemFormData({...itemFormData, icon: e.target.value})}
-                        placeholder="https://images.unsplash.com/..."
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setItemFormData({...itemFormData, icon: reader.result});
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        style={{
+                          padding: '10px',
+                          background: 'rgba(0,0,0,0.3)',
+                          border: '2px solid rgba(212, 175, 55, 0.3)',
+                          borderRadius: '8px',
+                          color: '#fff',
+                          cursor: 'pointer'
+                        }}
                       />
                       {itemFormData.icon && (
                         <div style={{marginTop: '12px', textAlign: 'center'}}>
@@ -3651,7 +4208,7 @@ export default function AdminPanel() {
                       >
                         <option value="">None</option>
                         <option value="heal">❤️ Heal HP</option>
-                        <option value="tickets">🎫 Add Tickets</option>
+                        <option value="stamina">⚡ Add Stamina</option>
                         <option value="xp_boost">⭐ XP Boost</option>
                         <option value="cash">💰 Add Cash</option>
                         <option value="jail_free">🔓 Jail Free</option>
@@ -3726,6 +4283,112 @@ export default function AdminPanel() {
                   </button>
                   <button onClick={closeItemModal} className="btn-cancel">
                     Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Store Item Modal */}
+          {showStoreModal && (
+            <div className="modal-overlay" onClick={closeStoreModal}>
+              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                  <h2>{editingStoreItem ? 'Edit Store Item' : 'Add Store Item'}</h2>
+                  <button onClick={closeStoreModal} className="modal-close">×</button>
+                </div>
+
+                <div className="modal-body">
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label>Select Item *</label>
+                      <select
+                        value={storeFormData.item_id}
+                        onChange={(e) => setStoreFormData({...storeFormData, item_id: e.target.value})}
+                      >
+                        <option value="">Choose an item...</option>
+                        {items.map(item => (
+                          <option key={item.id} value={item.id}>
+                            {item.name} ({item.type})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Category *</label>
+                      <select
+                        value={storeFormData.category}
+                        onChange={(e) => setStoreFormData({...storeFormData, category: e.target.value})}
+                      >
+                        <option value="weapons">⚔️ Weapons</option>
+                        <option value="gear">🛡️ Gear</option>
+                        <option value="healing">💊 Healing</option>
+                        <option value="valuable">💎 Valuable</option>
+                        <option value="limited_time">⏰ Limited Time</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Price *</label>
+                      <input
+                        type="number"
+                        value={storeFormData.price}
+                        onChange={(e) => setStoreFormData({...storeFormData, price: parseInt(e.target.value) || 0})}
+                        placeholder="1000"
+                        min="1"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Stock Quantity (optional)</label>
+                      <input
+                        type="number"
+                        value={storeFormData.stock_quantity || ''}
+                        onChange={(e) => setStoreFormData({...storeFormData, stock_quantity: e.target.value ? parseInt(e.target.value) : null})}
+                        placeholder="Leave empty for unlimited"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Display Order</label>
+                      <input
+                        type="number"
+                        value={storeFormData.display_order}
+                        onChange={(e) => setStoreFormData({...storeFormData, display_order: parseInt(e.target.value) || 0})}
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label>Limited Time Until (optional)</label>
+                      <input
+                        type="datetime-local"
+                        value={storeFormData.limited_time_until}
+                        onChange={(e) => setStoreFormData({...storeFormData, limited_time_until: e.target.value})}
+                      />
+                    </div>
+
+                    <div className="form-group full-width">
+                      <label style={{display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer'}}>
+                        <input
+                          type="checkbox"
+                          checked={storeFormData.is_active}
+                          onChange={(e) => setStoreFormData({...storeFormData, is_active: e.target.checked})}
+                          style={{width: 'auto', cursor: 'pointer'}}
+                        />
+                        <span>Item Active in Store</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="modal-footer">
+                  <button onClick={closeStoreModal} className="btn-secondary">Cancel</button>
+                  <button onClick={saveStoreItem} className="btn-primary">
+                    {editingStoreItem ? 'Update' : 'Add'} Store Item
                   </button>
                 </div>
               </div>

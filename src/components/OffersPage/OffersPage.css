@@ -550,14 +550,59 @@
   .offer-card {
     padding: 20px;
   }
+
+  .offer-card-title {
+    font-size: 1.125rem;
+  }
+
+  .offer-card-description {
+    font-size: 0.875rem;
+  }
+
+  .claim-button {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .offers-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
 }
 
 @media (max-width: 480px) {
+  .offers-page {
+    padding: 60px 15px 30px;
+  }
+
   .offers-container h1 {
     font-size: 1.75rem;
   }
 
   .offer-card {
     padding: 15px;
+  }
+
+  .premium-card-box > span {
+    width: 80px;
+    height: 80px;
+  }
+
+  .offers-subtitle {
+    font-size: 0.875rem;
+    margin-bottom: 30px;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  .claim-button,
+  button {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .offer-card {
+    transition: none;
   }
 }

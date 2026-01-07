@@ -22,6 +22,32 @@
   --theme-border: rgba(255, 255, 255, 0.1);
   --theme-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   --theme-border-animation: none;
+
+  /* Responsive Breakpoints */
+  --breakpoint-mobile: 320px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1024px;
+  --breakpoint-large: 1440px;
+
+  /* Responsive Spacing */
+  --spacing-xs: clamp(4px, 1vw, 8px);
+  --spacing-sm: clamp(8px, 1.5vw, 12px);
+  --spacing-md: clamp(12px, 2vw, 16px);
+  --spacing-lg: clamp(16px, 2.5vw, 24px);
+  --spacing-xl: clamp(24px, 3vw, 32px);
+
+  /* Responsive Font Sizes */
+  --font-xs: clamp(0.75rem, 2vw, 0.875rem);
+  --font-sm: clamp(0.875rem, 2.2vw, 1rem);
+  --font-base: clamp(1rem, 2.5vw, 1.125rem);
+  --font-lg: clamp(1.125rem, 3vw, 1.25rem);
+  --font-xl: clamp(1.25rem, 3.5vw, 1.5rem);
+  --font-2xl: clamp(1.5rem, 4vw, 2rem);
+  --font-3xl: clamp(2rem, 5vw, 3rem);
+
+  /* Sidebar Width */
+  --sidebar-width: 260px;
+  --sidebar-mobile-width: 280px;
 }
 
 body {
@@ -31,11 +57,17 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: transparent;
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+  /* Better text rendering on mobile */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {

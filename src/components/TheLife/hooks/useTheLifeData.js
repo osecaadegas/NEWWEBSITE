@@ -45,6 +45,13 @@ export const useTheLifeData = (user) => {
         .single();
 
       if (error && error.code === 'PGRST116') {
+        // Get username from profiles or user metadata
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('se_username, twitch_username')
+          .eq('id', user.id)
+          .single();
+
         const { data: newPlayer, error: createError } = await supabase
           .from('the_life_players')
           .insert({
@@ -56,13 +63,63 @@ export const useTheLifeData = (user) => {
             stamina: 300,
             max_stamina: 300,
             cash: 500,
-            bank_balance: 0
+            bank_balance: 0,
+            se_username: profileData?.se_username || null,
+            twitch_username: profileData?.twitch_username || user?.user_metadata?.preferred_username || null
           })
           .select()
           .single();
 
         if (createError) throw createError;
         playerData = newPlayer;
+      } else if (playerData && (!playerData.se_username || !playerData.twitch_username)) {
+        // Update existing player with username if missing
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('se_username, twitch_username')
+          .eq('id', user.id)
+          .single();
+
+        const updates = {};
+        if (!playerData.se_username && profileData?.se_username) {
+          updates.se_username = profileData.se_username;
+        }
+        if (!playerData.twitch_username) {
+          updates.twitch_username = profileData?.twitch_username || user?.user_metadata?.preferred_username || null;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          const { data: updatedPlayer } = await supabase
+            .from('the_life_players')
+            .update(updates)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+          
+          if (updatedPlayer) playerData = updatedPlayer;
+        }
+      }
+
+      // Calculate equipped item bonuses
+      if (playerData.equipped_weapon_id || playerData.equipped_gear_id) {
+        const equipmentIds = [];
+        if (playerData.equipped_weapon_id) equipmentIds.push(playerData.equipped_weapon_id);
+        if (playerData.equipped_gear_id) equipmentIds.push(playerData.equipped_gear_id);
+
+        const { data: equippedItems } = await supabase
+          .from('the_life_items')
+          .select('id, boost_type, boost_amount')
+          .in('id', equipmentIds);
+
+        if (equippedItems) {
+          equippedItems.forEach(item => {
+            if (item.boost_type === 'power' && item.boost_amount) {
+              playerData.power = (playerData.power || 0) + item.boost_amount;
+            } else if (item.boost_type === 'defense' && item.boost_amount) {
+              playerData.defense = (playerData.defense || 0) + item.boost_amount;
+            }
+          });
+        }
       }
 
       setPlayer(playerData);
@@ -342,6 +399,7 @@ export const useTheLifeData = (user) => {
           opsData[`${prod.business_id}_completed_at`] = prod.completed_at;
           opsData[`${prod.business_id}_reward_item_id`] = prod.reward_item_id;
           opsData[`${prod.business_id}_reward_item_quantity`] = prod.reward_item_quantity;
+          opsData[`${prod.business_id}_reward_cash`] = prod.reward_cash || 0;
         });
       }
       setDrugOps(opsData);
@@ -427,6 +485,7 @@ export const useTheLifeData = (user) => {
           pvp_wins,
           total_robberies
         `)
+        .order('level', { ascending: false })
         .order('xp', { ascending: false })
         .limit(10);
 

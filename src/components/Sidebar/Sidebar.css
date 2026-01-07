@@ -599,3 +599,248 @@
     height: 32px;
   }
 }
+
+/* ===== RESPONSIVE MOBILE DESIGN ===== */
+
+/* Mobile Hamburger Menu Button */
+.mobile-menu-toggle {
+  display: none; /* Hidden on desktop */
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 2000;
+  width: 50px;
+  height: 50px;
+  background: rgba(26, 27, 46, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(30, 31, 50, 0.95);
+  border-color: var(--theme-primary);
+}
+
+.hamburger-line {
+  width: 24px;
+  height: 2px;
+  background: var(--theme-text);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-line.open:nth-child(1) {
+  transform: rotate(45deg) translate(7px, 7px);
+}
+
+.hamburger-line.open:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-line.open:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Mobile Overlay */
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 999;
+  backdrop-filter: blur(4px);
+}
+
+/* Tablet Breakpoint */
+@media (max-width: 1024px) {
+  .sidebar {
+    top: 20px;
+    left: 20px;
+    width: 240px;
+  }
+}
+
+/* Mobile Breakpoint */
+@media (max-width: 768px) {
+  /* Show hamburger button */
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  /* Show overlay when menu is open */
+  .mobile-menu-overlay {
+    display: block;
+  }
+
+  /* Sidebar mobile styles */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -100%; /* Hidden off-screen */
+    width: var(--sidebar-mobile-width);
+    height: 100vh;
+    max-height: 100vh;
+    background: rgba(26, 27, 46, 0.98);
+    border-radius: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: none;
+    border-top: none;
+    border-bottom: none;
+    padding: 20px;
+    padding-top: 80px; /* Space for close button */
+    transition: left 0.3s ease;
+    z-index: 1001;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar.mobile-open {
+    left: 0; /* Slide in */
+  }
+
+  /* Adjust avatar section for mobile */
+  .sidebar-avatar-section {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .avatar-image {
+    width: 60px;
+    height: 60px;
+  }
+
+  .points-display {
+    justify-content: center;
+  }
+
+  /* Make sidebar items more touch-friendly */
+  .sidebar-item,
+  .sidebar-subitem {
+    min-height: 48px;
+    padding: 12px 16px;
+    font-size: var(--font-sm);
+  }
+
+  .sidebar-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Adjust dropdown arrows */
+  .dropdown-arrow {
+    font-size: 0.875rem;
+  }
+
+  /* Social links spacing */
+  .sidebar-social {
+    gap: 16px;
+    padding: 16px 0;
+  }
+
+  .social-link {
+    width: 40px;
+    height: 40px;
+  }
+
+  .social-link svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* Small Mobile Breakpoint */
+@media (max-width: 480px) {
+  .mobile-menu-toggle {
+    width: 45px;
+    height: 45px;
+    top: 15px;
+    left: 15px;
+  }
+
+  .hamburger-line {
+    width: 20px;
+  }
+
+  .sidebar {
+    width: 85vw;
+    max-width: 320px;
+    padding: 16px;
+    padding-top: 70px;
+  }
+
+  .sidebar-item,
+  .sidebar-subitem {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+
+  .avatar-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .points-value {
+    font-size: 1rem;
+  }
+
+  .twitch-login-button {
+    padding: 10px 14px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Avatar Picker Modal - Mobile Responsive */
+@media (max-width: 768px) {
+  .avatar-picker-card {
+    width: 90vw;
+    max-width: 400px;
+    padding: 20px;
+    margin: 20px;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .avatar-option {
+    width: 70px;
+    height: 70px;
+  }
+
+  .avatar-upload-btn {
+    padding: 10px;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .avatar-picker-card {
+    padding: 16px;
+  }
+
+  .avatar-picker-title {
+    font-size: 1.125rem;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .avatar-option {
+    width: 60px;
+    height: 60px;
+  }
+}
