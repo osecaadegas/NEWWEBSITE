@@ -5887,16 +5887,194 @@
     color: rgba(255, 255, 255, 0.5) !important;
   }
 
-  /* Old styles - keeping for other card types */
-  .item-card,
-  .boat-card {
-    min-width: 100%;
-    max-width: 100%;
+  /* Item Card (Stash/Inventory) Mobile List View */
+  .item-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    background: rgba(26, 31, 46, 0.95);
+    border-radius: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    overflow: hidden;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative;
+    margin-bottom: 12px;
+  }
+
+  .item-image-container {
+    position: relative;
+    width: 100% !important;
+    height: 140px !important;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.3);
+  }
+
+  .item-image-container img {
     width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+  }
+
+  .item-header {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent) !important;
+    padding: 12px !important;
     display: flex;
     flex-direction: row;
-    height: auto;
-    min-height: 80px;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 2;
+  }
+
+  .item-header h3 {
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
+  }
+
+  .item-quantity-badge {
+    background: rgba(212, 175, 55, 0.9);
+    color: #000;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .item-content {
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  .item-description {
+    font-size: 0.85rem;
+    color: #cbd5e0;
+    line-height: 1.4;
+  }
+
+  .item-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .item-stat-badge {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .item-card button {
+    width: 100% !important;
+    padding: 16px !important;
+    font-size: 1rem !important;
+    min-height: 56px !important;
+    font-weight: 700 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-top: 2px solid rgba(255, 255, 255, 0.1) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative !important;
+    background: linear-gradient(135deg, #d4af37, #f0c674) !important;
+    color: #000 !important;
+  }
+
+  .item-card button:active {
+    transform: scale(0.98);
+  }
+
+  .item-card button:disabled {
+    background: rgba(100, 100, 100, 0.5) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  /* Boat Card Mobile List View */
+  .boat-card {
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
+    background: rgba(26, 31, 46, 0.95);
+    border-radius: 12px;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    overflow: hidden;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: relative;
+    margin-bottom: 12px;
+  }
+
+  .boat-image-container {
+    position: relative;
+    width: 100% !important;
+    height: 140px !important;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .boat-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .boat-header {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent) !important;
+    padding: 12px !important;
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+  }
+
+  .boat-header h3 {
+    font-size: 1.1rem !important;
+    margin: 0 0 4px 0 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
+  }
+
+  .boat-card button {
+    width: 100% !important;
+    padding: 16px !important;
+    font-size: 1rem !important;
+    min-height: 56px !important;
+    font-weight: 700 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-top: 2px solid rgba(255, 255, 255, 0.1) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative !important;
+    background: linear-gradient(135deg, #10b981, #34d399) !important;
+    color: #000 !important;
+  }
+
+  .boat-card button:active {
+    transform: scale(0.98);
+  }
+
+  .boat-card button:disabled {
+    background: rgba(100, 100, 100, 0.5) !important;
+    color: rgba(255, 255, 255, 0.5) !important;
   }
 
   /* Content section - takes remaining space */
@@ -6039,11 +6217,18 @@
     white-space: nowrap;
     min-height: 36px;
     height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
 
   .tab img {
-    max-height: 24px;
-    max-width: 24px;
+    max-height: 20px;
+    max-width: 20px;
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
   }
 
   /* Stats Display */
