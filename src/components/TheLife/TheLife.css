@@ -5832,7 +5832,7 @@
     object-fit: cover;
   }
 
-  .worker-header {
+  .worker-header-overlay {
     position: absolute !important;
     top: 0;
     left: 0;
@@ -5841,28 +5841,52 @@
     padding: 12px !important;
     display: flex;
     flex-direction: column;
+    gap: 6px;
     z-index: 2;
   }
 
-  .worker-header h3 {
+  .worker-header-overlay h4 {
     font-size: 1.1rem !important;
-    margin: 0 0 4px 0 !important;
+    margin: 0 !important;
     color: #fff !important;
     font-weight: 700 !important;
     text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
   }
 
-  .worker-tier {
+  .worker-inline-stats {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .rarity-badge-inline {
     background: rgba(212, 175, 55, 0.9);
     color: #000;
     padding: 4px 8px;
     border-radius: 6px;
     font-size: 0.7rem;
     font-weight: 700;
-    width: fit-content;
+    text-transform: uppercase;
   }
 
-  .worker-card button {
+  .income-inline {
+    background: rgba(34, 197, 94, 0.9);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  .worker-actions-overlay {
+    position: relative !important;
+    width: 100% !important;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .worker-actions-overlay .compact-btn {
     width: 100% !important;
     padding: 16px !important;
     font-size: 1rem !important;
@@ -5873,18 +5897,71 @@
     border-top: 2px solid rgba(255, 255, 255, 0.1) !important;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    position: relative !important;
-    background: linear-gradient(135deg, #10b981, #34d399) !important;
+    background: linear-gradient(135deg, #d4af37, #f0c674) !important;
     color: #000 !important;
+    position: relative !important;
   }
 
-  .worker-card button:active {
+  .worker-actions-overlay .hire-compact-btn {
+    background: linear-gradient(135deg, #d4af37, #f0c674) !important;
+  }
+
+  .worker-actions-overlay .compact-btn:active {
     transform: scale(0.98);
   }
 
-  .worker-card button:disabled {
+  .worker-actions-overlay .compact-btn:disabled {
     background: rgba(100, 100, 100, 0.5) !important;
     color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  .worker-actions-overlay .locked-compact-worker {
+    width: 100% !important;
+    padding: 16px !important;
+    font-size: 1rem !important;
+    min-height: 56px !important;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(100, 100, 100, 0.5) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 700;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .worker-card .hired-badge {
+    position: absolute !important;
+    top: 8px !important;
+    left: 8px !important;
+    background: rgba(34, 197, 94, 0.95) !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    font-size: 0.65rem !important;
+    z-index: 3 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .worker-card .info-tooltip-btn {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    border: 2px solid rgba(212, 175, 55, 0.5) !important;
+    color: #d4af37 !important;
+    font-size: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 3 !important;
+    backdrop-filter: blur(4px);
   }
 
   /* Item Card (Stash/Inventory) Mobile List View */
@@ -6212,23 +6289,29 @@
     flex-shrink: 0;
     min-width: auto;
     width: auto;
-    padding: 6px 12px;
+    padding: 4px 10px;
     font-size: 0.75rem;
     white-space: nowrap;
-    min-height: 36px;
-    height: 36px;
+    min-height: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
   }
 
   .tab img {
-    max-height: 20px;
-    max-width: 20px;
-    width: 20px;
-    height: 20px;
+    max-height: 28px;
+    max-width: 28px;
+    width: 28px;
+    height: 28px;
     object-fit: contain;
+    display: block;
+  }
+
+  /* Hide category scroll arrows on mobile */
+  .tab-scroll-btn {
+    display: none !important;
   }
 
   /* Stats Display */
