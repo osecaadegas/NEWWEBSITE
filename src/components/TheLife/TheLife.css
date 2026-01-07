@@ -5643,16 +5643,18 @@
 
   .hired-badge {
     position: absolute !important;
-    top: 12px !important;
-    left: 12px !important;
+    top: 8px !important;
+    left: 8px !important;
     background: rgba(34, 197, 94, 0.95) !important;
     color: white !important;
-    padding: 6px 12px !important;
-    border-radius: 6px !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
     font-weight: 700 !important;
-    font-size: 0.75rem !important;
+    font-size: 0.65rem !important;
     z-index: 3 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .business-header-overlay {
