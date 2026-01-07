@@ -5498,7 +5498,8 @@
     background: rgba(26, 31, 46, 0.8);
     border-radius: 12px;
     border: 1px solid rgba(212, 175, 55, 0.3);
-    overflow: hidden;
+    overflow: visible !important;
+    position: relative;
     gap: 0;
     width: 100% !important;
     max-width: 100% !important;
@@ -5509,9 +5510,12 @@
     width: 130px !important;
     min-width: 130px !important;
     max-width: 130px !important;
-    height: auto !important;
+    height: 100% !important;
     flex-shrink: 0;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 12px 0 0 12px;
+    overflow: hidden;
   }
 
   .crime-image {
@@ -5519,17 +5523,21 @@
     height: 100% !important;
     object-fit: cover;
     display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
   }
 
   .crime-overlay-top {
-    position: relative !important;
+    position: static !important;
     background: transparent !important;
     padding: 12px !important;
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
     z-index: 1;
+    margin-left: 130px !important;
   }
 
   .crime-title {
@@ -5541,7 +5549,7 @@
   }
 
   .crime-inline-stats {
-    display: flex;
+    display: flex !important;
     gap: 10px;
     font-size: 0.75rem;
     color: #cbd5e0;
@@ -5562,13 +5570,13 @@
     transform: translateY(-50%) !important;
     width: auto !important;
     margin: 0 !important;
-    padding: 10px 16px !important;
-    font-size: 0.75rem !important;
-    min-height: 40px !important;
+    padding: 12px 20px !important;
+    font-size: 0.8rem !important;
+    min-height: 44px !important;
     border-radius: 8px !important;
     font-weight: 600;
     white-space: nowrap;
-    z-index: 3;
+    z-index: 10 !important;
   }
 
   .locked-overlay {
@@ -5601,7 +5609,7 @@
     flex-direction: row !important;
     align-items: stretch !important;
     height: auto !important;
-    min-height: 110px;
+    min-height: 130px;
     background: rgba(26, 31, 46, 0.8);
     border-radius: 12px;
     border: 1px solid rgba(212, 175, 55, 0.3);
@@ -5609,6 +5617,7 @@
     gap: 0;
     width: 100% !important;
     max-width: 100% !important;
+    position: relative;
   }
 
   .business-image-container {
@@ -5616,8 +5625,10 @@
     width: 130px !important;
     min-width: 130px !important;
     max-width: 130px !important;
-    height: auto !important;
+    height: 100% !important;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .business-image-container img {
@@ -5627,9 +5638,9 @@
   }
 
   .business-header-overlay {
-    position: relative !important;
+    position: static !important;
     background: transparent !important;
-    padding: 12px !important;
+    padding: 12px 100px 12px 12px !important;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -5650,20 +5661,51 @@
     color: #cbd5e0;
   }
 
-  .business-card button {
+  .business-compact-actions {
     position: absolute !important;
-    right: 12px !important;
+    right: 8px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
-    width: auto !important;
-    margin: 0 !important;
-    padding: 10px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    z-index: 10 !important;
+  }
+
+  .business-compact-actions .compact-btn {
+    width: 85px !important;
+    min-width: 85px !important;
+    padding: 10px 8px !important;
+    font-size: 0.7rem !important;
+    min-height: 44px !important;
+    white-space: normal !important;
+    line-height: 1.2;
+  }
+
+  .business-compact-actions .compact-actions-row {
+    display: flex !important;
+    gap: 4px !important;
+  }
+
+  .business-compact-actions .compact-btn-small {
+    width: 40px !important;
+    min-width: 40px !important;
+    padding: 8px 4px !important;
     font-size: 0.75rem !important;
-    min-height: 40px !important;
-    border-radius: 8px !important;
-    font-weight: 600;
-    white-space: nowrap;
-    z-index: 2;
+    min-height: 38px !important;
+  }
+
+  .business-compact-actions .timer-compact,
+  .business-compact-actions .locked-compact {
+    width: 85px !important;
+    min-width: 85px !important;
+    padding: 10px 8px !important;
+    font-size: 0.7rem !important;
+    min-height: 44px !important;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Worker Card Mobile List View */
