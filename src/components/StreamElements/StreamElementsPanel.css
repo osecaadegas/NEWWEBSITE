@@ -1,7 +1,7 @@
 .se-panel {
   min-height: 100vh;
   padding: 40px 20px 40px;
-  background: #1a1d23;
+  background: transparent;
 }
 
 .se-header {

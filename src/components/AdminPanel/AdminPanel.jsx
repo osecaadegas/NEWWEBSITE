@@ -4895,25 +4895,25 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="form-group">
-                      <label>Video URL * (Direct video link or embed)</label>
+                      <label>Video Filename * (from public/highlights folder)</label>
                       <input
-                        type="url"
+                        type="text"
                         value={highlightFormData.video_url}
                         onChange={(e) => setHighlightFormData({...highlightFormData, video_url: e.target.value})}
-                        placeholder="https://example.com/video.mp4"
+                        placeholder="video1 (or video1.mp4)"
                       />
-                      <small>Upload your video to a hosting service like Streamable, YouTube, or direct file URL</small>
+                      <small>Enter filename without extension (e.g., "video1", "video2") - videos must be in public/highlights folder</small>
                     </div>
 
                     <div className="form-group">
-                      <label>Thumbnail URL</label>
+                      <label>Thumbnail URL (optional)</label>
                       <input
                         type="url"
                         value={highlightFormData.thumbnail_url}
                         onChange={(e) => setHighlightFormData({...highlightFormData, thumbnail_url: e.target.value})}
                         placeholder="https://example.com/thumbnail.jpg"
                       />
-                      <small>Leave empty to use default thumbnail</small>
+                      <small>Leave empty for no thumbnail</small>
                     </div>
 
                     <div className="form-group">

@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../config/supabaseClient';
 import './StreamHighlights.css';
 
 export default function StreamHighlights() {
   const [highlights, setHighlights] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedHighlight, setSelectedHighlight] = useState(null);
+  const [hoveredId, setHoveredId] = useState(null);
+  const scrollContainerRef = useRef(null);
+  const videoRefs = useRef({});
 
   useEffect(() => {
     loadHighlights();
 
-    // Subscribe to real-time updates
     const channel = supabase
       .channel('highlights-changes')
       .on('postgres_changes', 
@@ -48,24 +49,36 @@ export default function StreamHighlights() {
     }
   };
 
-  const incrementViewCount = async (highlightId) => {
-    try {
-      const { error } = await supabase.rpc('increment_highlight_views', {
-        highlight_id: highlightId
-      });
-      if (error) console.error('Error incrementing views:', error);
-    } catch (err) {
-      console.error('Error:', err);
+  const handleMouseEnter = async (highlightId) => {
+    setHoveredId(highlightId);
+    const video = videoRefs.current[highlightId];
+    if (video) {
+      video.muted = true;
+      try {
+        await video.play();
+      } catch (err) {
+        console.error('Error playing video:', err);
+      }
     }
   };
 
-  const handleHighlightClick = (highlight) => {
-    setSelectedHighlight(highlight);
-    incrementViewCount(highlight.id);
+  const handleMouseLeave = (highlightId) => {
+    setHoveredId(null);
+    const video = videoRefs.current[highlightId];
+    if (video) {
+      video.pause();
+      video.currentTime = 0;
+    }
   };
 
-  const closeModal = () => {
-    setSelectedHighlight(null);
+  const scroll = (direction) => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 250;
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
   };
 
   if (loading) {
@@ -73,72 +86,66 @@ export default function StreamHighlights() {
   }
 
   if (highlights.length === 0) {
-    return null; // Don't show section if no highlights
+    return null;
   }
 
   return (
     <div className="stream-highlights">
       <div className="highlights-header">
-        <h2>🎬 Stream Highlights</h2>
-        <p>Best moments from recent streams</p>
-      </div>
-
-      <div className="highlights-grid">
-        {highlights.map(highlight => (
-          <div 
-            key={highlight.id} 
-            className="highlight-card"
-            onClick={() => handleHighlightClick(highlight)}
-          >
-            <div className="highlight-thumbnail">
-              {highlight.thumbnail_url ? (
-                <img src={highlight.thumbnail_url} alt={highlight.title} />
-              ) : (
-                <div className="no-thumbnail">
-                  <span>▶️</span>
-                </div>
-              )}
-              {highlight.duration && (
-                <div className="highlight-duration">{highlight.duration}</div>
-              )}
-              <div className="highlight-overlay">
-                <span className="play-icon">▶️</span>
-              </div>
-            </div>
-            <div className="highlight-info">
-              <h3>{highlight.title}</h3>
-              {highlight.description && (
-                <p className="highlight-description">{highlight.description}</p>
-              )}
-              <div className="highlight-stats">
-                <span className="view-count">👁️ {highlight.view_count || 0}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {selectedHighlight && (
-        <div className="highlight-modal" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="close-modal" onClick={closeModal}>✕</button>
-            <div className="modal-video">
-              <video 
-                controls 
-                autoPlay
-                src={selectedHighlight.video_url}
-                style={{ width: '100%', maxHeight: '80vh', borderRadius: '12px' }}
-              />
-            </div>
-            <div className="modal-info">
-              <h2>{selectedHighlight.title}</h2>
-              {selectedHighlight.description && (
-                <p>{selectedHighlight.description}</p>
-              )}
-            </div>
-          </div>
+        <div className="highlights-header-left">
+          <h2>🎬 Stream Highlights</h2>
+          <p>Hover to preview · Click to watch full</p>
         </div>
-      )}
+        <div className="scroll-buttons">
+          <button className="scroll-btn" onClick={() => scroll('left')}>‹</button>
+          <button className="scroll-btn" onClick={() => scroll('right')}>›</button>
+        </div>
+      </div>
+
+      <div className="highlights-grid" ref={scrollContainerRef}>
+        {highlights.map(highlight => {
+          // Use video_url from database - should be like "video1", "video2", etc.
+          const videoName = highlight.video_url.replace('.mp4', '').replace('.webm', '');
+          const videoPath = `/highlights/${videoName}.mp4`;
+
+          return (
+            <div 
+              key={highlight.id} 
+              className="highlight-card"
+            >
+              <div className="highlight-video-container">
+                <video 
+                  key={videoPath}
+                  src={videoPath}
+                  autoPlay
+                  loop
+                  playsInline
+                  muted
+                  preload="auto"
+                  className="highlight-video"
+                  onError={(e) => console.error('Video load error:', videoPath, e)}
+                />
+                {highlight.thumbnail_url && (
+                  <img 
+                    src={highlight.thumbnail_url} 
+                    alt={highlight.title}
+                    className="highlight-thumbnail-img"
+                  />
+                )}
+                {highlight.duration && (
+                  <div className="highlight-duration">{highlight.duration}</div>
+                )}
+              </div>
+              <div className="highlight-info">
+                <h3>{highlight.title}</h3>
+                <div className="highlight-stats">
+                  <span className="view-count">👁️ {highlight.view_count || 0}</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.5;
@@ -50,13 +54,39 @@
   --sidebar-mobile-width: 280px;
 }
 
+/* VS Code-style Scanline Animation */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
 body {
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background: transparent;
+  background: linear-gradient(135deg, #28313B 0%, #485461 100%);
   /* Prevent horizontal scroll on mobile */
   overflow-x: hidden;
   /* Better text rendering on mobile */
@@ -68,6 +98,7 @@ body {
   width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
+  background: transparent;
 }
 
 h1, h2, h3, h4, h5, h6 {

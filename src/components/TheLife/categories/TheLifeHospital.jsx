@@ -173,54 +173,6 @@ export default function TheLifeHospital({
   return (
     <div className="hospital-section">
       <h2>🏥 Hospital</h2>
-      <div className="hospital-info">
-        <h3>💊 Medical Services</h3>
-        <p>Purchase medical services to restore your HP</p>
-        
-        <div className="hospital-services">
-          <div className="service-item">
-            <div className="service-icon">💊</div>
-            <h4>Small Med Kit</h4>
-            <p>Restores 25 HP</p>
-            <div className="service-price">$500</div>
-            <button 
-              className="service-buy-btn"
-              onClick={() => buyService(500, 25)}
-              disabled={player.cash < 500 || player.hp >= player.max_hp}
-            >
-              Buy
-            </button>
-          </div>
-
-          <div className="service-item">
-            <div className="service-icon">💉</div>
-            <h4>Large Med Kit</h4>
-            <p>Restores 50 HP</p>
-            <div className="service-price">$900</div>
-            <button 
-              className="service-buy-btn"
-              onClick={() => buyService(900, 50)}
-              disabled={player.cash < 900 || player.hp >= player.max_hp}
-            >
-              Buy
-            </button>
-          </div>
-
-          <div className="service-item">
-            <div className="service-icon">🧪</div>
-            <h4>Full Recovery</h4>
-            <p>Restores to MAX HP</p>
-            <div className="service-price">$1,500</div>
-            <button 
-              className="service-buy-btn"
-              onClick={buyFullRecovery}
-              disabled={player.cash < 1500 || player.hp >= player.max_hp}
-            >
-              Buy
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -239,7 +239,17 @@ export default function TheLifeCrimes({
               key={robbery.id} 
               className={`crime-card ${player.level < robbery.min_level_required ? 'locked' : ''}`}
             >
-              <div className="crime-image-container">
+              <div 
+                className="crime-image-container"
+                onClick={() => {
+                  if (!(player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost)) {
+                    attemptRobbery(robbery);
+                  }
+                }}
+                style={{
+                  cursor: (player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost) ? 'not-allowed' : 'pointer'
+                }}
+              >
                 <img src={imageUrl} alt={robbery.name} className="crime-image" />
                 {player.level < robbery.min_level_required && (
                   <div className="locked-overlay">
@@ -253,9 +263,15 @@ export default function TheLifeCrimes({
                     <span className="inline-stat">✅ {Math.round(displaySuccessChance)}%</span>
                   </div>
                 </div>
+                <div className="crime-tap-hint">
+                  👆 Tap to Commit Crime
+                </div>
                 <button 
                   className="crime-button"
-                  onClick={() => attemptRobbery(robbery)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    attemptRobbery(robbery);
+                  }}
                   disabled={player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost}
                 >
                   {player.level < robbery.min_level_required ? '🔒 Locked' : 'Commit Crime'}

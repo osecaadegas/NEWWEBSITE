@@ -284,6 +284,9 @@ export default function TheLifePVP({
     return date.toLocaleDateString();
   };
   const attackPlayer = async (targetPlayer) => {
+    console.log('⚔️ Attack button clicked! Target:', targetPlayer);
+    console.log('⚔️ Player stamina:', player.stamina, 'HP:', player.hp);
+    
     if (player.stamina < 3) {
       setMessage({ type: 'error', text: 'Need 3 stamina to attack!' });
       return;
@@ -294,6 +297,8 @@ export default function TheLifePVP({
       return;
     }
 
+    console.log('⚔️ Checks passed, starting attack...');
+
     try {
       // Fetch fresh target data to prevent stale cash values
       const { data: freshTarget, error: fetchError } = await supabase
@@ -302,7 +307,10 @@ export default function TheLifePVP({
         .eq('id', targetPlayer.id)
         .single();
       
+      console.log('⚔️ Fresh target data:', freshTarget);
+      
       if (fetchError || !freshTarget) {
+        console.error('⚔️ Fetch error:', fetchError);
         setMessage({ type: 'error', text: 'Target player not found!' });
         return;
       }
@@ -332,7 +340,8 @@ export default function TheLifePVP({
           hospital_until: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         };
         
-        console.log('Updating target player:', freshTarget.id, 'Updates:', targetUpdates);
+        console.log('🎯 Attacker WON - Updating target player:', freshTarget.id, 'Updates:', targetUpdates);
+        console.log('🎯 Target current cash:', freshTarget.cash, '→ New cash:', targetUpdates.cash);
         
         const { data: targetUpdateResult, error: targetUpdateError } = await supabase
           .from('the_life_players')
@@ -341,11 +350,11 @@ export default function TheLifePVP({
           .select();
         
         if (targetUpdateError) {
-          console.error('Failed to update target player:', targetUpdateError);
+          console.error('❌ Failed to update target player:', targetUpdateError);
           throw targetUpdateError;
         }
         
-        console.log('Target player updated successfully:', targetUpdateResult);
+        console.log('✅ Target player updated successfully:', targetUpdateResult);
 
         setMessage({ 
           type: 'success', 
@@ -362,13 +371,18 @@ export default function TheLifePVP({
         updates.hp = 0;
         updates.hospital_until = new Date(Date.now() + 30 * 60 * 1000).toISOString();
         
+        console.log('💀 Attacker LOST - Attacker updates:', updates);
+        console.log('💀 Attacker current cash:', player.cash, '→ New cash:', updates.cash);
+        console.log('💀 Hospital until:', updates.hospital_until);
+        
         // Defender wins and gets the money
         const defenderUpdates = {
           cash: freshTarget.cash + cashLost,
           pvp_wins: (freshTarget.pvp_wins || 0) + 1
         };
         
-        console.log('Updating defender (they won):', freshTarget.id, 'Updates:', defenderUpdates);
+        console.log('💰 Updating defender (they won):', freshTarget.id, 'Updates:', defenderUpdates);
+        console.log('💰 Defender current cash:', freshTarget.cash, '→ New cash:', defenderUpdates.cash);
         
         const { data: defenderUpdateResult, error: defenderUpdateError } = await supabase
           .from('the_life_players')
@@ -377,11 +391,11 @@ export default function TheLifePVP({
           .select();
         
         if (defenderUpdateError) {
-          console.error('Failed to update defender:', defenderUpdateError);
+          console.error('❌ Failed to update defender:', defenderUpdateError);
           throw defenderUpdateError;
         }
         
-        console.log('Defender updated successfully:', defenderUpdateResult);
+        console.log('✅ Defender updated successfully:', defenderUpdateResult);
         
         setMessage({ 
           type: 'error', 
@@ -393,6 +407,9 @@ export default function TheLifePVP({
         }, 1500);
       }
 
+      console.log('🔄 Updating attacker player with:', updates);
+      console.log('🔄 Using user_id:', user.id);
+      
       const { data, error } = await supabase
         .from('the_life_players')
         .update(updates)
@@ -400,7 +417,12 @@ export default function TheLifePVP({
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Attacker update failed:', error);
+        throw error;
+      }
+      
+      console.log('✅ Attacker updated successfully:', data);
 
       await supabase.from('the_life_pvp_logs').insert({
         attacker_id: player.id,

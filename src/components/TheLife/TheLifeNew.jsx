@@ -4,7 +4,8 @@ import './TheLife.css';
 
 // Category Components
 import TheLifeCrimes from './categories/TheLifeCrimes';
-import TheLifePVP from './categories/TheLifePVP';
+import TheLifePVP from './categories/TheLifePVP_NEW';
+import './categories/TheLifePVP_NEW.css';
 import TheLifeBusinesses from './categories/TheLifeBusinesses';
 import TheLifeBrothel from './categories/TheLifeBrothel';
 import TheLifeBank from './categories/TheLifeBank';

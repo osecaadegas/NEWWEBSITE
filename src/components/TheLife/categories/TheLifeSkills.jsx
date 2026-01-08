@@ -61,11 +61,6 @@ export default function TheLifeSkills({
 
   return (
     <div className="skills-section">
-      <div className="section-header">
-        <h2>💪 Skills & Abilities</h2>
-        <p>Upgrade your skills to become more powerful</p>
-      </div>
-
       {isInHospital && (
         <div className="hospital-warning-box">
           <span className="warning-icon">🏥</span>

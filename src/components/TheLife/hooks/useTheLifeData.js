@@ -45,11 +45,11 @@ export const useTheLifeData = (user) => {
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // Get username from profiles or user metadata
+        // Get username from user_profiles or user metadata
         const { data: profileData } = await supabase
-          .from('profiles')
-          .select('se_username, twitch_username')
-          .eq('id', user.id)
+          .from('user_profiles')
+          .select('twitch_username')
+          .eq('user_id', user.id)
           .single();
 
         const { data: newPlayer, error: createError } = await supabase
@@ -64,7 +64,6 @@ export const useTheLifeData = (user) => {
             max_stamina: 300,
             cash: 500,
             bank_balance: 0,
-            se_username: profileData?.se_username || null,
             twitch_username: profileData?.twitch_username || user?.user_metadata?.preferred_username || null
           })
           .select()
@@ -72,18 +71,15 @@ export const useTheLifeData = (user) => {
 
         if (createError) throw createError;
         playerData = newPlayer;
-      } else if (playerData && (!playerData.se_username || !playerData.twitch_username)) {
+      } else if (playerData && !playerData.twitch_username) {
         // Update existing player with username if missing
         const { data: profileData } = await supabase
-          .from('profiles')
-          .select('se_username, twitch_username')
-          .eq('id', user.id)
+          .from('user_profiles')
+          .select('twitch_username')
+          .eq('user_id', user.id)
           .single();
 
         const updates = {};
-        if (!playerData.se_username && profileData?.se_username) {
-          updates.se_username = profileData.se_username;
-        }
         if (!playerData.twitch_username) {
           updates.twitch_username = profileData?.twitch_username || user?.user_metadata?.preferred_username || null;
         }
@@ -315,15 +311,23 @@ export const useTheLifeData = (user) => {
       // Fetch full player data for online players
       const { data, error } = await supabase
         .from('the_life_players')
-        .select('id, user_id, level, xp, cash, bank_balance, pvp_wins, pvp_losses, hp')
+        .select('id, user_id, level, xp, cash, bank_balance, pvp_wins, pvp_losses, hp, max_hp, power, intelligence, defense, avatar_url, se_username, hospital_until, jail_until')
         .in('id', onlinePlayerIds)
         .limit(50);
 
       if (error) throw error;
 
+      // Filter out players in hospital or jail
+      const now = new Date();
+      const availablePlayers = data?.filter(p => {
+        const inHospital = p.hospital_until && new Date(p.hospital_until) > now;
+        const inJail = p.jail_until && new Date(p.jail_until) > now;
+        return !inHospital && !inJail;
+      }) || [];
+
       // Enrich with usernames from SE connections and profiles
-      if (data && data.length > 0) {
-        const userIds = data.map(p => p.user_id);
+      if (availablePlayers && availablePlayers.length > 0) {
+        const userIds = availablePlayers.map(p => p.user_id);
         
         // Fetch SE usernames in batch
         const { data: seConnections } = await supabase
@@ -353,7 +357,7 @@ export const useTheLifeData = (user) => {
         });
 
         // Enrich player data with usernames (priority: SE > Twitch > fallback)
-        const enrichedData = data.map(playerData => {
+        const enrichedData = availablePlayers.map(playerData => {
           const username = seUsernameMap[playerData.user_id] || 
                           twitchUsernameMap[playerData.user_id] || 
                           'Player';
@@ -607,10 +611,47 @@ export const useTheLifeData = (user) => {
 
   // Subscribe to real-time updates
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+
+    console.log('🔴 Setting up realtime subscription for user:', user.id);
 
     const channel = supabase
-      .channel('thelife-changes')
+      .channel(`thelife-updates-${user.id}`, {
+        config: {
+          broadcast: { self: true },
+          presence: { key: user.id }
+        }
+      })
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'the_life_players'
+        }, 
+        (payload) => {
+          console.log('📨 Received player update event:', payload);
+          
+          // Only update if this is the current user's data
+          if (payload.new && payload.new.user_id === user.id) {
+            console.log('🔥 REALTIME: My player data changed!', payload.new);
+            setPlayer(prevPlayer => ({
+              ...prevPlayer,
+              ...payload.new
+            }));
+            
+            // If player was sent to hospital or jail, show message
+            if (payload.new.hp === 0 && payload.new.hospital_until) {
+              console.log('💀 Player sent to hospital!');
+              setMessage({ 
+                type: 'error', 
+                text: 'You were attacked and sent to the hospital!' 
+              });
+            }
+          } else {
+            console.log('📭 Update was for another player, ignoring');
+          }
+        }
+      )
       .on('postgres_changes', 
         { 
           event: '*', 
@@ -644,12 +685,24 @@ export const useTheLifeData = (user) => {
           loadTheLifeInventory();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to realtime updates!');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Channel error - retrying connection...');
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏱️ Subscription timed out');
+        } else if (status === 'CLOSED') {
+          console.warn('⚠️ Channel closed');
+        }
+      });
 
     return () => {
+      console.log('🔴 Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user?.id]); // Only depend on user.id, not player
 
   // Jail countdown timer
   useEffect(() => {

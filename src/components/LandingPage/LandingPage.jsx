@@ -1,155 +1,660 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useAdmin } from '../../hooks/useAdmin';
+import { supabase } from '../../config/supabaseClient';
 import AuthModal from '../Auth/AuthModal';
-import './LandingPage.css';
 
 export default function LandingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showAgeVerification, setShowAgeVerification] = useState(false);
+  const [casinoOffers, setCasinoOffers] = useState([]);
+  const [highlights, setHighlights] = useState([]);
+  const [giveaways, setGiveaways] = useState([]);
+  const [pointStoreItems, setPointStoreItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [activeTab, setActiveTab] = useState('highlights'); // 'highlights', 'offers', 'giveaways', 'pointstore'
+  const [aboutMeTab, setAboutMeTab] = useState('about'); // 'about' or 'stream'
   const { user } = useAuth();
   const navigate = useNavigate();
+  const scrollContainerRef = useRef(null);
 
-  const features = [
-    {
-      icon: '🎰',
-      title: 'Exclusive Casino Offers',
-      description: 'Access the best casino bonuses and promotions curated for streamers',
-      link: '/offers'
-    },
-    {
-      icon: '🎁',
-      title: 'Giveaways',
-      description: 'Run engaging giveaways with multiple winner selection modes for your viewers',
-      link: '/giveaways'
-    },
-    {
-      icon: '🎮',
-      title: 'Interactive Games',
-      description: 'Random slot picker, coin flip, and more interactive games for your stream',
-      link: '/games'
-    },
-    {
-      icon: '⭐',
-      title: 'Points Store',
-      description: 'Reward your loyal viewers with an integrated loyalty points redemption system',
-      link: '/points'
-    },
-    {
-      icon: '📺',
-      title: 'Live Stream Hub',
-      description: 'Tournaments, balance predictions, and real-time stream interactions',
-      link: '/stream'
-    },
-    {
-      icon: '✨',
-      title: 'Professional Overlay',
-      description: 'Bonus hunt tracker, customizable themes, and Twitch integration for premium streams',
-      link: user ? '/overlay' : null
+  useEffect(() => {
+    // Check if user has verified age
+    const ageVerified = localStorage.getItem('ageVerified');
+    if (!ageVerified) {
+      setShowAgeVerification(true);
     }
-  ];
+    loadData();
+  }, []);
 
-  const handleFeatureClick = (link) => {
-    if (link) {
-      if (!user && link !== '/offers') {
-        setShowAuthModal(true);
-      } else {
-        navigate(link);
+  const loadData = async () => {
+    try {
+      // Load offers
+      const { data: offersData, error: offersError } = await supabase
+        .from('casino_offers')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .limit(6);
+
+      if (!offersError && offersData) {
+        setCasinoOffers(offersData);
       }
-    } else {
-      setShowAuthModal(true);
+
+      // Load giveaways
+      const { data: giveawaysData, error: giveawaysError } = await supabase
+        .from('giveaways')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (!giveawaysError && giveawaysData && giveawaysData.length > 0) {
+        setGiveaways(giveawaysData);
+      } else {
+        // Mock data for testing
+        setGiveaways([
+          {
+            id: 1,
+            title: '💰 $500 Cash Giveaway',
+            description: 'Enter to win $500 cash! Winners announced every Friday.',
+            image_url: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=450&fit=crop',
+            entries: 234,
+            ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 2,
+            title: '🎮 Gaming Setup',
+            description: 'Complete gaming setup including keyboard, mouse, and headset!',
+            image_url: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&h=450&fit=crop',
+            entries: 189,
+            ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+          },
+          {
+            id: 3,
+            title: '🎁 Mystery Box',
+            description: 'Mystery box worth over $200! Could be anything!',
+            image_url: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=450&fit=crop',
+            entries: 412,
+            ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+          }
+        ]);
+      }
+
+      // Load point store items
+      const { data: pointStoreData, error: pointStoreError } = await supabase
+        .from('point_store_items')
+        .select('*')
+        .eq('is_available', true)
+        .order('cost', { ascending: true });
+
+      if (!pointStoreError && pointStoreData && pointStoreData.length > 0) {
+        setPointStoreItems(pointStoreData);
+      } else {
+        // Mock data for testing
+        setPointStoreItems([
+          {
+            id: 1,
+            name: '🎨 Custom Emote',
+            description: 'Get your own custom emote designed!',
+            image_url: 'https://images.unsplash.com/photo-1626785774625-ddcddc3445e9?w=800&h=450&fit=crop',
+            cost: 5000
+          },
+          {
+            id: 2,
+            name: '⭐ VIP Chat Badge',
+            description: 'Exclusive VIP badge next to your name in chat!',
+            image_url: 'https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=800&h=450&fit=crop',
+            cost: 10000
+          },
+          {
+            id: 3,
+            name: '🎤 Request Song',
+            description: 'Request any song to be played on stream!',
+            image_url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&h=450&fit=crop',
+            cost: 2500
+          },
+          {
+            id: 4,
+            name: '👑 Stream Title',
+            description: 'Choose the stream title for one stream!',
+            image_url: 'https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=800&h=450&fit=crop',
+            cost: 15000
+          },
+          {
+            id: 5,
+            name: '🎮 Game Choice',
+            description: 'Pick the game I play for 1 hour!',
+            image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=450&fit=crop',
+            cost: 20000
+          }
+        ]);
+      }
+
+      // Load highlights - use local videos
+      const localHighlights = Array.from({ length: 13 }, (_, i) => ({
+        id: i + 1,
+        video_url: `/highlights/video${i + 1}.mp4`,
+        title: `Highlight ${i + 1}`
+      }));
+      setHighlights(localHighlights);
+
+    } catch (err) {
+      console.error('Error loading data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOfferClick = (bonusLink) => {
+    if (bonusLink) {
+      window.open(bonusLink, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleAgeConfirm = () => {
+    localStorage.setItem('ageVerified', 'true');
+    setShowAgeVerification(false);
+  };
+
+  const handleAgeDeny = () => {
+    window.location.href = 'https://www.google.com';
+  };
+
+  const scrollHighlights = (direction) => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const cardWidth = 248; // Width of one card + gap (240px + 8px gap)
+      const scrollAmount = cardWidth; // Scroll 1 card at a time
+      const newPosition = direction === 'left' 
+        ? Math.max(0, currentSlide - 1)
+        : Math.min(highlights.length - 7, currentSlide + 1);
+      
+      setCurrentSlide(newPosition);
+      container.scrollTo({
+        left: newPosition * cardWidth,
+        behavior: 'smooth'
+      });
     }
   };
 
   return (
-    <div className="landing-page">
-      {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-content">
-          <div className="hero-badge">🎰 Premium Streaming Tools</div>
-          <h1 className="hero-title">
-            Elevate Your Casino
-            <span className="hero-title-highlight"> Streaming Experience</span>
-          </h1>
-          <p className="hero-subtitle">
-            Professional overlay system with exclusive casino offers, interactive games, 
-            loyalty rewards, and powerful streaming tools designed for content creators
-          </p>
-          {!user && (
-            <div className="hero-cta">
-              <button onClick={() => setShowAuthModal(true)} className="cta-button-primary">
-                Get Started Free
+    <>
+      {/* Age Verification Modal */}
+      {showAgeVerification && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', zIndex: 9999 }}>
+          <div style={{ width: '100%', maxWidth: '448px', backgroundColor: '#581c87', borderRadius: '24px', padding: '32px', textAlign: 'center', border: '2px solid #a855f7' }}>
+            
+            <div style={{ fontSize: '60px', marginBottom: '16px' }}>🔞</div>
+            
+            <h1 style={{ fontSize: '30px', fontWeight: '900', color: 'white', marginBottom: '16px' }}>
+              Age Verification
+            </h1>
+            
+            <p style={{ fontSize: '14px', color: '#d1d5db', marginBottom: '24px' }}>
+              This website contains gambling content. You must be 18+ to enter.
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+              <button
+                onClick={handleAgeConfirm}
+                style={{ padding: '12px 16px', backgroundColor: '#22c55e', color: 'white', fontWeight: 'bold', borderRadius: '12px', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#16a34a'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#22c55e'}
+              >
+                ✓ I'm 18+
               </button>
-              <button onClick={() => navigate('/offers')} className="cta-button-secondary">
-                View Offers
+              <button
+                onClick={handleAgeDeny}
+                style={{ padding: '12px 16px', backgroundColor: '#374151', color: 'white', fontWeight: 'bold', borderRadius: '12px', border: 'none', cursor: 'pointer' }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#4b5563'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#374151'}
+              >
+                ✗ Exit
               </button>
             </div>
-          )}
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="features-section">
-        <div className="features-container">
-          <div className="features-header">
-            <h2 className="section-title">Everything You Need</h2>
-            <p className="section-subtitle">Comprehensive tools to engage your audience and grow your stream</p>
-          </div>
-          
-          <div className="features-grid">
-            {features.map((feature, index) => (
-              <div 
-                key={index} 
-                className="feature-card"
-                onClick={() => handleFeatureClick(feature.link)}
-              >
-                <div className="feature-icon-wrapper">
-                  <div className="feature-icon">{feature.icon}</div>
-                </div>
-                <h3 className="feature-title">{feature.title}</h3>
-                <p className="feature-description">{feature.description}</p>
-                <div className="feature-arrow">→</div>
-              </div>
-            ))}
+            
+            <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(168, 85, 247, 0.2)', fontSize: '11px', color: '#9ca3af' }}>
+              18+ Only • Legal Compliance
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* CTA Section */}
-      {!user && (
-        <section className="final-cta-section">
-          <div className="final-cta-content">
-            <h2 className="final-cta-title">Ready to Transform Your Stream?</h2>
-            <p className="final-cta-subtitle">Join hundreds of streamers already using our platform</p>
-            <button onClick={() => setShowAuthModal(true)} className="cta-button-large">
-              Start Streaming Better
-            </button>
-          </div>
-        </section>
       )}
 
-      {/* Footer */}
-      <footer className="landing-footer">
-        <div className="footer-content">
-          <div className="footer-brand">
-            <h3>🎰 Stream Overlay</h3>
-            <p>Professional streaming tools for casino content creators</p>
+      <div className="min-h-screen pt-16 px-4 md:px-6 lg:px-8 pb-12">
+        <div className="max-w-[1800px] mx-auto space-y-6 md:space-y-8">
+        
+        {/* About Me Section */}
+        <section className="mt-2 animate-fade-in">
+          <div className="relative overflow-hidden rounded-lg border border-[#333] bg-[#1e1e1e] shadow-[0_8px_25px_rgba(0,0,0,0.6),inset_0_0_5px_rgba(0,255,0,0.05)]">
+            {/* Window Bar */}
+            <div className="h-8 bg-[#3c3c3c] flex items-center justify-between px-3 border-b border-[#2a2a2a]">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#ff605c] hover:scale-110 transition-transform cursor-pointer"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#ffbd44] hover:scale-110 transition-transform cursor-pointer"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#00ca4e] hover:scale-110 transition-transform cursor-pointer"></div>
+                </div>
+                <div className="text-xs text-[#cccccc] ml-2 opacity-90 font-mono">about.tsx</div>
+              </div>
+              {/* Live Status & Follow Button */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 bg-[#252526] px-2 py-1 rounded border border-[#1a1a1a]">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  <span className="text-[10px] text-red-400 font-mono font-bold">LIVE</span>
+                </div>
+                <a
+                  href="https://www.twitch.tv/osecaadegas95"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 px-3 py-1 rounded text-[10px] text-white font-bold transition-all duration-200 font-mono"
+                >
+                  <span>💜</span> FOLLOW
+                </a>
+              </div>
+            </div>
+            
+            {/* Tab Bar */}
+            <div className="h-9 bg-[#252526] flex items-center border-b border-[#1a1a1a]">
+              <button
+                onClick={() => setAboutMeTab('about')}
+                className={`px-4 py-2 text-sm border-r border-[#1a1a1a] font-mono flex items-center gap-2 transition-colors ${
+                  aboutMeTab === 'about'
+                    ? 'text-[#00ff00] bg-[#1e1e1e]'
+                    : 'text-[#999] bg-[#252526] hover:bg-[#2d2d2d] hover:text-[#ccc]'
+                }`}
+                style={aboutMeTab === 'about' ? { textShadow: '0 0 5px rgba(0,255,0,0.4)' } : {}}
+              >
+                <span className="text-base">👤</span> About Me
+              </button>
+              <button
+                onClick={() => setAboutMeTab('stream')}
+                className={`px-4 py-2 text-sm border-r border-[#1a1a1a] font-mono flex items-center gap-2 transition-colors ${
+                  aboutMeTab === 'stream'
+                    ? 'text-[#00ff00] bg-[#1e1e1e]'
+                    : 'text-[#999] bg-[#252526] hover:bg-[#2d2d2d] hover:text-[#ccc]'
+                }`}
+                style={aboutMeTab === 'stream' ? { textShadow: '0 0 5px rgba(0,255,0,0.4)' } : {}}
+              >
+                <span className="text-base">🔴</span> Stream & Chat
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="pt-6 md:pt-8 px-6 md:px-8 pb-2 bg-[#1e1e1e] h-[500px] overflow-auto">
+            {aboutMeTab === 'about' ? (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-3 flex justify-center">
+                <div className="relative w-52 h-52 md:w-60 md:h-60 lg:w-72 lg:h-72">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 to-blue-500/30 rounded-full blur-2xl"></div>
+                  <img 
+                    src="/profile-foto.png" 
+                    alt="osecaadegas - Miguel" 
+                    className="relative w-full h-full rounded-full object-cover border-4 border-purple-500/40 shadow-2xl"
+                  />
+                </div>
+              </div>
+              <div className="md:col-span-9">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold bg-gradient-to-r from-purple-400 via-purple-500 to-blue-500 bg-clip-text text-transparent mb-4">
+                  Sobre Mim
+                </h2>
+                <div className="space-y-4 text-gray-300 text-sm md:text-base lg:text-lg leading-relaxed">
+                  <p>
+                    Sou o Miguel, mais conhecido como osecaadegas. Sou um gajo simples e tranquilo. Trabalho aos fins de semana e, durante a semana, divido o tempo entre programação e streaming.
+                  </p>
+                  <p>
+                    O meu conteúdo principal é online gambling, mas também sou fã de simuladores, FPS e iRacing. Acima de tudo, estou aqui para te fazer rir e para passarmos bons momentos juntos.
+                  </p>
+                  <p>
+                    Se tiveres alguma questão ou precisares de ajuda, não hesites em mandar DM. Eu e toda a equipa estamos sempre disponíveis para ajudar.
+                    E claro, de vez em quando também gosto de beber umas boas birras ou finos. Se não fosse assim, nem fazia sentido ter este nome, não é verdade? 🍺
+                  </p>
+                </div>
+              </div>
+            </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+                {/* Stream Player */}
+                <div className="lg:col-span-2">
+                  <div className="relative w-full h-[435px]">
+                    <iframe
+                      src="https://player.twitch.tv/?channel=osecaadegas95&parent=www.osecaadegas.pt&parent=osecaadegas.pt&parent=localhost"
+                      className="absolute top-0 left-0 w-full h-full rounded-lg border border-[#252526]"
+                      allowFullScreen
+                      title="Twitch Stream"
+                    />
+                  </div>
+                </div>
+                
+                {/* Twitch Chat */}
+                <div className="lg:col-span-1">
+                  <div className="mb-1 flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-[#00ff00] flex items-center gap-2 font-mono" style={{ textShadow: '0 0 3px rgba(0,255,0,0.3)' }}>
+                        <span className="text-base">💬</span> CHAT
+                      </h3>
+                    </div>
+                    <div className="flex gap-2 text-xs">
+                      <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded font-bold border border-red-500/30 font-mono text-[10px]">● LIVE</span>
+                      <span className="bg-purple-500/20 text-purple-400 px-2 py-1 rounded font-bold border border-purple-500/30 font-mono text-[10px]">Daily 8PM EST</span>
+                    </div>
+                  </div>
+                  <div className="relative w-full h-[385px]">
+                    <iframe
+                      src="https://www.twitch.tv/embed/osecaadegas95/chat?parent=www.osecaadegas.pt&parent=osecaadegas.pt&parent=localhost&darkpopout"
+                      className="absolute top-0 left-0 w-full h-full rounded-lg border border-[#252526]"
+                      title="Twitch Chat"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            </div>
+            
+            {/* Status Bar */}
+            <div className="h-7 bg-[#007acc] flex justify-between items-center px-4 border-t border-[#005f99]">
+              {aboutMeTab === 'about' ? (
+                <>
+                  <span className="text-xs text-white opacity-90 font-mono">Profile loaded</span>
+                  <span className="text-xs text-white opacity-90 font-mono">Ready</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-xs text-white opacity-90 font-mono">Twitch Player Active</span>
+                  <span className="text-xs text-white opacity-90 font-mono">Connected</span>
+                </>
+              )}
+            </div>
           </div>
-          <div className="footer-links">
-            <a href="/about" onClick={(e) => { e.preventDefault(); navigate('/about'); }}>About</a>
-            <a href="/offers" onClick={(e) => { e.preventDefault(); navigate('/offers'); }}>Offers</a>
-            <a href="/stream" onClick={(e) => { e.preventDefault(); navigate('/stream'); }}>Streams</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>© 2025 Stream Overlay. All rights reserved.</p>
-        </div>
-      </footer>
+        </section>
+
+        {/* Stream Highlights */}
+        {highlights.length > 0 && (
+          <section className="animate-fade-in">
+            <div className="relative flex items-center justify-center">
+              {/* VS Code Container */}
+              <div className="relative overflow-hidden rounded-lg border border-[#333] bg-[#1e1e1e] shadow-[0_8px_25px_rgba(0,0,0,0.6),inset_0_0_5px_rgba(0,255,0,0.05)]">
+                {/* Window Bar */}
+                <div className="h-8 bg-[#3c3c3c] flex items-center justify-between px-3 border-b border-[#2a2a2a]">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#ff605c] hover:scale-110 transition-transform cursor-pointer"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#ffbd44] hover:scale-110 transition-transform cursor-pointer"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#00ca4e] hover:scale-110 transition-transform cursor-pointer"></div>
+                    </div>
+                    <div className="text-xs text-[#cccccc] ml-2 opacity-90 font-mono">SecaHub</div>
+                  </div>
+                  {/* Navigation Arrows */}
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => scrollHighlights('left')}
+                      disabled={currentSlide === 0}
+                      className="bg-[#252526] hover:bg-[#2d2d2d] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm w-6 h-6 rounded flex items-center justify-center transition-all duration-200 border border-[#1a1a1a]"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={() => scrollHighlights('right')}
+                      disabled={currentSlide >= highlights.length - 7}
+                      className="bg-[#252526] hover:bg-[#2d2d2d] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm w-6 h-6 rounded flex items-center justify-center transition-all duration-200 border border-[#1a1a1a]"
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Tab Bar */}
+                <div className="h-9 bg-[#252526] flex items-center border-b border-[#1a1a1a]">
+                  <button
+                    onClick={() => setActiveTab('highlights')}
+                    className={`px-4 py-2 text-sm border-r border-[#1a1a1a] font-mono flex items-center gap-2 transition-colors ${
+                      activeTab === 'highlights'
+                        ? 'text-[#00ff00] bg-[#1e1e1e]'
+                        : 'text-[#999] bg-[#252526] hover:bg-[#2d2d2d] hover:text-[#ccc]'
+                    }`}
+                    style={activeTab === 'highlights' ? { textShadow: '0 0 5px rgba(0,255,0,0.4)' } : {}}
+                  >
+                    <span className="text-base">🎬</span> <span className="hidden md:inline">Stream Highlights</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('offers')}
+                    className={`px-4 py-2 text-sm border-r border-[#1a1a1a] font-mono flex items-center gap-2 transition-colors ${
+                      activeTab === 'offers'
+                        ? 'text-[#00ff00] bg-[#1e1e1e]'
+                        : 'text-[#999] bg-[#252526] hover:bg-[#2d2d2d] hover:text-[#ccc]'
+                    }`}
+                    style={activeTab === 'offers' ? { textShadow: '0 0 5px rgba(0,255,0,0.4)' } : {}}
+                  >
+                    <span className="text-base">🎰</span> <span className="hidden md:inline">Partners & Offers</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('giveaways')}
+                    className={`px-4 py-2 text-sm border-r border-[#1a1a1a] font-mono flex items-center gap-2 transition-colors ${
+                      activeTab === 'giveaways'
+                        ? 'text-[#00ff00] bg-[#1e1e1e]'
+                        : 'text-[#999] bg-[#252526] hover:bg-[#2d2d2d] hover:text-[#ccc]'
+                    }`}
+                    style={activeTab === 'giveaways' ? { textShadow: '0 0 5px rgba(0,255,0,0.4)' } : {}}
+                  >
+                    <span className="text-base">🎁</span> <span className="hidden md:inline">Giveaways</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('pointstore')}
+                    className={`px-4 py-2 text-sm border-r border-[#1a1a1a] font-mono flex items-center gap-2 transition-colors ${
+                      activeTab === 'pointstore'
+                        ? 'text-[#00ff00] bg-[#1e1e1e]'
+                        : 'text-[#999] bg-[#252526] hover:bg-[#2d2d2d] hover:text-[#ccc]'
+                    }`}
+                    style={activeTab === 'pointstore' ? { textShadow: '0 0 5px rgba(0,255,0,0.4)' } : {}}
+                  >
+                    <span className="text-base">🏪</span> <span className="hidden md:inline">Point Store</span>
+                  </button>
+                </div>
+                
+                {/* Content with padding */}
+                <div className="p-6 bg-[#1e1e1e] h-[480px] overflow-auto">
+                {activeTab === 'highlights' ? (
+                <div 
+                  ref={scrollContainerRef}
+                  className="flex gap-2 overflow-hidden"
+                  style={{ width: 'calc(7 * 240px + 6 * 8px)' }}
+                >
+                  {highlights.map((highlight) => (
+                    <div
+                      key={highlight.id}
+                      className="flex-shrink-0"
+                      style={{ width: '240px' }}
+                    >
+                      <div className="relative overflow-hidden rounded-2xl border-2 border-purple-500/20 hover:border-purple-500/60 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/40">
+                        <div style={{ aspectRatio: '9/16' }}>
+                          <video
+                            src={highlight.video_url}
+                            className="w-full h-full object-cover"
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>                ) : activeTab === 'giveaways' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 w-full max-w-full">
+                    {giveaways.length > 0 ? giveaways.map((giveaway) => (
+                      <div
+                        key={giveaway.id}
+                        className="group relative bg-black/40 backdrop-blur-xl border border-green-500/20 rounded-3xl overflow-hidden transition-all duration-300 hover:border-green-500/60 hover:scale-[1.02] hover:shadow-2xl hover:shadow-green-500/25"
+                      >
+                        <div className="relative aspect-video overflow-hidden">
+                          <img 
+                            src={giveaway.image_url || 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=450&fit=crop'} 
+                            alt={giveaway.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                        </div>
+                        <div className="p-3">
+                          <h4 className="text-base font-black text-white mb-1.5 group-hover:text-green-400 transition-colors line-clamp-1">
+                            {giveaway.title}
+                          </h4>
+                          <p className="text-gray-400 text-xs mb-2 line-clamp-2">{giveaway.description}</p>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-green-400 font-bold">🎫 {giveaway.entries || 0} entries</span>
+                            <span className="text-gray-400">{giveaway.ends_at ? new Date(giveaway.ends_at).toLocaleDateString() : 'TBA'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="col-span-full text-center py-12 text-gray-400">
+                        <span className="text-4xl mb-4 block">🎁</span>
+                        <p>No active giveaways at the moment</p>
+                      </div>
+                    )}
+                  </div>
+                ) : activeTab === 'pointstore' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 w-full max-w-full">
+                    {pointStoreItems.length > 0 ? pointStoreItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="group relative bg-black/40 backdrop-blur-xl border border-blue-500/20 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500/60 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/25"
+                      >
+                        <div className="relative aspect-video overflow-hidden">
+                          <img 
+                            src={item.image_url || 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=800&h=450&fit=crop'} 
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                        </div>
+                        <div className="p-3">
+                          <h4 className="text-base font-black text-white mb-1.5 group-hover:text-blue-400 transition-colors line-clamp-1">
+                            {item.name}
+                          </h4>
+                          <p className="text-gray-400 text-xs mb-2 line-clamp-2">{item.description}</p>
+                          <div className="flex items-center justify-between">
+                            <span className="text-blue-400 font-bold text-sm">💰 {item.cost} points</span>
+                            <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-lg transition-colors">
+                              Buy
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="col-span-full text-center py-12 text-gray-400">
+                        <span className="text-4xl mb-4 block">🏪</span>
+                        <p>No items available in the point store</p>
+                      </div>
+                    )}
+                  </div>                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 w-full max-w-full">
+                    {casinoOffers.map((offer) => (
+                      <div
+                        key={offer.id}
+                        className="group relative bg-black/40 backdrop-blur-xl border border-purple-500/20 rounded-3xl overflow-hidden transition-all duration-300 hover:border-purple-500/60 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/25"
+                      >
+                        {/* Badge */}
+                        {offer.badge && (
+                          <div className="absolute top-4 right-4 z-10">
+                            <div className={`px-3 py-1.5 rounded-xl font-black text-xs shadow-xl ${
+                              offer.badge_class === 'hot' ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' :
+                              offer.badge_class === 'new' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
+                              'bg-gradient-to-r from-yellow-500 to-amber-500 text-black'
+                            }`}>
+                              {offer.badge}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Image */}
+                        <div className="relative aspect-video overflow-hidden">
+                          <img 
+                            src={offer.image_url || 'https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=450&fit=crop'} 
+                            alt={offer.casino_name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                        </div>
+                        
+                        {/* Content */}
+                        <div className="p-3">
+                          <h4 className="text-base font-black text-white mb-1.5 group-hover:text-purple-400 transition-colors line-clamp-1">
+                            {offer.casino_name}
+                          </h4>
+                          <p className="text-gray-400 text-xs mb-2 line-clamp-1">{offer.title}</p>
+                          
+                          {/* Bonus Details */}
+                          <div className="space-y-1 mb-2">
+                            {offer.bonus_value && (
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="text-purple-400">💰</span>
+                                <span className="text-white font-bold">{offer.bonus_value}</span>
+                              </div>
+                            )}
+                            {offer.free_spins && (
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="text-purple-400">🎰</span>
+                                <span className="text-white font-bold">{offer.free_spins} FS</span>
+                              </div>
+                            )}
+                            {offer.min_deposit && (
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="text-purple-400">💳</span>
+                                <span className="text-gray-300">{offer.min_deposit}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* CTA Button */}
+                          <button 
+                            onClick={() => handleOfferClick(offer.bonus_link)}
+                            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all duration-300 shadow-lg shadow-purple-500/40 hover:shadow-xl hover:shadow-purple-500/60 hover:scale-105"
+                          >
+                            🎁 Claim
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                </div>
+                
+                {/* Status Bar */}
+                <div className="h-7 bg-[#007acc] flex justify-between items-center px-4 border-t border-[#005f99]">
+                  {activeTab === 'highlights' ? (
+                    <>
+                      <span className="text-xs text-white opacity-90 font-mono">{highlights.length} clips</span>
+                      <span className="text-xs text-white opacity-90 font-mono">Loop Mode ∞</span>
+                    </>
+                  ) : activeTab === 'offers' ? (
+                    <>
+                      <span className="text-xs text-white opacity-90 font-mono">{casinoOffers.length} active offers</span>
+                      <span className="text-xs text-white opacity-90 font-mono">Ready</span>
+                    </>
+                  ) : activeTab === 'giveaways' ? (
+                    <>
+                      <span className="text-xs text-white opacity-90 font-mono">{giveaways.length} giveaways</span>
+                      <span className="text-xs text-white opacity-90 font-mono">Active</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-xs text-white opacity-90 font-mono">{pointStoreItems.length} items</span>
+                      <span className="text-xs text-white opacity-90 font-mono">Available</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+      </div>
 
       {/* Auth Modal */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
       )}
     </div>
+    </>
   );
 }

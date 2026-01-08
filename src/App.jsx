@@ -594,9 +594,9 @@ function App() {
           <BrowserRouter>
             <LayoutWrapper>
               <Routes>
-                <Route path="/" element={<StreamPage />} />
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/offers" element={<OffersPage />} />
-                <Route path="/" element={<StreamPage />} />
+                <Route path="/stream" element={<StreamPage />} />
                 <Route path="/tournaments" element={<TournamentsPage />} />
                 <Route path="/guess-balance" element={<GuessBalancePage />} />
                 <Route path="/giveaways" element={<GiveawaysPage />} />
