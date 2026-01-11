@@ -45,7 +45,6 @@ export default function SlotSelectionManager({ userId, onSlotSelect, mode = 'sta
       const { data, error } = await supabase
         .from('slots')
         .select('*')
-        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
