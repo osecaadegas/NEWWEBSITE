@@ -1,11 +1,15 @@
-export default function ThemesTab({ overlay, onUpdateSettings }) {
+import ThemeStudio from '../ThemeStudio/ThemeStudio';
+
+export default function ThemesTab({ overlay }) {
   return (
-    <div className="tab-content">
-      <h3>Themes & Styling</h3>
-      <p>Custom themes coming soon...</p>
-      <div className="theme-preview">
-        <p>Current theme: Default</p>
-      </div>
+    <div className="tab-content themes-tab-content">
+      {overlay ? (
+        <ThemeStudio overlayId={overlay.id} />
+      ) : (
+        <div className="loading-state">
+          <p>Loading theme studio...</p>
+        </div>
+      )}
     </div>
   );
 }
