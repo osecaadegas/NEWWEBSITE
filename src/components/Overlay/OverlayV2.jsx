@@ -16,11 +16,12 @@ import './OverlayV2.css';
 import BalanceWidget from './widgets/BalanceWidget';
 import WagerCounterWidget from './widgets/WagerCounterWidget';
 import ProfitTrackerWidget from './widgets/ProfitTrackerWidget';
-import BetHistoryWidget from './widgets/BetHistoryWidget';
-import GoalBarWidget from './widgets/GoalBarWidget';
-import BigWinAlert from './widgets/BigWinAlert';
-import SessionStatsWidget from './widgets/SessionStatsWidget';
-import RecentWinsWidget from './widgets/RecentWinsWidget';
+// TODO: Implement remaining widgets
+// import BetHistoryWidget from './widgets/BetHistoryWidget';
+// import GoalBarWidget from './widgets/GoalBarWidget';
+// import BigWinAlert from './widgets/BigWinAlert';
+// import SessionStatsWidget from './widgets/SessionStatsWidget';
+// import RecentWinsWidget from './widgets/RecentWinsWidget';
 
 export default function OverlayV2() {
   const [searchParams] = useSearchParams();
