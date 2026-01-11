@@ -10,6 +10,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../config/supabaseClient';
+import { useOverlayData } from './hooks/useOverlayData';
 import './OverlayV2.css';
 
 // Widget Components - All 25 Production-Ready Widgets
@@ -49,6 +50,10 @@ export default function OverlayV2() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
+  const [userId, setUserId] = useState(null);
+
+  // Fetch real-time data for widgets
+  const { data: widgetData, loading: dataLoading } = useOverlayData(userId);
 
   useEffect(() => {
     if (!publicId) {
@@ -81,6 +86,7 @@ export default function OverlayV2() {
       const data = await response.json();
       setOverlayData(data);
       setWidgets(data.widgets || []);
+      setUserId(data.user?.id || null); // Set user ID for data fetching
       setError(null);
     } catch (err) {
       console.error('Error loading overlay:', err);
@@ -182,10 +188,14 @@ export default function OverlayV2() {
       zIndex: widget.z_index || 0
     };
 
+    // Prepare widget props with real-time data
     const widgetProps = {
       config: config || {},
-      data: state?.data || {},
-      theme: overlayData?.settings?.theme || {}
+      data: {
+        ...widgetData, // Real-time data from database
+        ...(state?.data || {}) // Legacy state data (if any)
+      },
+      theme: overlayData?.theme || {}
     };
 
     // Map widget types to components - All 25+ widgets supported
