@@ -27,7 +27,7 @@ export default function DashboardV2() {
   const [activeTab, setActiveTab] = useState('widgets');
   const [copied, setCopied] = useState(false);
 
-  const overlayUrl = overlay ? `${window.location.origin}/premium/overlay-v2?id=${overlay.public_id}` : '';
+  const overlayUrl = overlay ? `${window.location.origin}/premium/overlay?id=${overlay.public_id}` : '';
 
   useEffect(() => {
     if (!user) {
