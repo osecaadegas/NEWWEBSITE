@@ -48,7 +48,7 @@ function AppContent({ isAdminOverlay = false }) {
 
   // Toggle body class based on current route
   useEffect(() => {
-    if (location.pathname === '/overlay' || location.pathname === '/admin-overlay' || location.pathname === '/premium/overlay') {
+    if (location.pathname === '/overlay' || location.pathname === '/admin-overlay' || location.pathname === '/premium/overlay' || location.pathname === '/premium/overlay-v2') {
       document.body.classList.add('no-sidebar');
     } else {
       document.body.classList.remove('no-sidebar');
@@ -615,8 +615,8 @@ function App() {
                 
                 {/* Premium Routes - For premium users */}
                 <Route path="/premium/overlay-controls" element={<DashboardV2 />} />
-                <Route path="/premium/overlay" element={<Overlay />} />
-                <Route path="/premium/overlay-v2" element={<OverlayV2 />} />
+                <Route path="/premium/overlay" element={<OverlayV2 />} />
+                <Route path="/premium/overlay-v1" element={<Overlay />} />
                 
                 {/* Legacy routes - Old overlay system */}
                 <Route path="/premium/overlay-controls-v1" element={<OverlayControls />} />
