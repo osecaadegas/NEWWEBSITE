@@ -17,6 +17,11 @@ import ThemesTab from './tabs/ThemesTab';
 import PresetsTab from './tabs/PresetsTab';
 import SubscriptionTab from './tabs/SubscriptionTab';
 
+// Input Managers
+import BonusHuntInputManager from './BonusHuntInputManager/BonusHuntInputManager';
+import TournamentInputManager from './TournamentInputManager/TournamentInputManager';
+import SlotSelectionManager from './SlotSelectionManager/SlotSelectionManager';
+
 export default function DashboardV2() {
   const { user } = useAuth();
   const { subscription, isActive, loading: subLoading } = useSubscription();
@@ -126,6 +131,9 @@ export default function DashboardV2() {
     { id: 'positioning', label: 'Positioning', icon: '📐' },
     { id: 'themes', label: 'Themes', icon: '🎨' },
     { id: 'presets', label: 'Presets', icon: '💾' },
+    { id: 'bonus-hunt', label: 'Bonus Hunt', icon: '🎯' },
+    { id: 'tournament', label: 'Tournament', icon: '🏆' },
+    { id: 'slots', label: 'Slot Library', icon: '🎰' },
     { id: 'subscription', label: 'Subscription', icon: '💳' }
   ];
 
@@ -194,6 +202,15 @@ export default function DashboardV2() {
         )}
         {activeTab === 'presets' && (
           <PresetsTab overlay={overlay} setOverlay={setOverlay} />
+        )}
+        {activeTab === 'bonus-hunt' && (
+          <BonusHuntInputManager userId={user.id} />
+        )}
+        {activeTab === 'tournament' && (
+          <TournamentInputManager userId={user.id} />
+        )}
+        {activeTab === 'slots' && (
+          <SlotSelectionManager userId={user.id} />
         )}
         {activeTab === 'subscription' && (
           <SubscriptionTab subscription={subscription} />
