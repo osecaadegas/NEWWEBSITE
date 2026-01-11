@@ -44,6 +44,9 @@ export default async function handler(req, res) {
     theme: data.settings?.theme || {},
     layout: data.settings?.layout || {},
     updated_at: data.updated_at,
-    user: userData
+    user: {
+      id: data.user_id, // Include user_id for data fetching
+      ...userData
+    }
   });
 }
