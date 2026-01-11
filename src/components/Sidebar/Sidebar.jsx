@@ -371,14 +371,14 @@ export default function Sidebar() {
                     onClick={() => handleNavigation('/premium/overlay')}
                   >
                     <span className="subitem-icon">📺</span>
-                    <span className="subitem-label">Overlay</span>
+                    <span className="subitem-label">Overlay V1</span>
                   </button>
                   <button
                     className={`sidebar-subitem ${isActive('/premium/overlay-controls') ? 'active' : ''}`}
                     onClick={() => handleNavigation('/premium/overlay-controls')}
                   >
                     <span className="subitem-icon">🎛️</span>
-                    <span className="subitem-label">Overlay Controls</span>
+                    <span className="subitem-label">Overlay V2 Dashboard</span>
                   </button>
                 </div>
               )}
