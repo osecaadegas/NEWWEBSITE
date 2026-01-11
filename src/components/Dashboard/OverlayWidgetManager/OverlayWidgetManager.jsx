@@ -131,11 +131,14 @@ export default function OverlayWidgetManager({ overlayId }) {
       const newWidget = {
         overlay_id: overlayId,
         widget_type_id: widgetTypeId,
+        name: widgetType.display_name || 'New Widget',
         config: widgetType.default_config || {},
         position_x: 50,
         position_y: 50 + yOffset,
         width: 300,
         height: 100,
+        scale: 1.0,
+        opacity: 1.0,
         z_index: maxZIndex + 1,
         enabled: true
       };

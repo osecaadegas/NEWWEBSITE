@@ -168,15 +168,17 @@ export default function OverlayV2() {
   };
 
   const renderWidget = (widget) => {
-    const { widget_type, config, position, size, state } = widget;
+    const { widget_type, config, position_x, position_y, width, height, scale, opacity, state } = widget;
     const widgetName = widget_type?.name;
 
     const style = {
       position: 'absolute',
-      left: `${position?.x || 0}px`,
-      top: `${position?.y || 0}px`,
-      width: `${size?.width || 300}px`,
-      height: `${size?.height || 'auto'}`,
+      left: `${position_x || 0}px`,
+      top: `${position_y || 0}px`,
+      width: `${width || 300}px`,
+      height: `${height || 'auto'}`,
+      transform: `scale(${scale || 1})`,
+      opacity: opacity || 1,
       zIndex: widget.z_index || 0
     };
 
