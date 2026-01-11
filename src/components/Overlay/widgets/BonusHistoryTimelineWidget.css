@@ -1,0 +1,207 @@
+.bonus-history-timeline-widget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, rgba(15, 15, 35, 0.95), rgba(25, 25, 45, 0.95));
+  border-radius: 16px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: rgba(59, 130, 246, 0.1);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+.timeline-header svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary-color, #3b82f6);
+}
+
+.timeline-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding: 20px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.5) rgba(0, 0, 0, 0.2);
+}
+
+.timeline-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.timeline-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.timeline-container::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 4px;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.empty-state p {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+.timeline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  position: relative;
+}
+
+.timeline-item.animated {
+  animation: timelineSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 24px;
+}
+
+.marker-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.marker-dot.completed {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+}
+
+.marker-dot.pending {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.marker-dot svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
+.marker-line {
+  flex: 1;
+  width: 2px;
+  min-height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.timeline-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.content-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bonus-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bonus-result {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.bonus-result.profit {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.bonus-result.loss {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.pending-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(245, 158, 11, 0.9);
+  font-style: italic;
+}
+
+@keyframes timelineSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-item.animated {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .timeline-header { padding: 12px 16px; font-size: 12px; }
+  .timeline-header svg { width: 18px; height: 18px; }
+  .timeline-container { padding: 16px; }
+  .timeline-marker { min-width: 20px; }
+  .marker-dot { width: 20px; height: 20px; }
+  .marker-dot svg { width: 12px; height: 12px; }
+  .bonus-name { font-size: 12px; }
+  .bonus-result { font-size: 11px; padding: 3px 8px; }
+  .pending-badge { font-size: 10px; }
+}

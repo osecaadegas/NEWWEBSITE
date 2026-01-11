@@ -12,16 +12,33 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../config/supabaseClient';
 import './OverlayV2.css';
 
-// Widget Components
+// Widget Components - All 25 Production-Ready Widgets
 import BalanceWidget from './widgets/BalanceWidget';
 import WagerCounterWidget from './widgets/WagerCounterWidget';
 import ProfitTrackerWidget from './widgets/ProfitTrackerWidget';
-// TODO: Implement remaining widgets
-// import BetHistoryWidget from './widgets/BetHistoryWidget';
-// import GoalBarWidget from './widgets/GoalBarWidget';
-// import BigWinAlert from './widgets/BigWinAlert';
-// import SessionStatsWidget from './widgets/SessionStatsWidget';
-// import RecentWinsWidget from './widgets/RecentWinsWidget';
+
+// Import all new widgets
+import AverageHuntBetsizeWidget from './widgets/AverageHuntBetsizeWidget';
+import AverageBonusCostWidget from './widgets/AverageBonusCostWidget';
+import CurrentMultiplierWidget from './widgets/CurrentMultiplierWidget';
+import RequiredMultiplierWidget from './widgets/RequiredMultiplierWidget';
+import BestMultiplierWidget from './widgets/BestMultiplierWidget';
+import BestBonusPayoutWidget from './widgets/BestBonusPayoutWidget';
+import CumulativeMultisWidget from './widgets/CumulativeMultisWidget';
+import CurrentAverageWidget from './widgets/CurrentAverageWidget';
+import RequiredAverageWidget from './widgets/RequiredAverageWidget';
+import RequiredRollAverageWidget from './widgets/RequiredRollAverageWidget';
+import BonusesCountWidget from './widgets/BonusesCountWidget';
+import RemainingBonusesWidget from './widgets/RemainingBonusesWidget';
+import CurrentStartCostWidget from './widgets/CurrentStartCostWidget';
+import SimpleBonusListWidget from './widgets/SimpleBonusListWidget';
+import RecentWinsFeedWidget from './widgets/RecentWinsFeedWidget';
+import BonusHistoryTimelineWidget from './widgets/BonusHistoryTimelineWidget';
+import GoalProgressWidget from './widgets/GoalProgressWidget';
+import SlotInfoWidget from './widgets/SlotInfoWidget';
+import CasinoInfoWidget from './widgets/CasinoInfoWidget';
+import BigWinAlertWidget from './widgets/BigWinAlertWidget';
+import SessionStatsPanelWidget from './widgets/SessionStatsPanelWidget';
 
 export default function OverlayV2() {
   const [searchParams] = useSearchParams();
@@ -169,16 +186,45 @@ export default function OverlayV2() {
       theme: overlayData?.settings?.theme || {}
     };
 
-    // Map widget types to components
+    // Map widget types to components - All 25+ widgets supported
     const widgetComponents = {
+      // Legacy widgets
       'balance_display': <BalanceWidget {...widgetProps} />,
       'wager_counter': <WagerCounterWidget {...widgetProps} />,
       'profit_tracker': <ProfitTrackerWidget {...widgetProps} />,
-      'bet_history': <BetHistoryWidget {...widgetProps} />,
-      'goal_bar': <GoalBarWidget {...widgetProps} />,
-      'big_win_alert': <BigWinAlert {...widgetProps} />,
-      'session_stats': <SessionStatsWidget {...widgetProps} />,
-      'recent_wins': <RecentWinsWidget {...widgetProps} />
+      
+      // Core stats widgets
+      'average_hunt_betsize': <AverageHuntBetsizeWidget {...widgetProps} />,
+      'average_bonus_cost': <AverageBonusCostWidget {...widgetProps} />,
+      'current_multiplier': <CurrentMultiplierWidget {...widgetProps} />,
+      'required_multiplier': <RequiredMultiplierWidget {...widgetProps} />,
+      'best_multiplier': <BestMultiplierWidget {...widgetProps} />,
+      'best_bonus_payout': <BestBonusPayoutWidget {...widgetProps} />,
+      'cumulative_multis': <CumulativeMultisWidget {...widgetProps} />,
+      
+      // Average & goal widgets
+      'current_average': <CurrentAverageWidget {...widgetProps} />,
+      'required_average': <RequiredAverageWidget {...widgetProps} />,
+      'required_roll_average': <RequiredRollAverageWidget {...widgetProps} />,
+      'goal_progress': <GoalProgressWidget {...widgetProps} />,
+      
+      // Counter widgets
+      'bonuses_count': <BonusesCountWidget {...widgetProps} />,
+      'remaining_bonuses': <RemainingBonusesWidget {...widgetProps} />,
+      'current_start_cost': <CurrentStartCostWidget {...widgetProps} />,
+      
+      // List & timeline widgets
+      'simple_bonus_list': <SimpleBonusListWidget {...widgetProps} />,
+      'recent_wins_feed': <RecentWinsFeedWidget {...widgetProps} />,
+      'bonus_history_timeline': <BonusHistoryTimelineWidget {...widgetProps} />,
+      
+      // Alert & panel widgets
+      'big_win_alert': <BigWinAlertWidget {...widgetProps} />,
+      'session_stats_panel': <SessionStatsPanelWidget {...widgetProps} />,
+      
+      // Info widgets
+      'slot_info': <SlotInfoWidget {...widgetProps} />,
+      'casino_info': <CasinoInfoWidget {...widgetProps} />
     };
 
     return (

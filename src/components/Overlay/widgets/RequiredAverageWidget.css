@@ -1,0 +1,168 @@
+.required-average-widget {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(15, 15, 35, 0.95), rgba(25, 25, 45, 0.95));
+  border-radius: 16px;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.required-average-widget.achievable {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.required-average-widget.difficult {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.required-average-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 48px rgba(249, 115, 22, 0.3);
+}
+
+.required-average-widget .widget-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary-color, #f97316), rgba(249, 115, 22, 0.6));
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.4);
+  transition: all 0.3s ease;
+}
+
+.required-average-widget .widget-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.required-average-widget .widget-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.required-average-widget .widget-label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+.required-average-widget .widget-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f97316;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+  transition: all 0.3s ease;
+}
+
+.required-average-widget.achievable .widget-value {
+  color: #10b981;
+}
+
+.required-average-widget.difficult .widget-value {
+  color: #ef4444;
+}
+
+.required-average-widget .widget-sublabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+.status-indicator {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 18px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.status-indicator.good {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.status-indicator.warning {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.required-average-widget .widget-glow {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.required-average-widget.achievable .widget-glow {
+  background: #10b981;
+}
+
+.required-average-widget.difficult .widget-glow {
+  background: #ef4444;
+}
+
+.required-average-widget:hover .widget-glow {
+  opacity: 1;
+}
+
+.required-average-widget.updating .widget-value {
+  animation: reqAvgPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.required-average-widget.updating .widget-icon {
+  animation: reqAvgShake 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes reqAvgPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes reqAvgShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .required-average-widget.updating .widget-value,
+  .required-average-widget.updating .widget-icon {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .required-average-widget { padding: 16px 20px; }
+  .required-average-widget .widget-icon { width: 40px; height: 40px; }
+  .required-average-widget .widget-icon svg { width: 24px; height: 24px; }
+  .required-average-widget .widget-label { font-size: 11px; }
+  .required-average-widget .widget-value { font-size: 20px; }
+  .required-average-widget .widget-sublabel { font-size: 10px; }
+  .status-indicator { width: 28px; height: 28px; font-size: 16px; }
+}

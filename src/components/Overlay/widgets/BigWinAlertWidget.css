@@ -1,0 +1,180 @@
+.big-win-alert-widget {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.alert-overlay {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.95));
+  animation: overlayFadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.alert-content {
+  position: relative;
+  text-align: center;
+  animation: contentZoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.alert-title {
+  font-size: 80px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 8px;
+  background: linear-gradient(45deg, #eab308, #f59e0b, #eab308);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 40px rgba(234, 179, 8, 0.8);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  animation: titlePulse 2s ease-in-out infinite, gradientShift 3s ease infinite;
+  margin-bottom: 20px;
+}
+
+.alert-amount {
+  font-size: 120px;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  text-shadow: 
+    0 0 20px rgba(234, 179, 8, 1),
+    0 0 40px rgba(234, 179, 8, 0.8),
+    0 0 60px rgba(234, 179, 8, 0.6),
+    0 4px 20px rgba(0, 0, 0, 0.5);
+  animation: amountGlow 1.5s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+.alert-bonus-name {
+  font-size: 32px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  animation: nameFadeIn 0.8s ease 0.3s backwards;
+}
+
+.alert-rays {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 600px;
+  height: 600px;
+  margin-left: -300px;
+  margin-top: -300px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.ray {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 300px;
+  margin-left: -2px;
+  background: linear-gradient(to bottom, rgba(234, 179, 8, 0.8), transparent);
+  transform-origin: center top;
+  animation: rayRotate 20s linear infinite;
+}
+
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  animation: confettiFall 4s linear infinite;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes contentZoomIn {
+  from { transform: scale(0.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes titlePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes amountGlow {
+  0%, 100% { 
+    text-shadow: 
+      0 0 20px rgba(234, 179, 8, 1),
+      0 0 40px rgba(234, 179, 8, 0.8),
+      0 0 60px rgba(234, 179, 8, 0.6),
+      0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+  50% { 
+    text-shadow: 
+      0 0 30px rgba(234, 179, 8, 1),
+      0 0 60px rgba(234, 179, 8, 1),
+      0 0 90px rgba(234, 179, 8, 0.8),
+      0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@keyframes nameFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes rayRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes confettiFall {
+  from { transform: translateY(0) rotate(0deg); opacity: 1; }
+  to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alert-title,
+  .alert-amount,
+  .ray,
+  .confetti {
+    animation: none;
+  }
+  .alert-content {
+    animation: none;
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .alert-title { font-size: 48px; letter-spacing: 4px; }
+  .alert-amount { font-size: 72px; }
+  .alert-bonus-name { font-size: 20px; }
+  .alert-rays { width: 400px; height: 400px; margin-left: -200px; margin-top: -200px; }
+  .ray { height: 200px; }
+}
