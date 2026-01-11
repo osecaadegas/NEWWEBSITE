@@ -1,3 +1,5 @@
+import '../styles/TheLifeStats.css';
+
 export default function TheLifeStats({ player }) {
   const successRate = player?.total_robberies 
     ? ((player.successful_robberies / player.total_robberies) * 100).toFixed(1)

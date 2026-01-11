@@ -1,0 +1,79 @@
+/**
+ * Profit Tracker Widget Styles
+ */
+
+.profit-tracker-widget {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(30, 30, 30, 0.9));
+  border: 2px solid var(--profit-color);
+  border-radius: 12px;
+  padding: 16px 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+  transition: all 0.3s ease;
+}
+
+.profit-tracker-widget.profit {
+  border-color: #10b981;
+}
+
+.profit-tracker-widget.loss {
+  border-color: #ef4444;
+}
+
+.profit-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+
+.profit-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--profit-color));
+}
+
+.profit-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.profit-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--profit-color);
+  text-shadow: 0 0 10px var(--profit-color),
+               0 0 20px var(--profit-color);
+  font-family: 'Rajdhani', sans-serif;
+  transition: all 0.3s ease;
+}
+
+.profit-percentage {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--profit-color);
+  margin-top: 8px;
+  opacity: 0.8;
+}
+
+.profit-tracker-widget.profit .profit-value {
+  animation: profitPulse 2s ease-in-out infinite;
+}
+
+.profit-tracker-widget.loss .profit-value {
+  animation: lossPulse 2s ease-in-out infinite;
+}
+
+@keyframes profitPulse {
+  0%, 100% { text-shadow: 0 0 10px #10b981, 0 0 20px #10b981; }
+  50% { text-shadow: 0 0 15px #10b981, 0 0 30px #10b981, 0 0 40px #10b981; }
+}
+
+@keyframes lossPulse {
+  0%, 100% { text-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444; }
+  50% { text-shadow: 0 0 15px #ef4444, 0 0 30px #ef4444, 0 0 40px #ef4444; }
+}

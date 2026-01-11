@@ -1,3 +1,4 @@
+import '../styles/TheLifeBlackMarket.css';
 import { supabase } from '../../../config/supabaseClient';
 import { useState, useEffect } from 'react';
 

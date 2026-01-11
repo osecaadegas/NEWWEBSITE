@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../../config/supabaseClient';
+import '../styles/TheLifeInventory.css';
 
 export default function TheLifeInventory({ 
   theLifeInventory,

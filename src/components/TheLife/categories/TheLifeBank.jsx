@@ -1,4 +1,5 @@
 import { supabase } from '../../../config/supabaseClient';
+import '../styles/TheLifeBank.css';
 
 export default function TheLifeBank({ 
   player,

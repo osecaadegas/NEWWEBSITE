@@ -40,7 +40,11 @@ export default function AdminPanel() {
     is_premium: false,
     details: '',
     is_active: true,
-    display_order: 0
+    display_order: 0,
+    game_providers: '',
+    total_games: '',
+    license: '',
+    welcome_bonus: ''
   });
 
   // The Life Management State
@@ -398,7 +402,13 @@ export default function AdminPanel() {
         is_premium: false,
         details: '',
         is_active: true,
-        display_order: offers.length
+        display_order: offers.length,
+        deposit_methods: '',
+        vpn_friendly: false,
+        game_providers: '',
+        total_games: '',
+        license: '',
+        welcome_bonus: ''
       });
       setEditingOffer(null);
     }
@@ -424,7 +434,11 @@ export default function AdminPanel() {
       is_premium: false,
       details: '',
       is_active: true,
-      display_order: 0
+      display_order: 0,
+      game_providers: '',
+      total_games: '',
+      license: '',
+      welcome_bonus: ''
     });
   };
 
@@ -2572,6 +2586,48 @@ export default function AdminPanel() {
                         value={offerFormData.free_spins}
                         onChange={(e) => handleOfferFormChange('free_spins', e.target.value)}
                         placeholder="Up to 750"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row form-row-4">
+                    <div className="form-group">
+                      <label>Game Providers</label>
+                      <input
+                        type="text"
+                        value={offerFormData.game_providers}
+                        onChange={(e) => handleOfferFormChange('game_providers', e.target.value)}
+                        placeholder="90+"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Total Games</label>
+                      <input
+                        type="text"
+                        value={offerFormData.total_games}
+                        onChange={(e) => handleOfferFormChange('total_games', e.target.value)}
+                        placeholder="5000+"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>License</label>
+                      <input
+                        type="text"
+                        value={offerFormData.license}
+                        onChange={(e) => handleOfferFormChange('license', e.target.value)}
+                        placeholder="Curaçao"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Welcome Bonus</label>
+                      <input
+                        type="text"
+                        value={offerFormData.welcome_bonus}
+                        onChange={(e) => handleOfferFormChange('welcome_bonus', e.target.value)}
+                        placeholder="100% up to €500"
                       />
                     </div>
                   </div>

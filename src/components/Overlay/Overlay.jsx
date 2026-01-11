@@ -10,11 +10,13 @@ import ChatDisplay from '../OBSDisplays/Chat/ChatDisplay';
 export default function Overlay() {
   const [searchParams] = useSearchParams();
   const publicId = searchParams.get('id');
+  const previewMode = searchParams.get('preview') === 'true';
   
   const [settings, setSettings] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showPreview, setShowPreview] = useState(true);
 
   useEffect(() => {
     if (!publicId) {
@@ -72,6 +74,44 @@ export default function Overlay() {
   const widgets = settings.widgets || {};
   const primaryColor = theme.primaryColor || '#d4af37';
   const backgroundColor = theme.backgroundColor || 'rgba(0, 0, 0, 0.8)';
+
+  const overlayUrl = `${window.location.origin}/premium/overlay?id=${publicId}`;
+
+  // If in preview mode, show the preview interface
+  if (previewMode) {
+    return (
+      <div className="preview-page">
+        <div className="preview-controls">
+          <div className="preview-header">
+            <h2>👁️ Live Overlay Preview</h2>
+            <button 
+              className="toggle-preview-btn"
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              {showPreview ? '🙈 Hide Preview' : '👁️ Show Preview'}
+            </button>
+          </div>
+          {showPreview && (
+            <div className="preview-container">
+              <div className="preview-frame-wrapper">
+                <iframe 
+                  src={overlayUrl}
+                  className="preview-frame"
+                  title="Overlay Preview"
+                />
+                <div className="preview-overlay-info">
+                  <span className="preview-resolution">2560 × 1440</span>
+                </div>
+              </div>
+              <p className="preview-instructions">
+                This is how your overlay will appear in OBS. Changes are applied in real-time.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 

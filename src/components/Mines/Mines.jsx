@@ -1,126 +1,110 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useStreamElements } from '../../context/StreamElementsContext';
 import { supabase } from '../../config/supabaseClient';
 import './Mines.css';
 
-const GRID_SIZE = 25; // 5x5 grid
-const MINE_COUNTS = [1, 3, 5, 10, 15]; // Different difficulty levels
-const MAX_BET = 200; // Maximum bet amount
+const GRID_SIZE = 25;
+const MINE_OPTIONS = [1, 3, 5, 10, 15];
 
 export default function Mines() {
   const { points, isConnected, updateUserPoints } = useStreamElements();
-  const [betAmount, setBetAmount] = useState(100);
-  const [mineCount, setMineCount] = useState(3);
-  const [gameState, setGameState] = useState('betting'); // betting, playing, won, lost
-  const [grid, setGrid] = useState([]);
-  const [revealedCells, setRevealedCells] = useState([]);
-  const [minePositions, setMinePositions] = useState([]);
-  const [currentMultiplier, setCurrentMultiplier] = useState(1.0);
-  const [balance, setBalance] = useState(0);
+  const [bet, setBet] = useState(50);
+  const [mines, setMines] = useState(3);
+  const [gameActive, setGameActive] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [won, setWon] = useState(false);
+  const [revealed, setRevealed] = useState([]);
+  const [mineLocations, setMineLocations] = useState([]);
+  const [multiplier, setMultiplier] = useState(1.0);
   const [profit, setProfit] = useState(0);
 
-  useEffect(() => {
-    setBalance(points);
-  }, [points]);
-
-  const getMultiplier = (revealed, mines) => {
-    // Calculate multiplier based on revealed safe cells and mine count
-    const totalCells = GRID_SIZE;
-    const safeCells = totalCells - mines;
-    const baseMultiplier = 1 + (mines / safeCells) * 0.25;
-    return Math.pow(baseMultiplier, revealed);
+  const calcMultiplier = (clicks, mineCount) => {
+    if (clicks === 0) return 1.0;
+    const safeSpots = GRID_SIZE - mineCount;
+    return Math.pow(1.15, clicks);
   };
 
-  const startGame = async () => {
+  const startNewGame = async () => {
+    console.log('Starting new game...', { isConnected, bet, points });
+    
     if (!isConnected) {
-      alert('Please connect your StreamElements account first!');
+      alert('Connect StreamElements first!');
       return;
     }
-
-    if (betAmount > balance || betAmount <= 0) {
+    if (bet > points || bet < 10) {
       alert('Invalid bet amount!');
       return;
     }
 
-    if (betAmount > MAX_BET) {
-      alert(`Maximum bet is ${MAX_BET} points!`);
+    try {
+      await updateUserPoints(-bet);
+      
+      // Generate mine positions
+      const positions = [];
+      while (positions.length < mines) {
+        const pos = Math.floor(Math.random() * GRID_SIZE);
+        if (!positions.includes(pos)) positions.push(pos);
+      }
+      
+      console.log('Game started!', { positions, mines });
+      
+      setMineLocations(positions);
+      setRevealed([]);
+      setGameActive(true);
+      setGameOver(false);
+      setWon(false);
+      setMultiplier(1.0);
+      setProfit(0);
+      
+      console.log('Game state updated, gameActive should be true');
+    } catch (error) {
+      console.error('Start game error:', error);
+      alert('Failed to start game');
+    }
+  };
+
+  const clickCell = async (cellIndex) => {
+    if (!gameActive || revealed.includes(cellIndex)) return;
+
+    const newRevealed = [...revealed, cellIndex];
+    setRevealed(newRevealed);
+
+    // Hit mine
+    if (mineLocations.includes(cellIndex)) {
+      setGameActive(false);
+      setGameOver(true);
+      setWon(false);
+      await saveSession(0);
       return;
     }
 
-    // Deduct bet from balance
-    const newBalance = balance - betAmount;
-    setBalance(newBalance);
-    await updatePoints(-betAmount);
+    // Safe cell
+    const newMultiplier = calcMultiplier(newRevealed.length, mines);
+    const newProfit = Math.floor(bet * newMultiplier);
+    setMultiplier(newMultiplier);
+    setProfit(newProfit);
 
-    // Generate random mine positions
-    const positions = [];
-    while (positions.length < mineCount) {
-      const pos = Math.floor(Math.random() * GRID_SIZE);
-      if (!positions.includes(pos)) {
-        positions.push(pos);
-      }
-    }
-
-    setMinePositions(positions);
-    setGrid(Array(GRID_SIZE).fill(null));
-    setRevealedCells([]);
-    setCurrentMultiplier(1.0);
-    setProfit(0);
-    setGameState('playing');
-  };
-
-  const revealCell = async (index) => {
-    if (gameState !== 'playing' || revealedCells.includes(index)) return;
-
-    const newRevealed = [...revealedCells, index];
-    setRevealedCells(newRevealed);
-
-    if (minePositions.includes(index)) {
-      // Hit a mine - game over
-      setGameState('lost');
-      revealAllMines();
-      // Save losing game session
-      await saveGameSession(0);
-    } else {
-      // Safe cell - update multiplier
-      const multiplier = getMultiplier(newRevealed.length, mineCount);
-      setCurrentMultiplier(multiplier);
-      setProfit(betAmount * multiplier - betAmount);
+    // Won all safe cells
+    if (newRevealed.length === GRID_SIZE - mines) {
+      await cashout(newProfit);
     }
   };
 
-  const revealAllMines = () => {
-    const newGrid = [...grid];
-    minePositions.forEach(pos => {
-      newGrid[pos] = 'mine';
-    });
-    setGrid(newGrid);
-  };
-
-  const cashOut = async () => {
-    if (gameState !== 'playing') return;
-
-    const winAmount = Math.floor(betAmount * currentMultiplier);
-    const newBalance = balance + winAmount;
-    setBalance(newBalance);
-    await updatePoints(winAmount);
-
-    // Save winning game session
-    await saveGameSession(winAmount);
-
-    revealAllMines();
-    setGameState('won');
-  };
-
-  const updatePoints = async (amount) => {
+  const cashout = async (amount = profit) => {
+    if (!gameActive) return;
+    
     try {
       await updateUserPoints(amount);
-    } catch (err) {
-      console.error('Error updating points:', err);
+      setGameActive(false);
+      setGameOver(true);
+      setWon(true);
+      await saveSession(amount);
+    } catch (error) {
+      console.error('Cashout error:', error);
     }
   };
 
-  const saveGameSession = async (resultAmount) => {
+  const saveSession = async (resultAmount) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -128,181 +112,181 @@ export default function Mines() {
       await supabase.from('game_sessions').insert({
         user_id: user.id,
         game_type: 'mines',
-        bet_amount: betAmount,
+        bet_amount: bet,
         result_amount: resultAmount,
         game_data: {
-          mine_count: mineCount,
-          cells_revealed: revealedCells.length,
-          multiplier: currentMultiplier,
-          mine_positions: minePositions
+          mine_count: mines,
+          cells_revealed: revealed.length,
+          multiplier: multiplier
         }
       });
-    } catch (err) {
-      console.error('Error saving game session:', err);
+    } catch (error) {
+      console.error('Save session error:', error);
     }
   };
 
-  const resetGame = () => {
-    setGrid([]);
-    setRevealedCells([]);
-    setMinePositions([]);
-    setCurrentMultiplier(1.0);
+  const playAgain = () => {
+    setGameActive(false);
+    setGameOver(false);
+    setRevealed([]);
+    setMineLocations([]);
+    setMultiplier(1.0);
     setProfit(0);
-    setGameState('betting');
-  };
-
-  const getCellClass = (index) => {
-    if (gameState === 'playing' && !revealedCells.includes(index)) {
-      return 'cell hidden';
-    }
-    if (revealedCells.includes(index) && !minePositions.includes(index)) {
-      return 'cell revealed safe';
-    }
-    if (minePositions.includes(index) && (gameState === 'lost' || gameState === 'won')) {
-      return 'cell revealed mine';
-    }
-    return 'cell hidden';
   };
 
   return (
-    <div className="mines-container">
+    <div className="mines-page">
       <div className="mines-header">
         <h1>💣 Mines</h1>
         <div className="balance-display">
-          <span className="balance-label">Balance:</span>
-          <span className="balance-amount">{balance} pts</span>
+          <span>Balance:</span>
+          <strong>{points} pts</strong>
         </div>
       </div>
 
       {!isConnected && (
-        <div className="connection-warning">
-          <p>⚠️ Connect with Twitch to access the games</p>
+        <div className="alert-box">
+          ⚠️ Connect StreamElements to play
         </div>
       )}
 
-      <div className="mines-content">
-        {/* Left Panel - Controls */}
+      <div className="mines-layout">
+        {/* Controls */}
         <div className="controls-panel">
-          {gameState === 'betting' && (
-            <>
-              <div className="control-section">
+          {!gameActive && !gameOver && (
+            <div className="setup-controls">
+              <div className="control-group">
                 <label>Bet Amount</label>
                 <div className="bet-controls">
-                  <button onClick={() => setBetAmount(Math.min(MAX_BET, Math.max(10, betAmount / 2)))}>½</button>
+                  <button onClick={() => setBet(Math.max(10, bet / 2))}>½</button>
                   <input
                     type="number"
-                    value={betAmount}
-                    onChange={(e) => setBetAmount(Math.min(MAX_BET, Math.max(10, parseInt(e.target.value) || 10)))}
-                    min="10"
-                    max={MAX_BET}
+                    value={bet}
+                    onChange={(e) => setBet(Math.min(200, Math.max(10, parseInt(e.target.value) || 10)))}
                   />
-                  <button onClick={() => setBetAmount(Math.min(MAX_BET, Math.min(balance, betAmount * 2)))}>2×</button>
+                  <button onClick={() => setBet(Math.min(200, Math.min(points, bet * 2)))}>2×</button>
                 </div>
                 <div className="quick-bets">
-                  <button onClick={() => setBetAmount(50)}>50</button>
-                  <button onClick={() => setBetAmount(100)}>100</button>
-                  <button onClick={() => setBetAmount(200)}>200</button>
+                  <button onClick={() => setBet(25)}>25</button>
+                  <button onClick={() => setBet(50)}>50</button>
+                  <button onClick={() => setBet(100)}>100</button>
+                  <button onClick={() => setBet(200)}>200</button>
                 </div>
               </div>
 
-              <div className="control-section">
-                <label>Number of Mines</label>
-                <div className="mine-selector">
-                  {MINE_COUNTS.map(count => (
+              <div className="control-group">
+                <label>Mines: {mines}</label>
+                <div className="mine-select">
+                  {MINE_OPTIONS.map(num => (
                     <button
-                      key={count}
-                      className={mineCount === count ? 'selected' : ''}
-                      onClick={() => setMineCount(count)}
+                      key={num}
+                      className={mines === num ? 'active' : ''}
+                      onClick={() => setMines(num)}
                     >
-                      {count}
+                      {num}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <button className="start-button" onClick={startGame} disabled={!isConnected}>
-                Start Game
+              <button
+                className="btn-start"
+                onClick={startNewGame}
+                disabled={!isConnected || bet > points}
+              >
+                Start Game ({bet} pts)
               </button>
-            </>
+            </div>
           )}
 
-          {gameState === 'playing' && (
-            <>
-              <div className="game-stats">
-                <div className="stat-item">
-                  <span className="stat-label">Bet:</span>
-                  <span className="stat-value">{betAmount} pts</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">Mines:</span>
-                  <span className="stat-value">{mineCount}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-label">Revealed:</span>
-                  <span className="stat-value">{revealedCells.length}</span>
-                </div>
+          {gameActive && (
+            <div className="game-stats">
+              <div className="stat">
+                <span>Bet:</span>
+                <strong>{bet} pts</strong>
+              </div>
+              <div className="stat">
+                <span>Mines:</span>
+                <strong>{mines}</strong>
+              </div>
+              <div className="stat">
+                <span>Found:</span>
+                <strong>{revealed.length}/{GRID_SIZE - mines}</strong>
               </div>
 
               <div className="multiplier-display">
-                <div className="multiplier-label">Current Multiplier</div>
-                <div className="multiplier-value">{currentMultiplier.toFixed(2)}×</div>
-                <div className="profit-display">
-                  Profit: <span className={profit > 0 ? 'profit-positive' : ''}>{profit > 0 ? '+' : ''}{Math.floor(profit)} pts</span>
-                </div>
+                <div className="mult-label">Multiplier</div>
+                <div className="mult-value">{multiplier.toFixed(2)}×</div>
+                <div className="profit-value">Win: {profit} pts</div>
               </div>
 
               <button
-                className="cashout-button"
-                onClick={cashOut}
-                disabled={revealedCells.length === 0}
+                className="btn-cashout"
+                onClick={() => cashout()}
+                disabled={revealed.length === 0}
               >
-                Cash Out {Math.floor(betAmount * currentMultiplier)} pts
+                Cash Out ({profit} pts)
               </button>
-            </>
+            </div>
           )}
 
-          {(gameState === 'won' || gameState === 'lost') && (
-            <div className="game-result">
-              <div className={`result-message ${gameState}`}>
-                {gameState === 'won' ? (
-                  <>
-                    <div className="result-icon">🎉</div>
-                    <div className="result-title">You Won!</div>
-                    <div className="result-amount">+{Math.floor(profit)} pts</div>
-                  </>
-                ) : (
-                  <>
-                    <div className="result-icon">💥</div>
-                    <div className="result-title">Hit a Mine!</div>
-                    <div className="result-amount">-{betAmount} pts</div>
-                  </>
-                )}
+          {gameOver && (
+            <div className="result-display">
+              <div className={`result-box ${won ? 'won' : 'lost'}`}>
+                <div className="result-icon">{won ? '🎉' : '💥'}</div>
+                <div className="result-text">{won ? 'You Won!' : 'Mine Hit!'}</div>
+                <div className="result-amount">
+                  {won ? `+${profit - bet} pts` : `-${bet} pts`}
+                </div>
               </div>
-              <button className="play-again-button" onClick={resetGame}>
+              <button className="btn-play-again" onClick={playAgain}>
                 Play Again
               </button>
             </div>
           )}
         </div>
 
-        {/* Right Panel - Game Grid */}
-        <div className="game-grid-panel">
+        {/* Grid */}
+        <div className="grid-panel">
           <div className="mines-grid">
-            {Array(GRID_SIZE).fill(null).map((_, index) => (
-              <button
-                key={index}
-                className={getCellClass(index)}
-                onClick={() => revealCell(index)}
-                disabled={gameState !== 'playing' || revealedCells.includes(index)}
-              >
-                {revealedCells.includes(index) && !minePositions.includes(index) && (
-                  <span className="gem-icon">💎</span>
-                )}
-                {minePositions.includes(index) && (gameState === 'lost' || gameState === 'won') && (
-                  <span className="mine-icon">💣</span>
-                )}
-              </button>
-            ))}
+            {Array.from({ length: GRID_SIZE }, (_, i) => {
+              const isRevealed = revealed.includes(i);
+              const isMine = mineLocations.includes(i);
+              const showMine = isMine && gameOver;
+              const isSafe = isRevealed && !isMine;
+
+              let cellClass = 'cell';
+              if (!gameActive && !gameOver) {
+                cellClass += ' idle';
+              } else if (gameActive && !isRevealed) {
+                cellClass += ' hidden';
+              } else if (isSafe) {
+                cellClass += ' safe';
+              } else if (showMine) {
+                cellClass += ' mine';
+              }
+
+              return (
+                <button
+                  key={i}
+                  className={cellClass}
+                  onClick={() => clickCell(i)}
+                  disabled={!gameActive || isRevealed}
+                  style={{
+                    minHeight: '80px',
+                    minWidth: '80px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {(!gameActive && !gameOver) && <span>💎</span>}
+                  {(gameActive && !isRevealed) && <span style={{fontSize: '2rem'}}>💎</span>}
+                  {isSafe && <span style={{fontSize: '2rem'}}>💎</span>}
+                  {showMine && <span style={{fontSize: '2rem'}}>💣</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

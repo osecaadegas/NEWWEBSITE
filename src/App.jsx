@@ -11,7 +11,6 @@ import LandingPage from './components/LandingPage/LandingPage';
 import AdminPanel from './components/AdminPanel/AdminPanel';
 import Sidebar from './components/Sidebar/Sidebar';
 import OffersPage from './components/OffersPage/OffersPage';
-import StreamPage from './components/StreamPage/StreamPage';
 import AboutPage from './components/AboutPage/AboutPage';
 import GamesPage from './components/GamesPage/GamesPage';
 import TournamentsPage from './components/TournamentsPage/TournamentsPage';
@@ -596,7 +595,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/offers" element={<OffersPage />} />
-                <Route path="/stream" element={<StreamPage />} />
                 <Route path="/tournaments" element={<TournamentsPage />} />
                 <Route path="/guess-balance" element={<GuessBalancePage />} />
                 <Route path="/giveaways" element={<GiveawaysPage />} />

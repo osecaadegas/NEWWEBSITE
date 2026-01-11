@@ -1,5 +1,6 @@
 import { supabase } from '../../../config/supabaseClient';
 import { useRef } from 'react';
+import '../styles/TheLifeCrimes.css';
 
 /**
  * Crimes Category Component

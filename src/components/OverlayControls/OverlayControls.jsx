@@ -213,6 +213,14 @@ export default function OverlayControls() {
               <p className="url-instructions">
                 Copy this URL and add it as a Browser Source in OBS
               </p>
+              <a 
+                href={`/premium/overlay?id=${overlay.public_id}&preview=true`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="preview-link-btn"
+              >
+                👁️ Open Live Preview
+              </a>
             </div>
 
             <div className="settings-section">
@@ -230,14 +238,7 @@ export default function OverlayControls() {
                   onClick={() => setActiveTab('positioning')}
                 >
                   <span className="tab-icon">🎯</span>
-                  Positioning
-                </button>
-                <button 
-                  className={`tab-button ${activeTab === 'layout' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('layout')}
-                >
-                  <span className="tab-icon">📐</span>
-                  Layout
+                  Positioning & Layout
                 </button>
                 <button 
                   className={`tab-button ${activeTab === 'styles' ? 'active' : ''}`}
@@ -256,11 +257,6 @@ export default function OverlayControls() {
               {/* Positioning Tab */}
               {activeTab === 'positioning' && (
                 <PositioningTab overlay={overlay} updateSettings={updateSettings} />
-              )}
-
-              {/* Layout Tab */}
-              {activeTab === 'layout' && (
-                <LayoutTab overlay={overlay} updateSettings={updateSettings} />
               )}
 
               {/* Styles Tab */}

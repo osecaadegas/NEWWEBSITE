@@ -1,3 +1,4 @@
+import '../styles/TheLifeHospital.css';
 import { supabase } from '../../../config/supabaseClient';
 
 export default function TheLifeHospital({ 

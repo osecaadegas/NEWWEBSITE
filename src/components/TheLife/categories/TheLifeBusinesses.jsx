@@ -1,6 +1,7 @@
 import { supabase } from '../../../config/supabaseClient';
 import { getMaxBusinessSlots, getUpgradeCost } from '../utils/gameUtils';
 import { useRef, useState } from 'react';
+import '../styles/TheLifeBusinesses.css';
 
 /**
  * Businesses Category Component
@@ -21,6 +22,8 @@ export default function TheLifeBusinesses({
 }) {
   const scrollContainerRef = useRef(null);
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
+  const [infoPopupData, setInfoPopupData] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [availableItems, setAvailableItems] = useState([]);
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -487,10 +490,22 @@ export default function TheLifeBusinesses({
                 </div>
                 <button 
                   className="info-tooltip-btn"
-                  title={!ownsIt ? 
-                    `Purchase: $${(business.purchase_price || 5000).toLocaleString()}\n${business.description}` :
-                    `Cost: $${productionCost.toLocaleString()} + 5 stamina\nTime: ${business.duration_minutes}m\n${business.reward_item_id ? `Reward: Items` : `Profit: $${(business.profit || 0).toLocaleString()}`}`
-                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setInfoPopupData({
+                      name: business.name,
+                      icon: business.item?.icon || '💼',
+                      owned: ownsIt,
+                      purchasePrice: business.purchase_price || 5000,
+                      description: business.description,
+                      productionCost: productionCost,
+                      duration: business.duration_minutes,
+                      profit: business.profit || 0,
+                      hasReward: !!business.reward_item_id,
+                      minLevel: business.min_level_required
+                    });
+                    setShowInfoPopup(true);
+                  }}
                 >
                   ℹ️
                 </button>
@@ -765,6 +780,72 @@ export default function TheLifeBusinesses({
                 ✗ Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Info Popup Modal */}
+      {showInfoPopup && infoPopupData && (
+        <div className="business-info-overlay" onClick={() => setShowInfoPopup(false)}>
+          <div className="business-info-popup" onClick={(e) => e.stopPropagation()}>
+            <button className="info-popup-close" onClick={() => setShowInfoPopup(false)}>✕</button>
+            
+            <div className="info-popup-header">
+              <span className="info-popup-icon">{infoPopupData.icon}</span>
+              <h3>{infoPopupData.name}</h3>
+            </div>
+
+            {!infoPopupData.owned ? (
+              <div className="info-popup-content">
+                <div className="info-section">
+                  <div className="info-label">Purchase Price</div>
+                  <div className="info-value purchase-price">💵 ${infoPopupData.purchasePrice.toLocaleString()}</div>
+                </div>
+                
+                <div className="info-section">
+                  <div className="info-label">Minimum Level</div>
+                  <div className="info-value">🔒 Level {infoPopupData.minLevel}</div>
+                </div>
+
+                <div className="info-section full-width">
+                  <div className="info-label">Description</div>
+                  <div className="info-description">{infoPopupData.description}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="info-popup-content">
+                <div className="info-section">
+                  <div className="info-label">Production Cost</div>
+                  <div className="info-value cost">💰 ${infoPopupData.productionCost.toLocaleString()}</div>
+                </div>
+
+                <div className="info-section">
+                  <div className="info-label">Stamina Required</div>
+                  <div className="info-value stamina">⚡ 5 Stamina</div>
+                </div>
+
+                <div className="info-section">
+                  <div className="info-label">Duration</div>
+                  <div className="info-value duration">⏱️ {infoPopupData.duration} minutes</div>
+                </div>
+
+                <div className="info-section">
+                  <div className="info-label">{infoPopupData.hasReward ? 'Reward' : 'Profit'}</div>
+                  <div className="info-value profit">
+                    {infoPopupData.hasReward ? '📦 Items' : `💵 $${infoPopupData.profit.toLocaleString()}`}
+                  </div>
+                </div>
+
+                <div className="info-section full-width">
+                  <div className="info-label">Description</div>
+                  <div className="info-description">{infoPopupData.description}</div>
+                </div>
+              </div>
+            )}
+
+            <button className="info-popup-ok" onClick={() => setShowInfoPopup(false)}>
+              Got it!
+            </button>
           </div>
         </div>
       )}

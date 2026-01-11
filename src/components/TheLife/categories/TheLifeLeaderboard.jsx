@@ -1,3 +1,5 @@
+import '../styles/TheLifeLeaderboard.css';
+
 export default function TheLifeLeaderboard({ leaderboard, player }) {
   return (
     <div className="leaderboard-section">

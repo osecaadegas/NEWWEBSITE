@@ -1,3 +1,4 @@
+import '../styles/TheLifeProfile.css';
 import { supabase } from '../../../config/supabaseClient';
 import { useState, useEffect, useRef } from 'react';
 

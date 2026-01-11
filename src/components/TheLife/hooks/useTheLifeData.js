@@ -132,7 +132,7 @@ export const useTheLifeData = (user) => {
     const now = new Date();
     
     if (!lastBonus) {
-      await claimDailyBonus(1);
+      await claimDailyBonus(1, playerData);
       return;
     }
 
@@ -140,18 +140,18 @@ export const useTheLifeData = (user) => {
     const hoursSinceBonus = (now - lastBonusDate) / 1000 / 60 / 60;
 
     if (hoursSinceBonus >= 24 && hoursSinceBonus < 48) {
-      await claimDailyBonus(playerData.consecutive_logins + 1);
+      await claimDailyBonus(playerData.consecutive_logins + 1, playerData);
     } else if (hoursSinceBonus >= 48) {
-      await claimDailyBonus(1);
+      await claimDailyBonus(1, playerData);
     }
   };
 
-  const claimDailyBonus = async (newStreak) => {
+  const claimDailyBonus = async (newStreak, playerData) => {
     try {
       const { data, error } = await supabase
         .from('the_life_players')
         .update({
-          stamina: Math.min(player.stamina + 10, player.max_stamina),
+          stamina: Math.min((playerData?.stamina || 0) + 10, playerData?.max_stamina || 300),
           last_daily_bonus: new Date().toISOString(),
           consecutive_logins: newStreak
         })

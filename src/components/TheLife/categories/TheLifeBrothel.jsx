@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../../../config/supabaseClient';
-import './TheLifeBrothel.css';
+import '../styles/TheLifeBrothel.css';
 
 /**
  * COMPLETE REWRITE - Brothel Management System
@@ -425,15 +425,17 @@ export default function TheLifeBrothel({
               <div key={worker.id} className="worker-card">
                 <div className="worker-image">
                   <img src={worker.image_url} alt={worker.name} />
-                  {hiredCount > 0 && (
-                    <div className="hired-badge">Owned ×{hiredCount}</div>
-                  )}
                   <div className={`rarity-badge rarity-${worker.rarity}`}>
                     {worker.rarity}
                   </div>
                 </div>
                 <div className="worker-details">
-                  <h4 className="worker-name">{worker.name}</h4>
+                  <div className="worker-name-row">
+                    <h4 className="worker-name">{worker.name}</h4>
+                    {hiredCount > 0 && (
+                      <div className="hired-badge-inline">Owned ×{hiredCount}</div>
+                    )}
+                  </div>
                   <p className="worker-description">{worker.description}</p>
                   
                   <div className="worker-stats">

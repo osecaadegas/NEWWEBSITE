@@ -1,0 +1,52 @@
+/**
+ * Balance Widget Styles
+ */
+
+.balance-widget {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(30, 30, 30, 0.9));
+  border: 2px solid var(--primary-color);
+  border-radius: 12px;
+  padding: 16px 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
+}
+
+.balance-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+
+.balance-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px var(--primary-color));
+}
+
+.balance-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.balance-value {
+  font-size: var(--font-size, 24px);
+  font-weight: 700;
+  color: var(--primary-color);
+  text-shadow: 0 0 10px var(--primary-color),
+               0 0 20px var(--primary-color);
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.balance-widget.animated .balance-value {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.balance-widget.animated .balance-value:hover {
+  transform: scale(1.05);
+}

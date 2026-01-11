@@ -1,13 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function PositioningTab({ overlay, updateSettings }) {
+  const overlayUrl = overlay ? `${window.location.origin}/premium/overlay?id=${overlay.public_id}` : '';
+  const [flippedCards, setFlippedCards] = useState({});
+
+  const toggleFlip = (cardName) => {
+    setFlippedCards(prev => ({
+      ...prev,
+      [cardName]: !prev[cardName]
+    }));
+  };
+  
   return (
     <div className="tab-content">
+      {/* Live Preview Section */}
+      <div className="positioning-preview-section">
+        <h3>👁️ Live Preview</h3>
+        <div className="positioning-preview-wrapper">
+          <iframe 
+            src={overlayUrl}
+            className="positioning-preview-frame"
+            title="Positioning Preview"
+          />
+          <div className="preview-overlay-badge">
+            <span>2560 × 1440</span>
+          </div>
+        </div>
+      </div>
+
       <div className="positioning-grid">
         {/* Bonus Hunt Positioning */}
-        <div className="position-widget-card">
-          <h3>🎯 Bonus Hunt Tracker</h3>
-          <div className="position-inputs">
+        <div className={`position-widget-card-container ${flippedCards['bonusHunt'] ? 'flipped' : ''}`}>
+          <div className="position-widget-card-inner">
+            {/* Front Side - Positioning */}
+            <div className="position-widget-card position-widget-card-front">
+              <div className="card-header-with-flip">
+                <h3>🎯 Bonus Hunt Tracker</h3>
+                <button className="flip-btn" onClick={() => toggleFlip('bonusHunt')} title="Show layout options">
+                  🔄
+                </button>
+              </div>
+              <div className="position-inputs">
             <div className="position-grid-and-vertical">
               <div className="position-control-area"
                 onMouseDown={(e) => {
@@ -112,6 +145,58 @@ export default function PositioningTab({ overlay, updateSettings }) {
             </div>
           </div>
         </div>
+        
+        {/* Back Side - Layout Options */}
+        <div className="position-widget-card position-widget-card-back">
+          <div className="card-header-with-flip">
+            <h3>🎯 Bonus Hunt Layout</h3>
+            <button className="flip-btn" onClick={() => toggleFlip('bonusHunt')} title="Show positioning">
+              🔄
+            </button>
+          </div>
+          <div className="layout-options-compact">
+            <button
+              className={`layout-option-btn ${overlay.settings.widgets?.bonusHunt?.layout === 'sidebar' ? 'active' : ''}`}
+              onClick={() => {
+                const newSettings = {
+                  ...overlay.settings,
+                  widgets: {
+                    ...overlay.settings.widgets,
+                    bonusHunt: {
+                      ...overlay.settings.widgets.bonusHunt,
+                      layout: 'sidebar'
+                    }
+                  }
+                };
+                updateSettings(newSettings);
+              }}
+            >
+              <span className="layout-icon">📊</span>
+              <span>Sidebar</span>
+            </button>
+            <button
+              className={`layout-option-btn ${overlay.settings.widgets?.bonusHunt?.layout === 'carousel' ? 'active' : ''}`}
+              onClick={() => {
+                const newSettings = {
+                  ...overlay.settings,
+                  widgets: {
+                    ...overlay.settings.widgets,
+                    bonusHunt: {
+                      ...overlay.settings.widgets.bonusHunt,
+                      layout: 'carousel'
+                    }
+                  }
+                };
+                updateSettings(newSettings);
+              }}
+            >
+              <span className="layout-icon">🎴</span>
+              <span>Spinning Card</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
         {/* Session Stats Positioning */}
         <div className="position-widget-card">
@@ -223,9 +308,17 @@ export default function PositioningTab({ overlay, updateSettings }) {
         </div>
 
         {/* Tournaments Positioning */}
-        <div className="position-widget-card">
-          <h3>🏆 Tournaments Bracket</h3>
-          <div className="position-inputs">
+        <div className={`position-widget-card-container ${flippedCards['tournaments'] ? 'flipped' : ''}`}>
+          <div className="position-widget-card-inner">
+            {/* Front Side - Positioning */}
+            <div className="position-widget-card position-widget-card-front">
+              <div className="card-header-with-flip">
+                <h3>🏆 Tournaments Bracket</h3>
+                <button className="flip-btn" onClick={() => toggleFlip('tournaments')} title="Show layout options">
+                  🔄
+                </button>
+              </div>
+              <div className="position-inputs">
             <div className="position-grid-and-vertical">
               <div className="position-control-area"
                 onMouseDown={(e) => {
@@ -330,6 +423,58 @@ export default function PositioningTab({ overlay, updateSettings }) {
             </div>
           </div>
         </div>
+        
+        {/* Back Side - Layout Options */}
+        <div className="position-widget-card position-widget-card-back">
+          <div className="card-header-with-flip">
+            <h3>🏆 Tournament Layout</h3>
+            <button className="flip-btn" onClick={() => toggleFlip('tournaments')} title="Show positioning">
+              🔄
+            </button>
+          </div>
+          <div className="layout-options-compact">
+            <button
+              className={`layout-option-btn ${(overlay.settings.widgets?.tournaments?.layout ?? 'horizontal') === 'horizontal' ? 'active' : ''}`}
+              onClick={() => {
+                const newSettings = {
+                  ...overlay.settings,
+                  widgets: {
+                    ...overlay.settings.widgets,
+                    tournaments: {
+                      ...overlay.settings.widgets.tournaments,
+                      layout: 'horizontal'
+                    }
+                  }
+                };
+                updateSettings(newSettings);
+              }}
+            >
+              <span className="layout-icon">↔️</span>
+              <span>Horizontal</span>
+            </button>
+            <button
+              className={`layout-option-btn ${overlay.settings.widgets?.tournaments?.layout === 'vertical' ? 'active' : ''}`}
+              onClick={() => {
+                const newSettings = {
+                  ...overlay.settings,
+                  widgets: {
+                    ...overlay.settings.widgets,
+                    tournaments: {
+                      ...overlay.settings.widgets.tournaments,
+                      layout: 'vertical'
+                    }
+                  }
+                };
+                updateSettings(newSettings);
+              }}
+            >
+              <span className="layout-icon">↕️</span>
+              <span>Vertical</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
         {/* Twitch Chat Positioning */}
         <div className="position-widget-card">

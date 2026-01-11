@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useStreamElements } from '../../context/StreamElementsContext';
 import { supabase } from '../../config/supabaseClient';
 import AuthModal from '../Auth/AuthModal';
 
@@ -13,11 +14,15 @@ export default function LandingPage() {
   const [pointStoreItems, setPointStoreItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [pointStoreSlide, setPointStoreSlide] = useState(0);
   const [activeTab, setActiveTab] = useState('highlights'); // 'highlights', 'offers', 'giveaways', 'pointstore'
   const [aboutMeTab, setAboutMeTab] = useState('about'); // 'about' or 'stream'
+  const [redeeming, setRedeeming] = useState(null);
   const { user } = useAuth();
+  const { redeemPoints, points, isConnected } = useStreamElements();
   const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
+  const pointStoreScrollRef = useRef(null);
 
   useEffect(() => {
     // Check if user has verified age
@@ -46,89 +51,37 @@ export default function LandingPage() {
       const { data: giveawaysData, error: giveawaysError } = await supabase
         .from('giveaways')
         .select('*')
-        .eq('status', 'active')
+        .eq('is_active', true)
+        .gte('ends_at', new Date().toISOString())
         .order('created_at', { ascending: false });
 
-      if (!giveawaysError && giveawaysData && giveawaysData.length > 0) {
+      if (!giveawaysError && giveawaysData) {
         setGiveaways(giveawaysData);
-      } else {
-        // Mock data for testing
-        setGiveaways([
-          {
-            id: 1,
-            title: '💰 $500 Cash Giveaway',
-            description: 'Enter to win $500 cash! Winners announced every Friday.',
-            image_url: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&h=450&fit=crop',
-            entries: 234,
-            ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: 2,
-            title: '🎮 Gaming Setup',
-            description: 'Complete gaming setup including keyboard, mouse, and headset!',
-            image_url: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=800&h=450&fit=crop',
-            entries: 189,
-            ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: 3,
-            title: '🎁 Mystery Box',
-            description: 'Mystery box worth over $200! Could be anything!',
-            image_url: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=800&h=450&fit=crop',
-            entries: 412,
-            ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-          }
-        ]);
+      } else if (giveawaysError) {
+        console.error('Error loading giveaways:', giveawaysError);
       }
 
       // Load point store items
       const { data: pointStoreData, error: pointStoreError } = await supabase
-        .from('point_store_items')
+        .from('redemption_items')
         .select('*')
-        .eq('is_available', true)
-        .order('cost', { ascending: true });
+        .order('point_cost', { ascending: true });
 
-      if (!pointStoreError && pointStoreData && pointStoreData.length > 0) {
-        setPointStoreItems(pointStoreData);
-      } else {
-        // Mock data for testing
-        setPointStoreItems([
-          {
-            id: 1,
-            name: '🎨 Custom Emote',
-            description: 'Get your own custom emote designed!',
-            image_url: 'https://images.unsplash.com/photo-1626785774625-ddcddc3445e9?w=800&h=450&fit=crop',
-            cost: 5000
-          },
-          {
-            id: 2,
-            name: '⭐ VIP Chat Badge',
-            description: 'Exclusive VIP badge next to your name in chat!',
-            image_url: 'https://images.unsplash.com/photo-1620891549027-942fdc95d3f5?w=800&h=450&fit=crop',
-            cost: 10000
-          },
-          {
-            id: 3,
-            name: '🎤 Request Song',
-            description: 'Request any song to be played on stream!',
-            image_url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&h=450&fit=crop',
-            cost: 2500
-          },
-          {
-            id: 4,
-            name: '👑 Stream Title',
-            description: 'Choose the stream title for one stream!',
-            image_url: 'https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?w=800&h=450&fit=crop',
-            cost: 15000
-          },
-          {
-            id: 5,
-            name: '🎮 Game Choice',
-            description: 'Pick the game I play for 1 hour!',
-            image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=450&fit=crop',
-            cost: 20000
-          }
-        ]);
+      if (!pointStoreError && pointStoreData) {
+        console.log('Point Store Raw Data:', pointStoreData);
+        setPointStoreItems(pointStoreData.map(item => {
+          console.log('Mapping item:', item.name, 'reward_details:', item.reward_details);
+          return {
+            id: item.id,
+            name: item.name,
+            description: item.description || '',
+            reward_details: item.reward_details || '',
+            image_url: item.image_url || 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=800&h=450&fit=crop',
+            cost: item.point_cost
+          };
+        }));
+      } else if (pointStoreError) {
+        console.error('Error loading point store items:', pointStoreError);
       }
 
       // Load highlights - use local videos
@@ -161,20 +114,64 @@ export default function LandingPage() {
     window.location.href = 'https://www.google.com';
   };
 
+  const handleRedeem = async (item) => {
+    if (!isConnected) {
+      alert('Please connect your StreamElements account first!');
+      navigate('/streamelements');
+      return;
+    }
+
+    if (points < item.cost) {
+      alert("You don't have enough points for this redemption!");
+      return;
+    }
+
+    if (!confirm(`Redeem "${item.name}" for ${item.cost.toLocaleString()} points?`)) {
+      return;
+    }
+
+    setRedeeming(item.id);
+    const result = await redeemPoints(item.id, item.cost);
+    setRedeeming(null);
+
+    if (result.success) {
+      alert('Redemption successful! Your reward has been applied.');
+      await loadData();
+    } else {
+      alert(`Redemption failed: ${result.error || 'Unknown error'}`);
+    }
+  };
+
   const scrollHighlights = (direction) => {
-    const container = scrollContainerRef.current;
-    if (container) {
-      const cardWidth = 248; // Width of one card + gap (240px + 8px gap)
-      const scrollAmount = cardWidth; // Scroll 1 card at a time
-      const newPosition = direction === 'left' 
-        ? Math.max(0, currentSlide - 1)
-        : Math.min(highlights.length - 7, currentSlide + 1);
-      
-      setCurrentSlide(newPosition);
-      container.scrollTo({
-        left: newPosition * cardWidth,
-        behavior: 'smooth'
-      });
+    if (activeTab === 'pointstore') {
+      const container = pointStoreScrollRef.current;
+      if (container) {
+        const cardWidth = 280; // Card width + gap
+        const newPosition = direction === 'left' 
+          ? Math.max(0, pointStoreSlide - 1)
+          : Math.min(pointStoreItems.length - 5, pointStoreSlide + 1);
+        
+        setPointStoreSlide(newPosition);
+        container.scrollTo({
+          left: newPosition * cardWidth,
+          behavior: 'smooth'
+        });
+      }
+    } else {
+      const container = scrollContainerRef.current;
+      if (container) {
+        const cardWidth = 248; // Width of one card + gap (240px + 8px gap)
+        const scrollAmount = cardWidth; // Scroll 1 card at a time
+        const newPosition = direction === 'left' 
+          ? Math.max(0, currentSlide - 1)
+          : Math.min(highlights.length - 7, currentSlide + 1);
+        
+        setCurrentSlide(newPosition);
+        container.scrollTo({
+          left: newPosition * cardWidth,
+          behavior: 'smooth'
+        });
+      }
     }
   };
 
@@ -388,14 +385,14 @@ export default function LandingPage() {
                   <div className="flex gap-1">
                     <button
                       onClick={() => scrollHighlights('left')}
-                      disabled={currentSlide === 0}
+                      disabled={activeTab === 'pointstore' ? pointStoreSlide === 0 : currentSlide === 0}
                       className="bg-[#252526] hover:bg-[#2d2d2d] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm w-6 h-6 rounded flex items-center justify-center transition-all duration-200 border border-[#1a1a1a]"
                     >
                       ‹
                     </button>
                     <button
                       onClick={() => scrollHighlights('right')}
-                      disabled={currentSlide >= highlights.length - 7}
+                      disabled={activeTab === 'pointstore' ? pointStoreSlide >= pointStoreItems.length - 5 : currentSlide >= highlights.length - 7}
                       className="bg-[#252526] hover:bg-[#2d2d2d] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm w-6 h-6 rounded flex items-center justify-center transition-all duration-200 border border-[#1a1a1a]"
                     >
                       ›
@@ -513,40 +510,85 @@ export default function LandingPage() {
                     )}
                   </div>
                 ) : activeTab === 'pointstore' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 w-full max-w-full">
-                    {pointStoreItems.length > 0 ? pointStoreItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="group relative bg-black/40 backdrop-blur-xl border border-blue-500/20 rounded-3xl overflow-hidden transition-all duration-300 hover:border-blue-500/60 hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-500/25"
-                      >
-                        <div className="relative aspect-video overflow-hidden">
-                          <img 
-                            src={item.image_url || 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=800&h=450&fit=crop'} 
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-                        </div>
-                        <div className="p-3">
-                          <h4 className="text-base font-black text-white mb-1.5 group-hover:text-blue-400 transition-colors line-clamp-1">
-                            {item.name}
-                          </h4>
-                          <p className="text-gray-400 text-xs mb-2 line-clamp-2">{item.description}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-blue-400 font-bold text-sm">💰 {item.cost} points</span>
-                            <button className="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-lg transition-colors">
-                              Buy
+                  <div 
+                    ref={pointStoreScrollRef}
+                    className="flex gap-4 overflow-x-hidden w-full"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                    {pointStoreItems.length > 0 ? pointStoreItems.map((item) => {
+                      const canAfford = isConnected && points >= item.cost;
+                      const isRedeeming = redeeming === item.id;
+                      const imageUrl = item.image_url || 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?w=400&h=300&fit=crop';
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          className={`group relative bg-black/40 backdrop-blur-xl border rounded-3xl overflow-hidden transition-all duration-300 flex-shrink-0 ${
+                            !canAfford || !isConnected 
+                              ? 'border-gray-700/30 opacity-60' 
+                              : 'border-purple-500/20 hover:border-purple-500/60 hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/25'
+                          }`}
+                          style={{ width: '264px', minHeight: '420px' }}
+                        >
+                          {/* Image */}
+                          <div className="relative aspect-video overflow-hidden">
+                            <img 
+                              src={imageUrl}
+                              alt={item.name}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                          </div>
+                          
+                          <div className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="text-base font-bold text-white group-hover:text-purple-400 transition-colors flex-1 line-clamp-1">
+                                {item.name}
+                              </h4>
+                              <div className="bg-gradient-to-br from-purple-500/30 to-blue-500/20 border border-purple-500/50 rounded-xl px-3 py-1.5 ml-2">
+                                <div className="text-sm font-black text-purple-400 whitespace-nowrap">
+                                  {item.cost.toLocaleString()}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <p className="text-gray-400 text-xs mb-3 line-clamp-2">{item.description}</p>
+                            
+                            {/* Reward Details */}
+                            {item.reward_details && (
+                              <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-2 mb-3">
+                                <div className="flex items-start gap-1.5">
+                                  <span className="text-base">🎁</span>
+                                  <span className="text-xs text-purple-300 font-medium line-clamp-2">
+                                    {item.reward_details}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Redeem Button */}
+                            <button
+                              onClick={() => handleRedeem(item)}
+                              disabled={!isConnected || !canAfford || isRedeeming}
+                              className={`w-full font-bold py-3 px-4 rounded-xl text-sm transition-all duration-300 ${
+                                !isConnected || !canAfford
+                                  ? 'bg-gray-700/50 border border-gray-600 text-gray-300 cursor-not-allowed'
+                                  : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg shadow-purple-500/40 hover:shadow-xl hover:shadow-purple-500/60 hover:scale-105'
+                              }`}
+                            >
+                              {!isConnected ? '🔒 Connect' : isRedeeming ? '⏳...' : canAfford ? '✨ Redeem' : '💰 Need More'}
                             </button>
                           </div>
                         </div>
-                      </div>
-                    )) : (
-                      <div className="col-span-full text-center py-12 text-gray-400">
+                      );
+                    }) : (
+                      <div className="w-full text-center py-12 text-gray-400">
                         <span className="text-4xl mb-4 block">🏪</span>
                         <p>No items available in the point store</p>
                       </div>
                     )}
-                  </div>                ) : (
+                  </div>
+                ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 md:gap-x-4 gap-y-2 md:gap-y-3 w-full max-w-full">
                     {casinoOffers.map((offer) => (
                       <div

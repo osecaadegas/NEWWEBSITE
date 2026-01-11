@@ -1,0 +1,243 @@
+/**
+ * Enhanced Overlay Styles for SaaS Platform
+ * Production-ready transparent overlay for OBS
+ */
+
+.overlay-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--font-family, 'Inter, sans-serif');
+}
+
+/* Widget Base Styles */
+.overlay-widget {
+  pointer-events: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading State */
+.overlay-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.95);
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--primary-color, #d4af37);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.overlay-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.95);
+  pointer-events: auto;
+}
+
+.error-message {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(153, 27, 27, 0.2));
+  border: 2px solid #ef4444;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.error-message h2 {
+  color: #fca5a5;
+  font-size: 24px;
+  margin: 0 0 16px 0;
+}
+
+.error-message p {
+  color: #fef2f2;
+  font-size: 16px;
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.error-hint {
+  color: #fca5a5;
+  font-size: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Empty State */
+.overlay-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: auto;
+  user-select: none;
+}
+
+.overlay-empty-state p {
+  font-size: 18px;
+  margin: 8px 0;
+}
+
+.overlay-empty-state .hint {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Connection Indicator (Dev Only) */
+.connection-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  z-index: 999999;
+  font-size: 16px;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+  transition: opacity 0.3s;
+}
+
+.connection-indicator.connected {
+  opacity: 0.7;
+}
+
+.connection-indicator.disconnected {
+  opacity: 1;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Widget Placeholder */
+.widget-placeholder {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  font-size: 14px;
+  backdrop-filter: blur(5px);
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scale-in {
+  animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* GPU Acceleration */
+.overlay-widget,
+.overlay-widget * {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Prevent text selection in OBS */
+.overlay-container * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* High contrast for stream visibility */
+.overlay-widget {
+  filter: contrast(1.1) saturate(1.1);
+}
+
+/* Responsive breakpoints for different stream resolutions */
+@media (max-width: 1920px) {
+  .overlay-widget {
+    transform: scale(0.9);
+    transform-origin: top left;
+  }
+}
+
+@media (max-width: 1280px) {
+  .overlay-widget {
+    transform: scale(0.75);
+    transform-origin: top left;
+  }
+}
+
+/* Ensure widgets don't interfere with clicks in OBS */
+.overlay-container.obs-mode .overlay-widget {
+  pointer-events: none;
+}

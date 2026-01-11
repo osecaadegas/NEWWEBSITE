@@ -1,3 +1,4 @@
+import '../styles/TheLifeJail.css';
 import { supabase } from '../../../config/supabaseClient';
 import { calculateBribeAmount } from '../utils/gameUtils';
 

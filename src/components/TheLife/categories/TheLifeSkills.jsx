@@ -1,3 +1,4 @@
+import '../styles/TheLifeSkills.css';
 import { supabase } from '../../../config/supabaseClient';
 
 /**

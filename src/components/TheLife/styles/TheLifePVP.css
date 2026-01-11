@@ -742,79 +742,176 @@
 
 @media (max-width: 768px) {
   .pvp-rebuilt {
-    padding: 15px;
+    padding: 10px !important;
+    max-width: 100% !important;
   }
 
   .pvp-header-new {
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
     text-align: center;
+    margin-bottom: 15px !important;
+    padding-bottom: 12px;
   }
 
   .pvp-header-new h2 {
-    font-size: 24px;
+    font-size: 1.3rem !important;
+    margin: 0 !important;
+  }
+
+  .online-badge {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .pvp-warning {
+    padding: 12px 15px;
+    font-size: 13px;
+    margin-bottom: 15px;
+  }
+
+  .pvp-warning span {
+    font-size: 20px;
   }
 
   .pvp-players-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
   }
 
   .pvp-player-card {
-    padding: 15px;
+    padding: 12px !important;
+    border-radius: 12px !important;
   }
 
   .player-avatar {
-    width: 60px;
-    height: 60px;
+    width: 60px !important;
+    height: 60px !important;
   }
 
   .player-details h4 {
-    font-size: 18px;
+    font-size: 1rem !important;
+    margin-bottom: 8px !important;
+  }
+
+  .player-level {
+    font-size: 0.8rem !important;
+    padding: 4px 10px !important;
   }
 
   .player-cash {
-    font-size: 16px;
+    font-size: 0.95rem !important;
+    padding: 6px !important;
+  }
+
+  .player-stats-mini {
+    gap: 6px !important;
+  }
+
+  .stat-mini {
+    font-size: 0.75rem !important;
+    padding: 6px !important;
+  }
+
+  .win-chance-bar {
+    height: 25px !important;
+    margin: 8px 0 !important;
+  }
+
+  .chance-text {
+    font-size: 0.8rem !important;
+  }
+
+  .pvp-stats-row {
+    gap: 8px;
+  }
+
+  .player-stat {
+    font-size: 12px;
   }
 
   .pvp-bottom-section {
-    grid-template-columns: 1fr;
-    gap: 15px;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin-top: 15px !important;
+  }
+
+  .pvp-chat-box,
+  .pvp-battle-log {
+    height: 250px !important;
+    padding: 12px !important;
+  }
+
+  .pvp-chat-box h3,
+  .pvp-battle-log h3 {
+    font-size: 1rem !important;
+    margin-bottom: 12px !important;
+  }
+
+  .chat-header-new,
+  .battle-log-header {
+    padding: 10px 12px;
+  }
+
+  .chat-header-new h3,
+  .battle-log-header h3 {
+    font-size: 14px;
   }
 
   .chat-messages-new,
   .battle-log-list {
-    max-height: 300px;
+    max-height: 200px;
+    padding: 10px;
+    gap: 8px;
   }
 
   .msg-avatar,
   .battle-avatar {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
 
   .msg-username,
   .participant-name {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .msg-text {
+    font-size: 12px;
+  }
+
+  .msg-time,
+  .battle-time {
+    font-size: 10px;
+  }
+
+  .battle-result {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .battle-stolen {
     font-size: 13px;
+  }
+
+  .chat-input-form-new {
+    padding: 10px;
+    gap: 8px;
   }
 
   .chat-input-form-new input {
     font-size: 13px;
-    padding: 10px 14px;
+    padding: 8px 12px;
   }
 
   .chat-input-form-new button {
-    padding: 10px 16px;
-    font-size: 16px;
+    padding: 8px 14px;
+    font-size: 14px;
   }
 
   .attack-button-new {
     padding: 10px;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   /* Defeat Popup Mobile */

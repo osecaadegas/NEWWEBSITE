@@ -892,7 +892,8 @@
 
 /* ===== OFFER MODAL ===== */
 .offer-modal {
-  max-width: 1200px;
+  max-width: 1400px !important;
+  width: 95vw !important;
   max-height: 90vh;
   overflow-y: auto;
   background: rgba(26, 31, 46, 0.95);

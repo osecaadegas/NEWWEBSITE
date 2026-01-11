@@ -1,3 +1,114 @@
+/* Preview Page Styles */
+.preview-page {
+  min-height: 100vh;
+  background: #1a1d23;
+  padding: 70px 32px 40px;
+}
+
+.preview-controls {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.preview-header h2 {
+  color: #d4af37;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.toggle-preview-btn {
+  background: rgba(212, 175, 55, 0.15);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-preview-btn:hover {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: rgba(212, 175, 55, 0.5);
+  transform: translateY(-1px);
+}
+
+.preview-container {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.preview-frame-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  aspect-ratio: 16 / 9;
+}
+
+.preview-frame {
+  width: 2560px;
+  height: 1440px;
+  border: none;
+  display: block;
+  background: #000;
+  transform: scale(0.5);
+  transform-origin: top left;
+}
+
+.preview-overlay-info {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  color: #d4af37;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.preview-resolution {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.preview-instructions {
+  color: #9ca3af;
+  font-size: 0.95rem;
+  margin-top: 16px;
+  margin-bottom: 0;
+  text-align: center;
+}
+
+/* Overlay Container */
 .overlay-container {
   width: 2560px;
   height: 1440px;
