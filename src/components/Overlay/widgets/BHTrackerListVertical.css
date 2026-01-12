@@ -5,6 +5,8 @@
   overflow: hidden;
   border-radius: 12px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: rgba(26, 26, 46, 0.95);
+  backdrop-filter: blur(10px);
 }
 
 /* Empty State */

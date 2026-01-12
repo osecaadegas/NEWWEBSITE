@@ -55,6 +55,9 @@ export default function BHTrackerListVertical({ data, config, theme }) {
           <div className="empty-icon">🎰</div>
           <p>No active hunt</p>
           <p className="empty-hint">Start opening bonuses to see them here</p>
+          <p style={{ color: 'yellow', fontSize: '12px', marginTop: '20px' }}>
+            Debug: activeHunt={activeHunt ? 'YES' : 'NO'} | bonuses={activeHuntBonuses.length}
+          </p>
         </div>
       </div>
     );
