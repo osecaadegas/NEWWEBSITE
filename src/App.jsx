@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import './App.css';
-import { BonusHuntProvider, useBonusHunt } from './context/BonusHuntContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { StreamElementsProvider } from './context/StreamElementsContext';
 import StreamElementsPanel from './components/StreamElements/StreamElementsPanel';
@@ -17,7 +16,6 @@ import TournamentsPage from './components/TournamentsPage/TournamentsPage';
 import GuessBalancePage from './components/GuessBalancePage/GuessBalancePage';
 import GiveawaysPage from './components/GiveawaysPage/GiveawaysPage';
 import { checkUserAccess } from './utils/adminUtils';
-import BonusHuntStats from './components/BonusHuntStats/BonusHuntStats';
 import ModernCardLayout from './components/ModernCardLayout/ModernCardLayout';
 import ModernSidebarLayout from './components/ModernSidebarLayout/ModernSidebarLayout';
 import GiveawayPanel from './components/GiveawayPanel/GiveawayPanel';
@@ -38,7 +36,6 @@ import DailyWheelPage from './components/DailyWheel/DailyWheelPage';
 function AppContent({ isAdminOverlay = false }) {
   const location = useLocation();
   const { user } = useAuth();
-  const { layoutMode, setLayoutMode } = useBonusHunt();
   const { latestRedemption, setLatestRedemption } = useStreamElements();
   // Removed overlay-related state
 
@@ -377,10 +374,6 @@ function AppContent({ isAdminOverlay = false }) {
       case 'customization':
         setShowCustomization(!showCustomization); // Toggle instead of just opening
         break;
-      case 'bonusHunt':
-        setShowBHPanel(!showBHPanel);
-        setShowStatsPanel(!showBHPanel); // Toggle stats panel with BH panel
-        break;
       case 'randomSlot':
         setShowRandomSlot(!showRandomSlot); // Toggle instead of just opening
         break;
@@ -405,44 +398,6 @@ function AppContent({ isAdminOverlay = false }) {
       <Navbar />
       
       <div className="main-layout">
-        {/* Currently Opening Card - Outside scroll container */}
-        {showBonusOpening && layoutMode === 'modern-sidebar' && showStatsPanel && <CurrentlyOpening selectedBonusId={selectedBonusId} />}
-        
-        {/* Right Sidebar - Info Panel (Conditionally visible) */}
-        <aside className={`info-panel ${showStatsPanel && showBHStats ? 'info-panel--visible' : ''}`} style={{ display: showStatsPanel && showBHStats ? 'flex' : 'none' }}>
-          {/* Layout Switcher */}
-          <div className="layout-switcher">
-            <button 
-              className={`layout-btn ${layoutMode === 'classic' ? 'active' : ''}`}
-              onClick={() => setLayoutMode('classic')}
-              title="Classic Layout"
-            >
-              📋
-            </button>
-            <button 
-              className={`layout-btn ${layoutMode === 'modern-card' ? 'active' : ''}`}
-              onClick={() => setLayoutMode('modern-card')}
-              title="Card Layout"
-            >
-              🎴
-            </button>
-            <button 
-              className={`layout-btn ${layoutMode === 'modern-sidebar' ? 'active' : ''}`}
-              onClick={() => setLayoutMode('modern-sidebar')}
-              title="Sidebar Layout"
-            >
-              📊
-            </button>
-          </div>
-
-          {/* Statistics Section - Only show for classic layout */}
-          {showStatsPanel && showBHStats && layoutMode === 'classic' && <BonusHuntStats />}
-
-          {/* Bonus List Section */}
-          {layoutMode === 'classic' && <BonusList onBonusClick={handleBonusClick} />}
-          {layoutMode === 'modern-card' && <ModernCardLayout showCards={showBHCards} />}
-          {layoutMode === 'modern-sidebar' && <ModernSidebarLayout showCards={showBHCards} />}
-        </aside>
       </div>
       {showBHPanel && <BHPanel onClose={() => setShowBHPanel(false)} onOpenBonusOpening={(bonusId) => {
         setSelectedBonusId(bonusId);
@@ -587,7 +542,6 @@ function App() {
   return (
     <AuthProvider>
       <StreamElementsProvider>
-        <BonusHuntProvider>
           <BrowserRouter>
             <LayoutWrapper>
               <Routes>
@@ -627,7 +581,6 @@ function App() {
               </Routes>
             </LayoutWrapper>
           </BrowserRouter>
-        </BonusHuntProvider>
       </StreamElementsProvider>
       <SpeedInsights />
     </AuthProvider>
