@@ -28,6 +28,9 @@ export { default as SimpleBonusListWidget } from './SimpleBonusListWidget';
 export { default as RecentWinsFeedWidget } from './RecentWinsFeedWidget';
 export { default as BonusHistoryTimelineWidget } from './BonusHistoryTimelineWidget';
 
+// BH Trackers (Bonus Hunt Trackers)
+export { default as BonusHuntListWidget } from './BonusHuntListWidget';
+
 // Alert & Panel Widgets
 export { default as BigWinAlertWidget } from './BigWinAlertWidget';
 export { default as SessionStatsPanelWidget } from './SessionStatsPanelWidget';

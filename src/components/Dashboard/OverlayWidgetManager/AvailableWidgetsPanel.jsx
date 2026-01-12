@@ -57,7 +57,8 @@ export default function AvailableWidgetsPanel({
       info: 'Information',
       progress: 'Progress',
       history: 'History',
-      goals: 'Goals'
+      goals: 'Goals',
+      bhtrackers: 'BH Trackers'
     };
     return labels[cat] || cat;
   };
@@ -73,7 +74,8 @@ export default function AvailableWidgetsPanel({
       info: 'ℹ️',
       progress: '📈',
       history: '📜',
-      goals: '🎯'
+      goals: '🎯',
+      bhtrackers: '🎰'
     };
     return icons[cat] || '📦';
   };

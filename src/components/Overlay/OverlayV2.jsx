@@ -35,6 +35,7 @@ import CurrentStartCostWidget from './widgets/CurrentStartCostWidget';
 import SimpleBonusListWidget from './widgets/SimpleBonusListWidget';
 import RecentWinsFeedWidget from './widgets/RecentWinsFeedWidget';
 import BonusHistoryTimelineWidget from './widgets/BonusHistoryTimelineWidget';
+import BonusHuntListWidget from './widgets/BonusHuntListWidget';
 import GoalProgressWidget from './widgets/GoalProgressWidget';
 import SlotInfoWidget from './widgets/SlotInfoWidget';
 import CasinoInfoWidget from './widgets/CasinoInfoWidget';
@@ -237,6 +238,9 @@ export default function OverlayV2() {
       'simple_bonus_list': <SimpleBonusListWidget {...widgetProps} />,
       'recent_wins_feed': <RecentWinsFeedWidget {...widgetProps} />,
       'bonus_history_timeline': <BonusHistoryTimelineWidget {...widgetProps} />,
+      
+      // BH Trackers (Bonus Hunt Trackers)
+      'bonus_hunt_list': <BonusHuntListWidget {...widgetProps} />,
       
       // Alert & panel widgets
       'big_win_alert': <BigWinAlertWidget {...widgetProps} />,
