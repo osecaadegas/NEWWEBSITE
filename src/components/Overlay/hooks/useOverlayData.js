@@ -30,8 +30,11 @@ export function useOverlayData(userId) {
     console.log('🔑 useOverlayData called with userId:', userId);
     if (!userId) {
       console.warn('⚠️ No userId provided to useOverlayData - skipping fetch');
+      setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     const fetchAllData = async () => {
       try {
