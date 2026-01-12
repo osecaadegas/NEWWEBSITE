@@ -23,9 +23,11 @@ export default function BHTrackerListVertical({ data, config, theme }) {
     console.log('🎰 BHTrackerListVertical data:', {
       activeHunt,
       activeHuntBonuses,
-      bonusCount: activeHuntBonuses.length
+      bonusCount: activeHuntBonuses.length,
+      dataReceived: data ? 'YES' : 'NO',
+      fullData: data
     });
-  }, [activeHunt, activeHuntBonuses]);
+  }, [activeHunt, activeHuntBonuses, data]);
 
   // Map active hunt bonuses to display format
   const bonuses = activeHuntBonuses.length > 0 ? activeHuntBonuses.map(bonus => ({
@@ -55,9 +57,12 @@ export default function BHTrackerListVertical({ data, config, theme }) {
           <div className="empty-icon">🎰</div>
           <p>No active hunt</p>
           <p className="empty-hint">Start opening bonuses to see them here</p>
-          <p style={{ color: 'yellow', fontSize: '12px', marginTop: '20px' }}>
-            Debug: activeHunt={activeHunt ? 'YES' : 'NO'} | bonuses={activeHuntBonuses.length}
-          </p>
+          <div style={{ color: 'yellow', fontSize: '11px', marginTop: '20px', textAlign: 'left', padding: '10px' }}>
+            <div>activeHunt: {activeHunt ? 'YES' : 'NO'}</div>
+            <div>bonuses: {activeHuntBonuses.length}</div>
+            <div>data received: {data ? 'YES' : 'NO'}</div>
+            <div>data keys: {data ? Object.keys(data).join(', ') : 'none'}</div>
+          </div>
         </div>
       </div>
     );
