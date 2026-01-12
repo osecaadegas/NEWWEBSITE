@@ -1,15 +1,11 @@
 /**
- * BonusHuntInputManager
- * Production-ready bonus hunt tracking with real-time calculations and overlay updates
+ * BonusHuntInputManager - Redesigned Workflow
  * 
- * Features:
- * - Add/Edit/Delete bonus entries
- * - Real-time stat calculations (averages, required multiplier, P/L)
- * - Supabase persistence with Realtime updates
- * - Historical tracking integration
- * - Live overlay widget updates
- * - Inline editing with validation
- * - Slot selection integration
+ * New Flow:
+ * 1. View list of saved hunts + "Add Bonus Hunt" button
+ * 2. Create hunt → Add bonuses → Save or Open
+ * 3. Opening bonuses → Input payouts one by one
+ * 4. History of completed hunts
  */
 
 import { useState, useEffect } from 'react';
@@ -17,68 +13,94 @@ import { supabase } from '../../../config/supabaseClient';
 import './BonusHuntInputManager.css';
 
 export default function BonusHuntInputManager({ userId }) {
-  // State Management
-  const [bonuses, setBonuses] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editingId, setEditingId] = useState(null);
-  const [showSlotSuggestions, setShowSlotSuggestions] = useState(false);
-  const [filteredSlots, setFilteredSlots] = useState([]);
-
-  // Form State
-  const [formData, setFormData] = useState({
+  // View modes: 'list', 'creating', 'opening'
+  const [viewMode, setViewMode] = useState('list');
+  
+  // Hunt sessions
+  const [sessions, setSessions] = useState([]);
+  const [currentSession, setCurrentSession] = useState(null);
+  const [currentBonuses, setCurrentBonuses] = useState([]);
+  
+  // Current bonus being opened
+  const [openingIndex, setOpeningIndex] = useState(0);
+  
+  // Form states
+  const [huntSettings, setHuntSettings] = useState({
     hunt_name: '',
+    start_amount: '',
+    target_amount: '',
+    stop_loss: ''
+  });
+  
+  const [bonusForm, setBonusForm] = useState({
     slot_name: '',
     provider: '',
     bet_size: '',
-    bonus_cost: '',
-    bonus_win: '',
-    start_amount: '',
-    target_amount: '',
-    stop_loss: '',
-    notes: ''
+    bonus_cost: ''
   });
+  
+  const [payoutForm, setPayoutForm] = useState({
+    bonus_win: ''
+  });
+  
+  // Autocomplete
+  const [showSlotSuggestions, setShowSlotSuggestions] = useState(false);
+  const [filteredSlots, setFilteredSlots] = useState([]);
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // ============================================================================
   // DATA FETCHING
   // ============================================================================
 
-  // Fetch all bonuses for this user
-  const fetchBonuses = async () => {
+  useEffect(() => {
+    if (!userId) return;
+    loadSessions();
+  }, [userId]);
+
+  const loadSessions = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('bonus_hunt_sessions')
+        .select(`
+          *,
+          bonuses:bonus_hunt_history(count)
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (err) {
+      console.error('Error loading sessions:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSessionBonuses = async (sessionId) => {
     try {
       const { data, error } = await supabase
         .from('bonus_hunt_history')
         .select('*')
-        .eq('user_id', userId)
-        .order('opened_at', { ascending: false });
+        .eq('session_id', sessionId)
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setBonuses(data || []);
+      setCurrentBonuses(data || []);
     } catch (err) {
-      console.error('Error fetching bonuses:', err);
+      console.error('Error loading bonuses:', err);
       setError(err.message);
     }
   };
 
-  // Fetch aggregated stats
-  const fetchStats = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('bonus_hunt_stats')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+  // ============================================================================
+  // SLOT AUTOCOMPLETE
+  // ============================================================================
 
-      if (error && error.code !== 'PGRST116') throw error; // Ignore "not found" error
-      setStats(data);
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-    }
-  };
-
-  // Fetch available slots for selection
-  // Search slots in Supabase (no need to load all 8000+ slots)
   const searchSlots = async (searchTerm) => {
     try {
       const { data, error } = await supabase
@@ -86,228 +108,23 @@ export default function BonusHuntInputManager({ userId }) {
         .select('id, name, provider, image')
         .ilike('name', `%${searchTerm}%`)
         .order('name')
-        .limit(20); // Only return top 20 matches
+        .limit(20);
 
       if (error) throw error;
-      
-      // Map image field to image_link for compatibility
-      const slotsWithImageLink = (data || []).map(slot => ({
+      return (data || []).map(slot => ({
         ...slot,
         image_link: slot.image
       }));
-      
-      return slotsWithImageLink;
     } catch (err) {
       console.error('Error searching slots:', err);
       return [];
     }
   };
 
-  // Initial data load (no slots needed, we search on demand)
-  useEffect(() => {
-    if (!userId) return;
-
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchBonuses(),
-        fetchStats()
-      ]);
-      setLoading(false);
-    };
-
-    loadData();
-  }, [userId]);
-
-  // ============================================================================
-  // REALTIME SUBSCRIPTIONS
-  // ============================================================================
-
-  useEffect(() => {
-    if (!userId) return;
-
-    // Subscribe to bonus hunt history changes
-    const bonusSubscription = supabase
-      .channel('bonus_hunt_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'bonus_hunt_history',
-        filter: `user_id=eq.${userId}`
-      }, () => {
-        fetchBonuses();
-        fetchStats(); // Stats auto-update via trigger
-      })
-      .subscribe();
-
-    // Subscribe to stats changes
-    const statsSubscription = supabase
-      .channel('bonus_stats_changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'bonus_hunt_stats',
-        filter: `user_id=eq.${userId}`
-      }, () => {
-        fetchStats();
-      })
-      .subscribe();
-
-    return () => {
-      bonusSubscription.unsubscribe();
-      statsSubscription.unsubscribe();
-    };
-  }, [userId]);
-
-  // ============================================================================
-  // CALCULATIONS (Client-side for instant feedback)
-  // ============================================================================
-
-  const calculateBonusStats = (betSize, bonusCost, bonusWin) => {
-    const bet = parseFloat(betSize) || 0;
-    const cost = parseFloat(bonusCost) || 0;
-    const win = parseFloat(bonusWin) || 0;
-
-    const multiplier = bet > 0 ? (win / bet) : 0;
-    const profitLoss = win - cost;
-    const isWin = win > cost;
-
-    return {
-      bonus_multiplier: parseFloat(multiplier.toFixed(2)),
-      profit_loss: parseFloat(profitLoss.toFixed(2)),
-      is_win: isWin
-    };
-  };
-
-  // ============================================================================
-  // CRUD OPERATIONS
-  // ============================================================================
-
-  // Add new bonus
-  const handleAddBonus = async (e) => {
-    e.preventDefault();
-
-    if (!formData.slot_name || !formData.bet_size) {
-      setError('Please fill in required fields: Slot Name and Bet Size');
-      return;
-    }
-
-    try {
-      const calculated = calculateBonusStats(
-        formData.bet_size,
-        formData.bonus_cost || 0,
-        formData.bonus_win || 0
-      );
-
-      const insertData = {
-        user_id: userId,
-        hunt_name: formData.hunt_name || `Hunt ${new Date().toLocaleDateString()}`,
-        slot_name: formData.slot_name,
-        provider: formData.provider || 'Unknown',
-        bet_size: parseFloat(formData.bet_size),
-        bonus_win: parseFloat(formData.bonus_win) || 0,
-        ...calculated,
-        notes: formData.notes
-      };
-
-      // Add optional bonus_cost if provided
-      if (formData.bonus_cost) {
-        insertData.bonus_cost = parseFloat(formData.bonus_cost);
-      }
-
-      const { error } = await supabase
-        .from('bonus_hunt_history')
-        .insert([insertData]);
-
-      if (error) throw error;
-
-      // Reset form
-      setFormData({
-        hunt_name: formData.hunt_name, // Keep hunt name
-        slot_name: '',
-        provider: '',
-        bet_size: formData.bet_size, // Keep bet size for convenience
-        bonus_cost: '',
-        bonus_win: '',
-        start_amount: formData.start_amount, // Keep hunt settings
-        target_amount: formData.target_amount,
-        stop_loss: formData.stop_loss,
-        notes: ''
-      });
-
-      setError(null);
-    } catch (err) {
-      console.error('Error adding bonus:', err);
-      setError(err.message);
-    }
-  };
-
-  // Update existing bonus
-  const handleUpdateBonus = async (id, updates) => {
-    try {
-      const bonus = bonuses.find(b => b.id === id);
-      if (!bonus) return;
-
-      // Recalculate if numeric fields changed
-      const calculated = calculateBonusStats(
-        updates.bet_size ?? bonus.bet_size,
-        updates.bonus_cost ?? bonus.bonus_cost,
-        updates.bonus_win ?? bonus.bonus_win
-      );
-
-      const { error } = await supabase
-        .from('bonus_hunt_history')
-        .update({
-          ...updates,
-          ...calculated
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-      setEditingId(null);
-    } catch (err) {
-      console.error('Error updating bonus:', err);
-      setError(err.message);
-    }
-  };
-
-  // Delete bonus
-  const handleDeleteBonus = async (id) => {
-    if (!confirm('Delete this bonus entry?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('bonus_hunt_history')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-    } catch (err) {
-      console.error('Error deleting bonus:', err);
-      setError(err.message);
-    }
-  };
-
-  // ============================================================================
-  // SLOT SELECTION
-  // ============================================================================
-
-  // Slot selection integration
-  const handleSlotSelect = (slot) => {
-    setFormData({
-      ...formData,
-      slot_name: slot.name,
-      provider: slot.provider
-    });
-    setShowSlotSuggestions(false);
-  };
-
-  // Handle slot name input change for autocomplete
   const handleSlotNameChange = async (e) => {
     const value = e.target.value;
-    setFormData({ ...formData, slot_name: value });
+    setBonusForm({ ...bonusForm, slot_name: value });
 
-    // Search Supabase after 3 characters
     if (value.length >= 3) {
       const results = await searchSlots(value);
       setFilteredSlots(results);
@@ -315,6 +132,239 @@ export default function BonusHuntInputManager({ userId }) {
     } else {
       setShowSlotSuggestions(false);
       setFilteredSlots([]);
+    }
+  };
+
+  const handleSlotSelect = (slot) => {
+    setBonusForm({
+      ...bonusForm,
+      slot_name: slot.name,
+      provider: slot.provider
+    });
+    setShowSlotSuggestions(false);
+  };
+
+  // ============================================================================
+  // HUNT CREATION
+  // ============================================================================
+
+  const startNewHunt = async () => {
+    if (!huntSettings.hunt_name) {
+      setError('Please enter a hunt name');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('bonus_hunt_sessions')
+        .insert([{
+          user_id: userId,
+          hunt_name: huntSettings.hunt_name,
+          start_amount: parseFloat(huntSettings.start_amount) || 0,
+          target_amount: parseFloat(huntSettings.target_amount) || 0,
+          stop_loss: parseFloat(huntSettings.stop_loss) || 0,
+          status: 'building'
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setCurrentSession(data);
+      setCurrentBonuses([]);
+      setViewMode('creating');
+      setError(null);
+    } catch (err) {
+      console.error('Error creating hunt:', err);
+      setError(err.message);
+    }
+  };
+
+  // ============================================================================
+  // ADD BONUSES TO HUNT
+  // ============================================================================
+
+  const addBonusToHunt = async (e) => {
+    e.preventDefault();
+
+    if (!bonusForm.slot_name || !bonusForm.bet_size) {
+      setError('Please fill in Slot Name and Bet Size');
+      return;
+    }
+
+    try {
+      const bonusCost = parseFloat(bonusForm.bonus_cost) || 0;
+      const betSize = parseFloat(bonusForm.bet_size);
+
+      const { data, error } = await supabase
+        .from('bonus_hunt_history')
+        .insert([{
+          user_id: userId,
+          session_id: currentSession.id,
+          hunt_name: currentSession.hunt_name,
+          slot_name: bonusForm.slot_name,
+          provider: bonusForm.provider || 'Unknown',
+          bet_size: betSize,
+          bonus_cost: bonusCost,
+          bonus_win: 0,
+          bonus_multiplier: 0,
+          profit_loss: -bonusCost,
+          is_win: false
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCurrentBonuses([...currentBonuses, data]);
+      
+      // Reset form but keep bet size
+      setBonusForm({
+        slot_name: '',
+        provider: '',
+        bet_size: bonusForm.bet_size,
+        bonus_cost: ''
+      });
+      
+      setError(null);
+    } catch (err) {
+      console.error('Error adding bonus:', err);
+      setError(err.message);
+    }
+  };
+
+  const removeBonusFromHunt = async (bonusId) => {
+    if (!confirm('Remove this bonus from the hunt?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('bonus_hunt_history')
+        .delete()
+        .eq('id', bonusId);
+
+      if (error) throw error;
+
+      setCurrentBonuses(currentBonuses.filter(b => b.id !== bonusId));
+    } catch (err) {
+      console.error('Error removing bonus:', err);
+      setError(err.message);
+    }
+  };
+
+  // ============================================================================
+  // SAVE HUNT
+  // ============================================================================
+
+  const saveHunt = async () => {
+    if (currentBonuses.length === 0) {
+      setError('Add at least one bonus before saving');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bonus_hunt_sessions')
+        .update({ status: 'saved' })
+        .eq('id', currentSession.id);
+
+      if (error) throw error;
+
+      alert(`Hunt "${currentSession.hunt_name}" saved with ${currentBonuses.length} bonuses!`);
+      setViewMode('list');
+      setCurrentSession(null);
+      setCurrentBonuses([]);
+      loadSessions();
+    } catch (err) {
+      console.error('Error saving hunt:', err);
+      setError(err.message);
+    }
+  };
+
+  // ============================================================================
+  // OPEN BONUSES (Input Payouts)
+  // ============================================================================
+
+  const startOpeningBonuses = async (session) => {
+    try {
+      await loadSessionBonuses(session.id);
+      
+      const { error } = await supabase
+        .from('bonus_hunt_sessions')
+        .update({ 
+          status: 'opening',
+          started_at: new Date().toISOString()
+        })
+        .eq('id', session.id);
+
+      if (error) throw error;
+
+      setCurrentSession(session);
+      setOpeningIndex(0);
+      setViewMode('opening');
+    } catch (err) {
+      console.error('Error starting bonus opening:', err);
+      setError(err.message);
+    }
+  };
+
+  const submitPayout = async (e) => {
+    e.preventDefault();
+
+    const bonus = currentBonuses[openingIndex];
+    const bonusWin = parseFloat(payoutForm.bonus_win) || 0;
+    const multiplier = bonus.bet_size > 0 ? (bonusWin / bonus.bet_size) : 0;
+    const profitLoss = bonusWin - bonus.bonus_cost;
+    const isWin = bonusWin > bonus.bonus_cost;
+
+    try {
+      const { error } = await supabase
+        .from('bonus_hunt_history')
+        .update({
+          bonus_win: bonusWin,
+          bonus_multiplier: parseFloat(multiplier.toFixed(2)),
+          profit_loss: parseFloat(profitLoss.toFixed(2)),
+          is_win: isWin,
+          opened_at: new Date().toISOString()
+        })
+        .eq('id', bonus.id);
+
+      if (error) throw error;
+
+      // Update local state
+      const updatedBonuses = [...currentBonuses];
+      updatedBonuses[openingIndex] = {
+        ...bonus,
+        bonus_win: bonusWin,
+        bonus_multiplier: parseFloat(multiplier.toFixed(2)),
+        profit_loss: parseFloat(profitLoss.toFixed(2)),
+        is_win: isWin
+      };
+      setCurrentBonuses(updatedBonuses);
+
+      // Move to next bonus or complete
+      if (openingIndex < currentBonuses.length - 1) {
+        setOpeningIndex(openingIndex + 1);
+        setPayoutForm({ bonus_win: '' });
+      } else {
+        // All bonuses opened - mark session as completed
+        await supabase
+          .from('bonus_hunt_sessions')
+          .update({ 
+            status: 'completed',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', currentSession.id);
+
+        alert('Hunt completed! All bonuses opened.');
+        setViewMode('list');
+        setCurrentSession(null);
+        setCurrentBonuses([]);
+        setOpeningIndex(0);
+        loadSessions();
+      }
+    } catch (err) {
+      console.error('Error submitting payout:', err);
+      setError(err.message);
     }
   };
 
@@ -333,394 +383,384 @@ export default function BonusHuntInputManager({ userId }) {
     return `${(value || 0).toFixed(2)}x`;
   };
 
-  if (loading) {
-    return <div className="bonus-hunt-loading">Loading bonus hunt data...</div>;
-  }
-
   // ============================================================================
   // RENDER
   // ============================================================================
 
-  return (
-    <div className="bonus-hunt-input-manager">
-      {/* Header with Stats Overview */}
-      <div className="bonus-hunt-header">
-        <h2>🎯 Bonus Hunt Manager</h2>
-        {stats && (
-          <div className="quick-stats">
-            <div className="stat-item">
-              <span className="stat-label">Total Bonuses:</span>
-              <span className="stat-value">{stats.total_bonuses}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Required Multi:</span>
-              <span className="stat-value danger">{formatMultiplier(stats.required_multiplier)}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Current P/L:</span>
-              <span className={`stat-value ${stats.total_profit_loss >= 0 ? 'success' : 'danger'}`}>
-                {formatCurrency(stats.total_profit_loss)}
-              </span>
-            </div>
+  if (loading) {
+    return <div className="bonus-hunt-input-manager"><p>Loading...</p></div>;
+  }
+
+  // VIEW: LIST OF HUNTS
+  if (viewMode === 'list') {
+    return (
+      <div className="bonus-hunt-input-manager">
+        <div className="bonus-hunt-header">
+          <h2>🎯 Bonus Hunts</h2>
+          <button onClick={() => setViewMode('creating')} className="btn-primary">
+            ➕ Add Bonus Hunt
+          </button>
+        </div>
+
+        {error && (
+          <div className="error-message">
+            ⚠️ {error}
+            <button onClick={() => setError(null)}>×</button>
           </div>
         )}
-      </div>
 
-      {error && (
-        <div className="error-message">
-          ⚠️ {error}
-          <button onClick={() => setError(null)}>×</button>
-        </div>
-      )}
-
-      {/* Add Bonus Form */}
-      <div className="add-bonus-section">
-        <h3>➕ Add New Bonus</h3>
-        <form onSubmit={handleAddBonus} className="bonus-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Start Amount (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.start_amount}
-                onChange={(e) => setFormData({ ...formData, start_amount: e.target.value })}
-                placeholder="e.g., 500.00"
-              />
+        <div className="hunts-grid">
+          {sessions.length === 0 ? (
+            <div className="empty-state">
+              <p>No bonus hunts yet. Create your first hunt! 🎰</p>
             </div>
+          ) : (
+            sessions.map(session => (
+              <div key={session.id} className="hunt-card">
+                <div className="hunt-card-header">
+                  <h3>{session.hunt_name}</h3>
+                  <span className={`status-badge status-${session.status}`}>
+                    {session.status}
+                  </span>
+                </div>
+                
+                <div className="hunt-card-stats">
+                  <div className="stat-row">
+                    <span>Bonuses:</span>
+                    <span>{session.bonuses_opened}/{session.bonuses_count}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span>Cost:</span>
+                    <span>{formatCurrency(session.total_cost)}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span>Wins:</span>
+                    <span>{formatCurrency(session.total_wins)}</span>
+                  </div>
+                  <div className="stat-row">
+                    <span>P/L:</span>
+                    <span className={session.total_profit_loss >= 0 ? 'profit' : 'loss'}>
+                      {formatCurrency(session.total_profit_loss)}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="form-group">
-              <label>Target Amount (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.target_amount}
-                onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
-                placeholder="e.g., 2000.00"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Stop Loss (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.stop_loss}
-                onChange={(e) => setFormData({ ...formData, stop_loss: e.target.value })}
-                placeholder="e.g., 0 for none"
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>Hunt Name (optional)</label>
-              <input
-                type="text"
-                value={formData.hunt_name}
-                onChange={(e) => setFormData({ ...formData, hunt_name: e.target.value })}
-                placeholder="e.g., Christmas Hunt 2024"
-              />
-            </div>
-
-            <div className="form-group required" style={{ position: 'relative' }}>
-              <label>Slot Name *</label>
-              <input
-                type="text"
-                value={formData.slot_name}
-                onChange={handleSlotNameChange}
-                onFocus={() => formData.slot_name.length >= 3 && setShowSlotSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSlotSuggestions(false), 200)}
-                placeholder="Type at least 3 letters..."
-                required
-              />
-              {showSlotSuggestions && filteredSlots.length > 0 && (
-                <div className="slot-suggestions">
-                  {filteredSlots.slice(0, 10).map((slot) => (
-                    <div
-                      key={slot.id}
-                      className="suggestion-item"
-                      onClick={() => handleSlotSelect(slot)}
+                <div className="hunt-card-actions">
+                  {session.status === 'saved' && (
+                    <button 
+                      onClick={() => startOpeningBonuses(session)}
+                      className="btn-primary"
                     >
-                      {slot.image_link && (
-                        <img src={slot.image_link} alt={slot.name} />
-                      )}
-                      <div className="suggestion-info">
-                        <span className="suggestion-name">{slot.name}</span>
-                        <span className="suggestion-provider">{slot.provider}</span>
-                      </div>
+                      🎰 Open Bonuses
+                    </button>
+                  )}
+                  {session.status === 'completed' && (
+                    <button className="btn-secondary" disabled>
+                      ✅ Completed
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // VIEW: CREATING HUNT (Adding Bonuses)
+  if (viewMode === 'creating') {
+    return (
+      <div className="bonus-hunt-input-manager">
+        <div className="bonus-hunt-header">
+          <h2>🎯 {currentSession ? `Building: ${currentSession.hunt_name}` : 'New Bonus Hunt'}</h2>
+          <button onClick={() => {
+            setViewMode('list');
+            setCurrentSession(null);
+          }} className="btn-secondary">
+            ← Back
+          </button>
+        </div>
+
+        {error && (
+          <div className="error-message">
+            ⚠️ {error}
+            <button onClick={() => setError(null)}>×</button>
+          </div>
+        )}
+
+        {/* Step 1: Hunt Settings */}
+        {!currentSession && (
+          <div className="hunt-settings-section">
+            <h3>Hunt Settings</h3>
+            <div className="form-row">
+              <div className="form-group required">
+                <label>Hunt Name *</label>
+                <input
+                  type="text"
+                  value={huntSettings.hunt_name}
+                  onChange={(e) => setHuntSettings({ ...huntSettings, hunt_name: e.target.value })}
+                  placeholder="e.g., Weekend Hunt"
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Start Amount (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={huntSettings.start_amount}
+                  onChange={(e) => setHuntSettings({ ...huntSettings, start_amount: e.target.value })}
+                  placeholder="500.00"
+                />
+              </div>
+              <div className="form-group">
+                <label>Target Amount (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={huntSettings.target_amount}
+                  onChange={(e) => setHuntSettings({ ...huntSettings, target_amount: e.target.value })}
+                  placeholder="2000.00"
+                />
+              </div>
+              <div className="form-group">
+                <label>Stop Loss (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={huntSettings.stop_loss}
+                  onChange={(e) => setHuntSettings({ ...huntSettings, stop_loss: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <button onClick={startNewHunt} className="btn-primary">
+              Start Hunt
+            </button>
+          </div>
+        )}
+
+        {/* Step 2: Add Bonuses */}
+        {currentSession && (
+          <>
+            <div className="current-bonuses-section">
+              <h3>Bonuses in Hunt ({currentBonuses.length})</h3>
+              {currentBonuses.length === 0 ? (
+                <p className="empty-hint">Add your first bonus below</p>
+              ) : (
+                <div className="bonuses-list">
+                  {currentBonuses.map((bonus, idx) => (
+                    <div key={bonus.id} className="bonus-item">
+                      <span className="bonus-number">#{idx + 1}</span>
+                      <span className="bonus-slot">{bonus.slot_name}</span>
+                      <span className="bonus-bet">{formatCurrency(bonus.bet_size)}</span>
+                      <span className="bonus-cost">{formatCurrency(bonus.bonus_cost)}</span>
+                      <button 
+                        onClick={() => removeBonusFromHunt(bonus.id)}
+                        className="btn-remove"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="form-group">
-              <label>Provider</label>
-              <input
-                type="text"
-                value={formData.provider}
-                onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                placeholder="e.g., Pragmatic Play"
-              />
+            <div className="add-bonus-section">
+              <h3>Add Bonus</h3>
+              <form onSubmit={addBonusToHunt} className="bonus-form">
+                <div className="form-row">
+                  <div className="form-group required" style={{ position: 'relative' }}>
+                    <label>Slot Name *</label>
+                    <input
+                      type="text"
+                      value={bonusForm.slot_name}
+                      onChange={handleSlotNameChange}
+                      onFocus={() => bonusForm.slot_name.length >= 3 && setShowSlotSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSlotSuggestions(false), 200)}
+                      placeholder="Type at least 3 letters..."
+                      required
+                    />
+                    {showSlotSuggestions && filteredSlots.length > 0 && (
+                      <div className="slot-suggestions">
+                        {filteredSlots.slice(0, 10).map((slot) => (
+                          <div
+                            key={slot.id}
+                            className="suggestion-item"
+                            onClick={() => handleSlotSelect(slot)}
+                          >
+                            {slot.image_link && (
+                              <img src={slot.image_link} alt={slot.name} />
+                            )}
+                            <div className="suggestion-info">
+                              <span className="suggestion-name">{slot.name}</span>
+                              <span className="suggestion-provider">{slot.provider}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label>Provider</label>
+                    <input
+                      type="text"
+                      value={bonusForm.provider}
+                      onChange={(e) => setBonusForm({ ...bonusForm, provider: e.target.value })}
+                      placeholder="e.g., Pragmatic Play"
+                    />
+                  </div>
+
+                  <div className="form-group required">
+                    <label>Bet Size * (€)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={bonusForm.bet_size}
+                      onChange={(e) => setBonusForm({ ...bonusForm, bet_size: e.target.value })}
+                      placeholder="0.40"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Bonus Cost (€)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={bonusForm.bonus_cost}
+                      onChange={(e) => setBonusForm({ ...bonusForm, bonus_cost: e.target.value })}
+                      placeholder="100.00"
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-primary">
+                  ➕ Add Bonus
+                </button>
+              </form>
             </div>
-          </div>
 
-          <div className="form-row">
-            <div className="form-group required">
-              <label>Bet Size * (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.bet_size}
-                onChange={(e) => setFormData({ ...formData, bet_size: e.target.value })}
-                placeholder="0.40"
-                required
-              />
+            <div className="hunt-actions">
+              <button 
+                onClick={saveHunt}
+                className="btn-success"
+                disabled={currentBonuses.length === 0}
+              >
+                💾 Save Hunt
+              </button>
+              <button 
+                onClick={() => startOpeningBonuses(currentSession)}
+                className="btn-primary"
+                disabled={currentBonuses.length === 0}
+              >
+                🎰 Open Bonuses
+              </button>
             </div>
-
-            <div className="form-group">
-              <label>Bonus Cost (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.bonus_cost}
-                onChange={(e) => setFormData({ ...formData, bonus_cost: e.target.value })}
-                placeholder="100.00 (optional)"
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Bonus Win (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.bonus_win}
-                onChange={(e) => setFormData({ ...formData, bonus_win: e.target.value })}
-                placeholder="0.00 (fill after opening)"
-              />
-            </div>
-
-            <div className="form-group preview-calc">
-              <label>Preview Multiplier</label>
-              <div className="calc-display">
-                {formData.bet_size && formData.bonus_win
-                  ? formatMultiplier((parseFloat(formData.bonus_win) || 0) / (parseFloat(formData.bet_size) || 1))
-                  : '0.00x'}
-              </div>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group full-width">
-              <label>Notes (optional)</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Any additional notes..."
-                rows="2"
-              />
-            </div>
-          </div>
-
-          <button type="submit" className="btn-primary">
-            ➕ Add Bonus
-          </button>
-        </form>
-      </div>
-
-      {/* Bonuses Table */}
-      <div className="bonuses-table-section">
-        <h3>📋 Bonus Entries ({bonuses.length})</h3>
-        {bonuses.length === 0 ? (
-          <div className="empty-state">
-            <p>No bonuses added yet. Start by adding your first bonus above! 🎰</p>
-          </div>
-        ) : (
-          <div className="table-wrapper">
-            <table className="bonuses-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Slot</th>
-                  <th>Provider</th>
-                  <th>Bet</th>
-                  <th>Cost</th>
-                  <th>Win</th>
-                  <th>Multi</th>
-                  <th>P/L</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bonuses.map((bonus) => (
-                  <tr key={bonus.id} className={editingId === bonus.id ? 'editing' : ''}>
-                    <td>{new Date(bonus.opened_at).toLocaleDateString()}</td>
-                    <td>
-                      {editingId === bonus.id ? (
-                        <input
-                          type="text"
-                          defaultValue={bonus.slot_name}
-                          onBlur={(e) => handleUpdateBonus(bonus.id, { slot_name: e.target.value })}
-                        />
-                      ) : (
-                        bonus.slot_name
-                      )}
-                    </td>
-                    <td>{bonus.provider}</td>
-                    <td>
-                      {editingId === bonus.id ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          defaultValue={bonus.bet_size}
-                          onBlur={(e) => handleUpdateBonus(bonus.id, { bet_size: parseFloat(e.target.value) })}
-                        />
-                      ) : (
-                        formatCurrency(bonus.bet_size)
-                      )}
-                    </td>
-                    <td>
-                      {editingId === bonus.id ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          defaultValue={bonus.bonus_cost}
-                          onBlur={(e) => handleUpdateBonus(bonus.id, { bonus_cost: parseFloat(e.target.value) })}
-                        />
-                      ) : (
-                        formatCurrency(bonus.bonus_cost)
-                      )}
-                    </td>
-                    <td>
-                      {editingId === bonus.id ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          defaultValue={bonus.bonus_win}
-                          onBlur={(e) => handleUpdateBonus(bonus.id, { bonus_win: parseFloat(e.target.value) })}
-                        />
-                      ) : (
-                        formatCurrency(bonus.bonus_win)
-                      )}
-                    </td>
-                    <td className="multiplier-cell">
-                      {formatMultiplier(bonus.bonus_multiplier)}
-                    </td>
-                    <td className={bonus.profit_loss >= 0 ? 'profit' : 'loss'}>
-                      {formatCurrency(bonus.profit_loss)}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${bonus.is_win ? 'win' : 'loss'}`}>
-                        {bonus.is_win ? '✓ Win' : '✗ Loss'}
-                      </span>
-                    </td>
-                    <td className="actions-cell">
-                      {editingId === bonus.id ? (
-                        <button onClick={() => setEditingId(null)} className="btn-done">
-                          ✓
-                        </button>
-                      ) : (
-                        <>
-                          <button onClick={() => setEditingId(bonus.id)} className="btn-edit">
-                            ✏️
-                          </button>
-                          <button onClick={() => handleDeleteBonus(bonus.id)} className="btn-delete">
-                            🗑️
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          </>
         )}
       </div>
+    );
+  }
 
-      {/* Summary Stats Cards */}
-      {stats && (
-        <div className="stats-summary">
-          <h3>📊 Session Statistics</h3>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">💰</div>
-              <div className="stat-content">
-                <div className="stat-title">Total Cost</div>
-                <div className="stat-number">{formatCurrency(stats.total_cost)}</div>
-              </div>
-            </div>
+  // VIEW: OPENING BONUSES (Input Payouts)
+  if (viewMode === 'opening' && currentBonuses.length > 0) {
+    const currentBonus = currentBonuses[openingIndex];
+    const progress = ((openingIndex + 1) / currentBonuses.length) * 100;
 
-            <div className="stat-card">
-              <div className="stat-icon">🎁</div>
-              <div className="stat-content">
-                <div className="stat-title">Total Won</div>
-                <div className="stat-number">{formatCurrency(stats.total_won)}</div>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">📈</div>
-              <div className="stat-content">
-                <div className="stat-title">Average Multi</div>
-                <div className="stat-number">{formatMultiplier(stats.average_multiplier)}</div>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">🎯</div>
-              <div className="stat-content">
-                <div className="stat-title">Best Payout</div>
-                <div className="stat-number">{formatCurrency(stats.best_bonus_payout)}</div>
-                <div className="stat-subtitle">{stats.best_bonus_slot}</div>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">🔥</div>
-              <div className="stat-content">
-                <div className="stat-title">Best Multi</div>
-                <div className="stat-number">{formatMultiplier(stats.best_bonus_multiplier)}</div>
-              </div>
-            </div>
-
-            <div className="stat-card">
-              <div className="stat-icon">📊</div>
-              <div className="stat-content">
-                <div className="stat-title">Win Rate</div>
-                <div className="stat-number">{stats.win_rate.toFixed(1)}%</div>
-              </div>
-            </div>
+    return (
+      <div className="bonus-hunt-input-manager">
+        <div className="bonus-hunt-header">
+          <h2>🎰 Opening: {currentSession?.hunt_name}</h2>
+          <div className="progress-info">
+            Bonus {openingIndex + 1} of {currentBonuses.length}
           </div>
         </div>
-      )}
 
-      {/* Integration Notes for Overlay Widgets */}
-      <div className="integration-notes">
-        <details>
-          <summary>🔌 Overlay Widget Integration</summary>
-          <div className="notes-content">
-            <p><strong>These stats auto-update the following overlay widgets:</strong></p>
-            <ul>
-              <li><code>RequiredMultiplierWidget</code> - reads from bonus_hunt_stats.required_multiplier</li>
-              <li><code>BestMultiplierWidget</code> - reads from bonus_hunt_stats.best_bonus_multiplier</li>
-              <li><code>BestBonusPayoutWidget</code> - reads from bonus_hunt_stats.best_bonus_payout</li>
-              <li><code>AverageBonusCostWidget</code> - reads from bonus_hunt_stats.average_bonus_cost</li>
-              <li><code>BonusesCountWidget</code> - reads from bonus_hunt_stats.total_bonuses</li>
-              <li><code>CurrentAverageWidget</code> - reads from bonus_hunt_stats.average_multiplier</li>
-            </ul>
-            <p><strong>Realtime Updates:</strong> All changes trigger database triggers that recalculate stats automatically. Overlay widgets subscribe to these tables via Supabase Realtime.</p>
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+        </div>
+
+        {error && (
+          <div className="error-message">
+            ⚠️ {error}
+            <button onClick={() => setError(null)}>×</button>
           </div>
-        </details>
+        )}
+
+        <div className="opening-bonus-card">
+          <h3>{currentBonus.slot_name}</h3>
+          <p className="bonus-provider">{currentBonus.provider}</p>
+
+          <div className="bonus-details">
+            <div className="detail-item">
+              <span className="detail-label">Bet Size:</span>
+              <span className="detail-value">{formatCurrency(currentBonus.bet_size)}</span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">Bonus Cost:</span>
+              <span className="detail-value">{formatCurrency(currentBonus.bonus_cost)}</span>
+            </div>
+          </div>
+
+          <form onSubmit={submitPayout} className="payout-form">
+            <div className="form-group">
+              <label>Bonus Win (€) *</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={payoutForm.bonus_win}
+                onChange={(e) => setPayoutForm({ bonus_win: e.target.value })}
+                placeholder="Enter payout amount"
+                required
+                autoFocus
+              />
+            </div>
+
+            {payoutForm.bonus_win && (
+              <div className="payout-preview">
+                <div className="preview-item">
+                  <span>Multiplier:</span>
+                  <span>{formatMultiplier(parseFloat(payoutForm.bonus_win) / currentBonus.bet_size)}</span>
+                </div>
+                <div className="preview-item">
+                  <span>Profit/Loss:</span>
+                  <span className={(parseFloat(payoutForm.bonus_win) - currentBonus.bonus_cost) >= 0 ? 'profit' : 'loss'}>
+                    {formatCurrency(parseFloat(payoutForm.bonus_win) - currentBonus.bonus_cost)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <button type="submit" className="btn-primary btn-large">
+              {openingIndex < currentBonuses.length - 1 ? 'Next Bonus →' : 'Complete Hunt ✓'}
+            </button>
+          </form>
+        </div>
+
+        <div className="opened-bonuses-summary">
+          <h4>Already Opened:</h4>
+          <div className="opened-list">
+            {currentBonuses.slice(0, openingIndex).map((bonus, idx) => (
+              <div key={bonus.id} className="opened-item">
+                <span>{bonus.slot_name}</span>
+                <span>{formatMultiplier(bonus.bonus_multiplier)}</span>
+                <span className={bonus.is_win ? 'profit' : 'loss'}>
+                  {formatCurrency(bonus.profit_loss)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }

@@ -620,3 +620,376 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================================
+   NEW REDESIGN STYLES
+   ============================================================================ */
+
+/* Hunts Grid */
+.hunts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.hunt-card {
+  background: #22252f;
+  border: 2px solid #3a3d4a;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.hunt-card:hover {
+  border-color: #6366f1;
+  transform: translateY(-2px);
+}
+
+.hunt-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.hunt-card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #fff;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-building {
+  background: #fbbf24;
+  color: #000;
+}
+
+.status-saved {
+  background: #6366f1;
+  color: #fff;
+}
+
+.status-opening {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.status-completed {
+  background: #10b981;
+  color: #fff;
+}
+
+.hunt-card-stats {
+  margin-bottom: 16px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2d3a;
+}
+
+.stat-row span:first-child {
+  color: #888;
+}
+
+.stat-row span:last-child {
+  color: #fff;
+  font-weight: 600;
+}
+
+.hunt-card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.hunt-card-actions button {
+  flex: 1;
+}
+
+/* Hunt Settings Section */
+.hunt-settings-section {
+  background: #22252f;
+  border: 2px solid #3a3d4a;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.hunt-settings-section h3 {
+  margin: 0 0 20px 0;
+  color: #fff;
+}
+
+/* Current Bonuses Section */
+.current-bonuses-section {
+  background: #22252f;
+  border: 2px solid #3a3d4a;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.current-bonuses-section h3 {
+  margin: 0 0 16px 0;
+  color: #fff;
+}
+
+.bonuses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bonus-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #1a1d29;
+  border: 1px solid #3a3d4a;
+  border-radius: 8px;
+}
+
+.bonus-number {
+  font-weight: 600;
+  color: #6366f1;
+  min-width: 30px;
+}
+
+.bonus-slot {
+  flex: 1;
+  color: #fff;
+}
+
+.bonus-bet,
+.bonus-cost {
+  color: #888;
+  font-size: 14px;
+}
+
+.btn-remove {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background 0.2s;
+}
+
+.btn-remove:hover {
+  background: #b91c1c;
+}
+
+/* Hunt Actions */
+.hunt-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid #2a2d3a;
+}
+
+.hunt-actions button {
+  flex: 1;
+  padding: 14px 24px;
+  font-size: 16px;
+}
+
+.btn-success {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-success:disabled {
+  background: #374151;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Opening View */
+.progress-info {
+  color: #888;
+  font-size: 14px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #2a2d3a;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  transition: width 0.3s ease;
+}
+
+.opening-bonus-card {
+  background: #22252f;
+  border: 2px solid #6366f1;
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.opening-bonus-card h3 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  color: #fff;
+}
+
+.bonus-provider {
+  color: #888;
+  margin-bottom: 24px;
+}
+
+.bonus-details {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 32px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.detail-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.payout-form {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.payout-form .form-group input {
+  font-size: 18px;
+  padding: 16px;
+  text-align: center;
+}
+
+.payout-preview {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px 0;
+  padding: 20px;
+  background: #1a1d29;
+  border-radius: 8px;
+}
+
+.preview-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-item span:first-child {
+  font-size: 12px;
+  color: #888;
+}
+
+.preview-item span:last-child {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.btn-large {
+  width: 100%;
+  padding: 18px;
+  font-size: 18px;
+  margin-top: 20px;
+}
+
+/* Opened Bonuses Summary */
+.opened-bonuses-summary {
+  background: #22252f;
+  border: 2px solid #3a3d4a;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.opened-bonuses-summary h4 {
+  margin: 0 0 16px 0;
+  color: #888;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.opened-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.opened-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: #1a1d29;
+  border-radius: 6px;
+}
+
+.opened-item span {
+  color: #fff;
+}
+
+.opened-item span:first-child {
+  flex: 1;
+}
+
+.empty-hint {
+  color: #888;
+  text-align: center;
+  padding: 20px;
+}
+
+.profit {
+  color: #10b981 !important;
+}
+
+.loss {
+  color: #ef4444 !important;
+}
