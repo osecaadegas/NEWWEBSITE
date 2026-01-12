@@ -9,3 +9,8 @@ CREATE INDEX IF NOT EXISTS idx_bonus_hunt_sessions_active ON bonus_hunt_sessions
 
 -- Add comment
 COMMENT ON COLUMN bonus_hunt_sessions.is_active_for_display IS 'Flag to mark which hunt should be displayed in overlay widgets. Only one hunt per user should be active at a time.';
+
+-- Automatically set any currently opening hunts as active
+UPDATE bonus_hunt_sessions 
+SET is_active_for_display = true 
+WHERE status = 'opening';

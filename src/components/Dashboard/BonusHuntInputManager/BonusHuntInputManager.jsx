@@ -361,6 +361,9 @@ export default function BonusHuntInputManager({ userId }) {
     try {
       await loadSessionBonuses(session.id);
       
+      // Set this hunt as active when starting to open
+      await setActiveHunt(session.id);
+      
       const { error } = await supabase
         .from('bonus_hunt_sessions')
         .update({ 
