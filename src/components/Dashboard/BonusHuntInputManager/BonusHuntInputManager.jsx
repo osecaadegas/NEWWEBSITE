@@ -20,7 +20,6 @@ export default function BonusHuntInputManager({ userId }) {
   // State Management
   const [bonuses, setBonuses] = useState([]);
   const [stats, setStats] = useState(null);
-  const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -79,12 +78,15 @@ export default function BonusHuntInputManager({ userId }) {
   };
 
   // Fetch available slots for selection
-  const fetchSlots = async () => {
+  // Search slots in Supabase (no need to load all 8000+ slots)
+  const searchSlots = async (searchTerm) => {
     try {
       const { data, error } = await supabase
         .from('slots')
         .select('id, name, provider, image')
-        .order('name');
+        .ilike('name', `%${searchTerm}%`)
+        .order('name')
+        .limit(20); // Only return top 20 matches
 
       if (error) throw error;
       
@@ -94,13 +96,14 @@ export default function BonusHuntInputManager({ userId }) {
         image_link: slot.image
       }));
       
-      setSlots(slotsWithImageLink);
+      return slotsWithImageLink;
     } catch (err) {
-      console.error('Error fetching slots:', err);
+      console.error('Error searching slots:', err);
+      return [];
     }
   };
 
-  // Initial data load
+  // Initial data load (no slots needed, we search on demand)
   useEffect(() => {
     if (!userId) return;
 
@@ -108,8 +111,7 @@ export default function BonusHuntInputManager({ userId }) {
       setLoading(true);
       await Promise.all([
         fetchBonuses(),
-        fetchStats(),
-        fetchSlots()
+        fetchStats()
       ]);
       setLoading(false);
     };
@@ -301,17 +303,15 @@ export default function BonusHuntInputManager({ userId }) {
   };
 
   // Handle slot name input change for autocomplete
-  const handleSlotNameChange = (e) => {
+  const handleSlotNameChange = async (e) => {
     const value = e.target.value;
     setFormData({ ...formData, slot_name: value });
 
-    // Show suggestions after 3 characters
+    // Search Supabase after 3 characters
     if (value.length >= 3) {
-      const filtered = slots.filter(slot =>
-        slot.name.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredSlots(filtered);
-      setShowSlotSuggestions(true);
+      const results = await searchSlots(value);
+      setFilteredSlots(results);
+      setShowSlotSuggestions(results.length > 0);
     } else {
       setShowSlotSuggestions(false);
       setFilteredSlots([]);
@@ -534,30 +534,6 @@ export default function BonusHuntInputManager({ userId }) {
           </button>
         </form>
       </div>
-
-      {/* Slot Selection Quick Picks */}
-      {slots.length > 0 && (
-        <div className="slot-quick-picks">
-          <h4>Quick Select Slot:</h4>
-          <div className="slot-grid">
-            {slots.slice(0, 12).map((slot, idx) => (
-              <button
-                key={idx}
-                className={`slot-card ${formData.slot_name === slot.name ? 'selected' : ''}`}
-                onClick={() => handleSlotSelect(slot)}
-              >
-                {slot.image_link && (
-                  <img src={slot.image_link} alt={slot.name} />
-                )}
-                <div className="slot-info">
-                  <span className="slot-name">{slot.name}</span>
-                  <span className="slot-provider">{slot.provider}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Bonuses Table */}
       <div className="bonuses-table-section">
