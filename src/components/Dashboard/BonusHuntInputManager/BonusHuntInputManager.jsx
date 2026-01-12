@@ -37,6 +37,7 @@ export default function BonusHuntInputManager({ userId }) {
     provider: '',
     bet_size: '',
     bonus_cost: '',
+    slot_image: '',
     is_super_bonus: false
   });
   
@@ -142,7 +143,8 @@ export default function BonusHuntInputManager({ userId }) {
     setBonusForm({
       ...bonusForm,
       slot_name: slot.name,
-      provider: slot.provider
+      provider: slot.provider,
+      slot_image: slot.image_link || ''
     });
     setShowSlotSuggestions(false);
   };
@@ -213,6 +215,7 @@ export default function BonusHuntInputManager({ userId }) {
           bonus_multiplier: 0,
           profit_loss: -bonusCost,
           is_win: false,
+          slot_image: bonusForm.slot_image || null,
           is_super_bonus: bonusForm.is_super_bonus
         }])
         .select()
@@ -228,6 +231,7 @@ export default function BonusHuntInputManager({ userId }) {
         provider: '',
         bet_size: bonusForm.bet_size,
         bonus_cost: '',
+        slot_image: '',
         is_super_bonus: false
       });
       
@@ -818,8 +822,17 @@ export default function BonusHuntInputManager({ userId }) {
         )}
 
         <div className="opening-bonus-card">
-          <h3>{currentBonus.slot_name}</h3>
-          <p className="bonus-provider">{currentBonus.provider}</p>
+          <div className="opening-bonus-header">
+            {currentBonus.slot_image && (
+              <div className="slot-image-container">
+                <img src={currentBonus.slot_image} alt={currentBonus.slot_name} className="slot-image" />
+              </div>
+            )}
+            <div className="slot-info">
+              <h3>{currentBonus.slot_name}</h3>
+              <p className="bonus-provider">{currentBonus.provider}</p>
+            </div>
+          </div>
 
           <div className="bonus-details">
             <div className="detail-item">
