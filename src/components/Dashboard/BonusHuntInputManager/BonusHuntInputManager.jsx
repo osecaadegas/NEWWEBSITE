@@ -36,7 +36,8 @@ export default function BonusHuntInputManager({ userId }) {
     slot_name: '',
     provider: '',
     bet_size: '',
-    bonus_cost: ''
+    bonus_cost: '',
+    is_super_bonus: false
   });
   
   const [payoutForm, setPayoutForm] = useState({
@@ -209,7 +210,8 @@ export default function BonusHuntInputManager({ userId }) {
           bonus_win: 0,
           bonus_multiplier: 0,
           profit_loss: -bonusCost,
-          is_win: false
+          is_win: false,
+          is_super_bonus: bonusForm.is_super_bonus
         }])
         .select()
         .single();
@@ -223,7 +225,8 @@ export default function BonusHuntInputManager({ userId }) {
         slot_name: '',
         provider: '',
         bet_size: bonusForm.bet_size,
-        bonus_cost: ''
+        bonus_cost: '',
+        is_super_bonus: false
       });
       
       setError(null);
@@ -551,8 +554,9 @@ export default function BonusHuntInputManager({ userId }) {
               ) : (
                 <div className="bonuses-list">
                   {currentBonuses.map((bonus, idx) => (
-                    <div key={bonus.id} className="bonus-item">
+                    <div key={bonus.id} className={`bonus-item ${bonus.is_super_bonus ? 'super-bonus' : ''}`}>
                       <span className="bonus-number">#{idx + 1}</span>
+                      {bonus.is_super_bonus && <span className="super-badge">⭐ SUPER</span>}
                       <span className="bonus-slot">{bonus.slot_name}</span>
                       <span className="bonus-bet">{formatCurrency(bonus.bet_size)}</span>
                       <span className="bonus-cost">{formatCurrency(bonus.bonus_cost)}</span>
@@ -637,6 +641,17 @@ export default function BonusHuntInputManager({ userId }) {
                       onChange={(e) => setBonusForm({ ...bonusForm, bonus_cost: e.target.value })}
                       placeholder="100.00"
                     />
+                  </div>
+
+                  <div className="form-group checkbox-group">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={bonusForm.is_super_bonus}
+                        onChange={(e) => setBonusForm({ ...bonusForm, is_super_bonus: e.target.checked })}
+                      />
+                      <span className="checkbox-text">⭐ SUPER Bonus</span>
+                    </label>
                   </div>
                 </div>
 
