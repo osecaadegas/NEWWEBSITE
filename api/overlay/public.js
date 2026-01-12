@@ -18,41 +18,65 @@ export default async function handler(req, res) {
   }
 
   // Get overlay by public_id
-  const { data, error } = await supabase
+  const { data: overlayData, error: overlayError } = await supabase
     .from('overlays')
-    .select('settings, updated_at, user_id')
+    .select('id, settings, updated_at, user_id')
     .eq('public_id', id)
     .single();
 
-  if (error) {
-    if (error.code === 'PGRST116') {
+  if (overlayError) {
+    if (overlayError.code === 'PGRST116') {
       return res.status(404).json({ error: 'Overlay not found' });
     }
-    return res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: overlayError.message });
+  }
+
+  // Fetch widgets from widgets table (NEW system)
+  const { data: widgets, error: widgetsError } = await supabase
+    .from('widgets')
+    .select(`
+      id,
+      widget_type_id,
+      name,
+      enabled,
+      position_x,
+      position_y,
+      width,
+      height,
+      scale,
+      opacity,
+      z_index,
+      config,
+      widget_type:widget_types(
+        id,
+        name,
+        display_name,
+        category
+      )
+    `)
+    .eq('overlay_id', overlayData.id)
+    .eq('enabled', true)
+    .order('z_index', { ascending: true });
+
+  if (widgetsError) {
+    console.error('Error fetching widgets:', widgetsError);
   }
 
   // Fetch user data to get twitch username
   let userData = null;
-  if (data.user_id) {
-    const { data: user } = await supabase.auth.admin.getUserById(data.user_id);
+  if (overlayData.user_id) {
+    const { data: user } = await supabase.auth.admin.getUserById(overlayData.user_id);
     userData = user?.user;
   }
 
-  // Convert widgets object to array format expected by OverlayV2
-  const widgetsObject = data.settings?.widgets || {};
-  const widgetsArray = Object.entries(widgetsObject).map(([name, config]) => ({
-    name,
-    ...config
-  }));
-
   // Return settings and relevant user info (twitch username only)
   res.status(200).json({
-    widgets: widgetsArray,
-    theme: data.settings?.theme || {},
-    layout: data.settings?.layout || {},
-    updated_at: data.updated_at,
+    widgets: widgets || [],
+    theme: overlayData.settings?.theme || {},
+    layout: overlayData.settings?.layout || {},
+    updated_at: overlayData.updated_at,
     user: {
-      id: data.user_id, // Include user_id for data fetching
+      id: overlayData.user_id, // Include user_id for data fetching
       ...userData
     }
   });
