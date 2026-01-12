@@ -478,12 +478,19 @@ export default function BonusHuntInputManager({ userId }) {
             </div>
           ) : (
             sessions.map(session => (
-              <div key={session.id} className="hunt-card">
+              <div key={session.id} className={`hunt-card ${session.status === 'opening' ? 'active-hunt' : ''}`}>
                 <div className="hunt-card-header">
                   <h3>{session.hunt_name}</h3>
-                  <span className={`status-badge status-${session.status}`}>
-                    {session.status}
-                  </span>
+                  <div className="hunt-badges">
+                    {session.status === 'opening' && (
+                      <span className="active-badge">
+                        🔴 ACTIVE
+                      </span>
+                    )}
+                    <span className={`status-badge status-${session.status}`}>
+                      {session.status}
+                    </span>
+                  </div>
                 </div>
                 
                 <div className="hunt-card-stats">

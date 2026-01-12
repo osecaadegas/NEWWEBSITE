@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import './BonusHuntListWidget.css';
 
 export default function BonusHuntListWidget({ data, config, theme }) {
-  const { bonuses = [] } = data || {};
+  const { activeHuntBonuses = [], activeHunt = null } = data || {};
   const { 
     scrollSpeed = 30,
     pauseOnHover = true,
@@ -19,8 +19,15 @@ export default function BonusHuntListWidget({ data, config, theme }) {
   const [isPaused, setIsPaused] = useState(false);
   const scrollContainerRef = useRef(null);
 
-  // Example data for testing (will be replaced with real Supabase data)
-  const slotBonuses = bonuses.length > 0 ? bonuses : [
+  // Use active hunt bonuses if available, otherwise use example data
+  const slotBonuses = activeHuntBonuses.length > 0 ? activeHuntBonuses.map(bonus => ({
+    id: bonus.id,
+    image: bonus.slot_image || 'https://via.placeholder.com/80',
+    name: bonus.slot_name,
+    bet: bonus.bet_size,
+    payout: bonus.bonus_win || 0,
+    is_super_bonus: bonus.is_super_bonus || false
+  })) : [
     {
       id: 1,
       image: 'https://cdn2.softswiss.net/i/s3/softswiss/Wanted_Dead_or_a_Wild.png',

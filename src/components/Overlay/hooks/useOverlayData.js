@@ -11,6 +11,8 @@ export function useOverlayData(userId) {
   const [data, setData] = useState({
     bonuses: [],
     bonusStats: null,
+    activeHunt: null,
+    activeHuntBonuses: [],
     tournaments: [],
     tournamentRounds: [],
     slotHistory: [],
@@ -34,6 +36,8 @@ export function useOverlayData(userId) {
         const [
           bonusesRes,
           statsRes,
+          activeHuntRes,
+          activeHuntBonusesRes,
           tournamentsRes,
           roundsRes,
           slotsRes,
@@ -53,6 +57,24 @@ export function useOverlayData(userId) {
             .select('*')
             .eq('user_id', userId)
             .single(),
+
+          // Fetch active bonus hunt session (status = 'opening')
+          supabase
+            .from('bonus_hunt_sessions')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('status', 'opening')
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .single(),
+
+          // Fetch bonuses from active hunt session
+          supabase
+            .from('bonus_hunt_history')
+            .select('*')
+            .eq('user_id', userId)
+            .not('session_id', 'is', null)
+            .order('created_at', { ascending: true }),
 
           // Fetch active tournaments
           supabase
@@ -88,14 +110,26 @@ export function useOverlayData(userId) {
         console.log('📊 Data fetched:');
         console.log('  Bonuses:', bonusesRes.data?.length || 0);
         console.log('  Stats:', statsRes.data ? 'Found' : 'None');
+        console.log('  Active Hunt:', activeHuntRes.data ? activeHuntRes.data.hunt_name : 'None');
+        console.log('  Active Hunt Bonuses:', activeHuntBonusesRes.data?.length || 0);
         console.log('  Tournaments:', tournamentsRes.data?.length || 0);
         console.log('  Rounds:', roundsRes.data?.length || 0);
         console.log('  Slots:', slotsRes.data?.length || 0);
         console.log('  Session:', sessionRes.data ? 'Found' : 'None');
 
+        // Filter active hunt bonuses if we have an active hunt
+        let activeHuntBonuses = [];
+        if (activeHuntRes.data) {
+          activeHuntBonuses = (activeHuntBonusesRes.data || []).filter(
+            b => b.session_id === activeHuntRes.data.id
+          );
+        }
+
         setData({
           bonuses: bonusesRes.data || [],
           bonusStats: statsRes.data || null,
+          activeHunt: activeHuntRes.data || null,
+          activeHuntBonuses: activeHuntBonuses,
           tournaments: tournamentsRes.data || [],
           tournamentRounds: roundsRes.data || [],
           slotHistory: slotsRes.data || [],
