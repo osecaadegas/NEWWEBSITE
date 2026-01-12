@@ -57,11 +57,12 @@ export default function BHTrackerListVertical({ data, config, theme }) {
           <div className="empty-icon">🎰</div>
           <p>No active hunt</p>
           <p className="empty-hint">Start opening bonuses to see them here</p>
-          <div style={{ color: 'yellow', fontSize: '11px', marginTop: '20px', textAlign: 'left', padding: '10px' }}>
-            <div>activeHunt: {activeHunt ? 'YES' : 'NO'}</div>
+          <div style={{ color: 'yellow', fontSize: '10px', marginTop: '20px', textAlign: 'left', padding: '10px', lineHeight: '1.5' }}>
+            <div>activeHunt: {activeHunt ? JSON.stringify(activeHunt).substring(0, 50) : 'NO'}</div>
             <div>bonuses: {activeHuntBonuses.length}</div>
             <div>data received: {data ? 'YES' : 'NO'}</div>
-            <div>data keys: {data ? Object.keys(data).join(', ') : 'none'}</div>
+            {data && <div>all bonuses: {data.bonuses?.length || 0}</div>}
+            {data && <div>bonusStats: {data.bonusStats ? 'YES' : 'NO'}</div>}
           </div>
         </div>
       </div>
