@@ -16,8 +16,6 @@ import TournamentsPage from './components/TournamentsPage/TournamentsPage';
 import GuessBalancePage from './components/GuessBalancePage/GuessBalancePage';
 import GiveawaysPage from './components/GiveawaysPage/GiveawaysPage';
 import { checkUserAccess } from './utils/adminUtils';
-import ModernCardLayout from './components/ModernCardLayout/ModernCardLayout';
-import ModernSidebarLayout from './components/ModernSidebarLayout/ModernSidebarLayout';
 import GiveawayPanel from './components/GiveawayPanel/GiveawayPanel';
 import TwitchChat from './components/TwitchChat/TwitchChat';
 import BlackjackPremium from './components/Blackjack/BlackjackPremium';
@@ -525,8 +523,7 @@ function LayoutWrapper({ children }) {
 
   const showSidebar = location.pathname !== '/overlay' && 
                       location.pathname !== '/admin-overlay' && 
-                      !isWidgetRoute &&
-                      !isPremiumOverlay;
+                      !isWidgetRoute;
 
   return (
     <div className="app-layout">
