@@ -175,6 +175,9 @@ export default function BonusHuntInputManager({ userId }) {
 
       if (error) throw error;
       
+      // Set the new hunt as active
+      await setActiveHunt(data.id);
+      
       setCurrentSession(data);
       setCurrentBonuses([]);
       setViewMode('creating');
