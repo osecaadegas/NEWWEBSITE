@@ -38,9 +38,16 @@ export default async function handler(req, res) {
     userData = user?.user;
   }
 
+  // Convert widgets object to array format expected by OverlayV2
+  const widgetsObject = data.settings?.widgets || {};
+  const widgetsArray = Object.entries(widgetsObject).map(([name, config]) => ({
+    name,
+    ...config
+  }));
+
   // Return settings and relevant user info (twitch username only)
   res.status(200).json({
-    widgets: data.settings?.widgets || [],
+    widgets: widgetsArray,
     theme: data.settings?.theme || {},
     layout: data.settings?.layout || {},
     updated_at: data.updated_at,
