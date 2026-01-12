@@ -3,4 +3,6 @@
  * Ready for new widget implementations
  */
 
-// No widgets currently exported
+// BH Trackers
+export { default as BHTrackerListVertical } from './BHTrackerListVertical';
+

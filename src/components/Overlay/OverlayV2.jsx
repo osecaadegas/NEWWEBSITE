@@ -13,6 +13,9 @@ import { supabase } from '../../config/supabaseClient';
 import { useOverlayData } from './hooks/useOverlayData';
 import './OverlayV2.css';
 
+// Widget Components
+import BHTrackerListVertical from './widgets/BHTrackerListVertical';
+
 export default function OverlayV2() {
   const [searchParams] = useSearchParams();
   const publicId = searchParams.get('id');
@@ -178,8 +181,10 @@ export default function OverlayV2() {
     
     console.log('📊 Widget data for', widgetName, ':', widgetData);
 
-    // No widget components registered yet
-    const widgetComponents = {};
+    // Widget components mapping
+    const widgetComponents = {
+      'bh_tracker_list_vertical': <BHTrackerListVertical {...widgetProps} />
+    };
 
     return (
       <div key={widget.id} style={style} className="overlay-widget">

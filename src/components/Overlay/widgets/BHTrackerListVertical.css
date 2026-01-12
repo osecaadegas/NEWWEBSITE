@@ -1,0 +1,210 @@
+/* BH Tracker List Vertical Styles */
+
+.bh-tracker-vertical {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Empty State */
+.empty-hunt-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+  padding: 40px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-hunt-state p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.empty-hint {
+  font-size: 14px !important;
+  opacity: 0.6;
+  margin-top: 8px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Gradient Overlays */
+.gradient-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: linear-gradient(to bottom, rgba(26, 26, 46, 1) 0%, transparent 100%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.gradient-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: linear-gradient(to top, rgba(26, 26, 46, 1) 0%, transparent 100%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Scroll Container */
+.scroll-container {
+  animation: scroll 30s linear infinite;
+  padding: 12px;
+}
+
+.scroll-container.paused {
+  animation-play-state: paused;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+/* Bonus Card */
+.bonus-card {
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+}
+
+/* Normal Bonus */
+.normal-bonus {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Super Bonus */
+.super-bonus {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 50%, #1a1a2e 100%);
+  border: 2px solid #ffd700;
+  animation: shake 0.5s ease-in-out infinite, glow 2s ease-in-out infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
+  20%, 40%, 60%, 80% { transform: translateX(2px); }
+}
+
+@keyframes glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px #ffd700, 0 0 10px #ffd700, 0 0 15px #ffd700;
+  }
+  50% { 
+    box-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 30px #ffd700;
+  }
+}
+
+/* Slot Image */
+.slot-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Bonus Info */
+.bonus-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bonus-name {
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bonus-bet {
+  color: #9ca3af;
+  font-size: 12px;
+  margin: 0 0 2px 0;
+}
+
+.bonus-payout {
+  color: #4ade80;
+  font-size: 12px;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Multiplier Badge */
+.multiplier {
+  padding: 8px 12px;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.multiplier.normal {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+}
+
+.multiplier.super {
+  background: linear-gradient(135deg, #ffd700, #ffec8b, #ffd700);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { 
+    background-position: 0% 50%;
+    background-size: 200% 200%;
+  }
+  50% { 
+    background-position: 100% 50%;
+  }
+}
+
+.multiplier-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.multiplier.normal .multiplier-value {
+  color: #fff;
+}
+
+.multiplier.super .multiplier-value {
+  color: #1a1a2e;
+}
+
+/* GPU Acceleration */
+.scroll-container,
+.bonus-card,
+.super-bonus {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
