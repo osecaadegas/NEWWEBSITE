@@ -84,12 +84,16 @@ export default function OverlayV2() {
       }
 
       const data = await response.json();
+      console.log('🔍 Overlay API Response:', data);
+      console.log('📦 Widgets received:', data.widgets);
+      console.log('👤 User ID:', data.user?.id);
+      
       setOverlayData(data);
       setWidgets(data.widgets || []);
       setUserId(data.user?.id || null); // Set user ID for data fetching
       setError(null);
     } catch (err) {
-      console.error('Error loading overlay:', err);
+      console.error('❌ Error loading overlay:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -176,6 +180,8 @@ export default function OverlayV2() {
   const renderWidget = (widget) => {
     const { widget_type, config, position_x, position_y, width, height, scale, opacity, state } = widget;
     const widgetName = widget_type?.name;
+    
+    console.log('🎨 Rendering widget:', widgetName, 'at', position_x, position_y);
 
     const style = {
       position: 'absolute',
@@ -197,6 +203,8 @@ export default function OverlayV2() {
       },
       theme: overlayData?.theme || {}
     };
+    
+    console.log('📊 Widget data for', widgetName, ':', widgetData);
 
     // Map widget types to components - All 25+ widgets supported
     const widgetComponents = {
@@ -310,9 +318,24 @@ export default function OverlayV2() {
 
       {/* Show message if no widgets */}
       {widgets.length === 0 && (
-        <div className="overlay-empty-state">
-          <p>No widgets enabled</p>
-          <p className="hint">Add widgets in your dashboard</p>
+        <div className="overlay-empty-state" style={{ 
+          position: 'absolute', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          textAlign: 'center',
+          color: '#fff',
+          background: 'rgba(0,0,0,0.8)',
+          padding: '40px',
+          borderRadius: '12px'
+        }}>
+          <p style={{ fontSize: '24px', margin: '0 0 10px 0' }}>No widgets enabled</p>
+          <p className="hint" style={{ fontSize: '14px', color: '#888', margin: 0 }}>
+            Go to Dashboard → Widgets tab → Enable widgets
+          </p>
+          <p style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
+            Debug: User ID = {userId || 'null'} | Public ID = {publicId}
+          </p>
         </div>
       )}
     </div>

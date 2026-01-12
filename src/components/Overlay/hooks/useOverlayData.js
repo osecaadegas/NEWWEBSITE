@@ -29,6 +29,8 @@ export function useOverlayData(userId) {
 
     const fetchAllData = async () => {
       try {
+        console.log('🔄 Fetching overlay data for user:', userId);
+        
         const [
           bonusesRes,
           statsRes,
@@ -83,6 +85,14 @@ export function useOverlayData(userId) {
             .single()
         ]);
 
+        console.log('📊 Data fetched:');
+        console.log('  Bonuses:', bonusesRes.data?.length || 0);
+        console.log('  Stats:', statsRes.data ? 'Found' : 'None');
+        console.log('  Tournaments:', tournamentsRes.data?.length || 0);
+        console.log('  Rounds:', roundsRes.data?.length || 0);
+        console.log('  Slots:', slotsRes.data?.length || 0);
+        console.log('  Session:', sessionRes.data ? 'Found' : 'None');
+
         setData({
           bonuses: bonusesRes.data || [],
           bonusStats: statsRes.data || null,
@@ -95,7 +105,7 @@ export function useOverlayData(userId) {
 
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching overlay data:', error);
+        console.error('❌ Error fetching overlay data:', error);
         setLoading(false);
       }
     };
