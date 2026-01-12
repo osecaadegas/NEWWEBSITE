@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react';
 import './BHTrackerListVertical.css';
 
 export default function BHTrackerListVertical({ data, config, theme }) {
-  const { activeHuntBonuses = [], activeHunt = null } = data || {};
   const { 
     scrollSpeed = 30,
     pauseOnHover = true,
@@ -18,16 +17,19 @@ export default function BHTrackerListVertical({ data, config, theme }) {
 
   const [isPaused, setIsPaused] = useState(false);
 
+  // Extract data properties (don't destructure at top to ensure fresh values)
+  const activeHuntBonuses = data?.activeHuntBonuses || [];
+  const activeHunt = data?.activeHunt || null;
+
   // Debug logging
   useEffect(() => {
-    console.log('🎰 BHTrackerListVertical data:', {
-      activeHunt,
-      activeHuntBonuses,
+    console.log('🎰 BHTrackerListVertical received:', {
+      dataObject: data ? 'YES' : 'NO',
+      activeHunt: activeHunt ? 'YES' : 'NO',
       bonusCount: activeHuntBonuses.length,
-      dataReceived: data ? 'YES' : 'NO',
-      fullData: data
+      allDataKeys: data ? Object.keys(data) : []
     });
-  }, [activeHunt, activeHuntBonuses, data]);
+  }, [data, activeHunt, activeHuntBonuses]);
 
   // Map active hunt bonuses to display format
   const bonuses = activeHuntBonuses.length > 0 ? activeHuntBonuses.map(bonus => ({
