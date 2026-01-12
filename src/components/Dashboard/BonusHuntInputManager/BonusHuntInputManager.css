@@ -217,6 +217,51 @@
   transform: translateY(0);
 }
 
+.btn-secondary {
+  background: #2a2d3a;
+  color: #e0e0e0;
+  border: 1px solid #3a3d4a;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.btn-secondary:hover {
+  background: #3a3d4a;
+  border-color: #4a4d5a;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 8px;
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+}
+
 /* Slot Quick Picks */
 .slot-quick-picks {
   background: #22252f;
@@ -741,12 +786,15 @@
 
 .hunt-card-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   margin-top: 16px;
+  flex-wrap: wrap;
 }
 
 .hunt-card-actions button {
   flex: 1;
+  min-width: 120px;
+  white-space: nowrap;
 }
 
 /* Hunt Settings Section */

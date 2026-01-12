@@ -92,9 +92,11 @@ export default function BonusHuntInputManager({ userId }) {
 
       if (error) throw error;
       setCurrentBonuses(data || []);
+      return data || [];
     } catch (err) {
       console.error('Error loading bonuses:', err);
       setError(err.message);
+      return [];
     }
   };
 
@@ -284,6 +286,43 @@ export default function BonusHuntInputManager({ userId }) {
   };
 
   // ============================================================================
+  // HUNT MANAGEMENT
+  // ============================================================================
+
+  const editHunt = async (session) => {
+    try {
+      const bonuses = await loadSessionBonuses(session.id);
+      setCurrentSession(session);
+      setCurrentBonuses(bonuses);
+      setViewMode('creating');
+    } catch (err) {
+      console.error('Error loading hunt for editing:', err);
+      setError(err.message);
+    }
+  };
+
+  const deleteHunt = async (sessionId, huntName) => {
+    if (!confirm(`Are you sure you want to delete "${huntName}"? This will remove all bonuses in this hunt.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('bonus_hunt_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      alert(`Hunt "${huntName}" deleted successfully!`);
+      loadSessions();
+    } catch (err) {
+      console.error('Error deleting hunt:', err);
+      setError(err.message);
+    }
+  };
+
+  // ============================================================================
   // OPEN BONUSES (Input Payouts)
   // ============================================================================
 
@@ -306,6 +345,22 @@ export default function BonusHuntInputManager({ userId }) {
       setViewMode('opening');
     } catch (err) {
       console.error('Error starting bonus opening:', err);
+      setError(err.message);
+    }
+  };
+
+  const continueOpeningBonuses = async (session) => {
+    try {
+      const bonuses = await loadSessionBonuses(session.id);
+      
+      // Find first unopened bonus
+      const firstUnopened = bonuses.findIndex(b => b.bonus_win === 0);
+      
+      setCurrentSession(session);
+      setOpeningIndex(firstUnopened >= 0 ? firstUnopened : 0);
+      setViewMode('opening');
+    } catch (err) {
+      console.error('Error continuing bonus opening:', err);
       setError(err.message);
     }
   };
@@ -449,18 +504,72 @@ export default function BonusHuntInputManager({ userId }) {
                 </div>
 
                 <div className="hunt-card-actions">
+                  {session.status === 'building' && (
+                    <>
+                      <button 
+                        onClick={() => editHunt(session)}
+                        className="btn-primary"
+                      >
+                        ✏️ Continue Building
+                      </button>
+                      <button 
+                        onClick={() => deleteHunt(session.id, session.hunt_name)}
+                        className="btn-danger"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </>
+                  )}
                   {session.status === 'saved' && (
-                    <button 
-                      onClick={() => startOpeningBonuses(session)}
-                      className="btn-primary"
-                    >
-                      🎰 Open Bonuses
-                    </button>
+                    <>
+                      <button 
+                        onClick={() => startOpeningBonuses(session)}
+                        className="btn-primary"
+                      >
+                        🎰 Open Bonuses
+                      </button>
+                      <button 
+                        onClick={() => editHunt(session)}
+                        className="btn-secondary"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button 
+                        onClick={() => deleteHunt(session.id, session.hunt_name)}
+                        className="btn-danger"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </>
+                  )}
+                  {session.status === 'opening' && (
+                    <>
+                      <button 
+                        onClick={() => continueOpeningBonuses(session)}
+                        className="btn-primary"
+                      >
+                        ▶️ Continue Opening
+                      </button>
+                      <button 
+                        onClick={() => deleteHunt(session.id, session.hunt_name)}
+                        className="btn-danger"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </>
                   )}
                   {session.status === 'completed' && (
-                    <button className="btn-secondary" disabled>
-                      ✅ Completed
-                    </button>
+                    <>
+                      <button className="btn-secondary" disabled>
+                        ✅ Completed
+                      </button>
+                      <button 
+                        onClick={() => deleteHunt(session.id, session.hunt_name)}
+                        className="btn-danger"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
