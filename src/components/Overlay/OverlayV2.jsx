@@ -172,27 +172,27 @@ export default function OverlayV2() {
     // Prepare widget props with real-time data
     const widgetProps = {
       config: config || {},
-      data: {
-        ...widgetData, // Real-time data from database
-        ...(state?.data || {}) // Legacy state data (if any)
-      },
+      data: widgetData, // Real-time data from database (don't merge with state)
       theme: overlayData?.theme || {}
     };
     
     console.log('📊 Widget data for', widgetName, ':', widgetData);
 
-    // Widget components mapping
-    const widgetComponents = {
-      'bh_tracker_list_vertical': <BHTrackerListVertical {...widgetProps} />
-    };
+    // Render widget component directly (don't pre-create in object)
+    let widgetComponent = null;
+    if (widgetName === 'bh_tracker_list_vertical') {
+      widgetComponent = <BHTrackerListVertical {...widgetProps} />;
+    } else {
+      widgetComponent = (
+        <div className="widget-placeholder">
+          {widget_type?.display_name || 'Unknown Widget'}
+        </div>
+      );
+    }
 
     return (
       <div key={widget.id} style={style} className="overlay-widget">
-        {widgetComponents[widgetName] || (
-          <div className="widget-placeholder">
-            {widget_type?.display_name || 'Unknown Widget'}
-          </div>
-        )}
+        {widgetComponent}
       </div>
     );
   };
