@@ -256,6 +256,64 @@
   color: #888;
 }
 
+/* Autocomplete Slot Suggestions */
+.slot-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #22252f;
+  border: 2px solid #6366f1;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #2a2d3a;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background: #2d3046;
+}
+
+.suggestion-item img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.suggestion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.suggestion-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.suggestion-provider {
+  font-size: 11px;
+  color: #888;
+}
+
 /* Bonuses Table */
 .bonuses-table-section {
   margin-bottom: 24px;

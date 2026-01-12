@@ -24,6 +24,8 @@ export default function BonusHuntInputManager({ userId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [showSlotSuggestions, setShowSlotSuggestions] = useState(false);
+  const [filteredSlots, setFilteredSlots] = useState([]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -33,6 +35,9 @@ export default function BonusHuntInputManager({ userId }) {
     bet_size: '',
     bonus_cost: '',
     bonus_win: '',
+    start_amount: '',
+    target_amount: '',
+    stop_loss: '',
     notes: ''
   });
 
@@ -174,31 +179,37 @@ export default function BonusHuntInputManager({ userId }) {
   const handleAddBonus = async (e) => {
     e.preventDefault();
 
-    if (!formData.slot_name || !formData.bet_size || !formData.bonus_cost) {
-      setError('Please fill in required fields: Slot Name, Bet Size, and Bonus Cost');
+    if (!formData.slot_name || !formData.bet_size) {
+      setError('Please fill in required fields: Slot Name and Bet Size');
       return;
     }
 
     try {
       const calculated = calculateBonusStats(
         formData.bet_size,
-        formData.bonus_cost,
+        formData.bonus_cost || 0,
         formData.bonus_win || 0
       );
 
+      const insertData = {
+        user_id: userId,
+        hunt_name: formData.hunt_name || `Hunt ${new Date().toLocaleDateString()}`,
+        slot_name: formData.slot_name,
+        provider: formData.provider || 'Unknown',
+        bet_size: parseFloat(formData.bet_size),
+        bonus_win: parseFloat(formData.bonus_win) || 0,
+        ...calculated,
+        notes: formData.notes
+      };
+
+      // Add optional bonus_cost if provided
+      if (formData.bonus_cost) {
+        insertData.bonus_cost = parseFloat(formData.bonus_cost);
+      }
+
       const { error } = await supabase
         .from('bonus_hunt_history')
-        .insert([{
-          user_id: userId,
-          hunt_name: formData.hunt_name || `Hunt ${new Date().toLocaleDateString()}`,
-          slot_name: formData.slot_name,
-          provider: formData.provider || 'Unknown',
-          bet_size: parseFloat(formData.bet_size),
-          bonus_cost: parseFloat(formData.bonus_cost),
-          bonus_win: parseFloat(formData.bonus_win) || 0,
-          ...calculated,
-          notes: formData.notes
-        }]);
+        .insert([insertData]);
 
       if (error) throw error;
 
@@ -210,6 +221,9 @@ export default function BonusHuntInputManager({ userId }) {
         bet_size: formData.bet_size, // Keep bet size for convenience
         bonus_cost: '',
         bonus_win: '',
+        start_amount: formData.start_amount, // Keep hunt settings
+        target_amount: formData.target_amount,
+        stop_loss: formData.stop_loss,
         notes: ''
       });
 
@@ -270,12 +284,32 @@ export default function BonusHuntInputManager({ userId }) {
   // SLOT SELECTION
   // ============================================================================
 
+  // Slot selection integration
   const handleSlotSelect = (slot) => {
     setFormData({
       ...formData,
       slot_name: slot.name,
       provider: slot.provider
     });
+    setShowSlotSuggestions(false);
+  };
+
+  // Handle slot name input change for autocomplete
+  const handleSlotNameChange = (e) => {
+    const value = e.target.value;
+    setFormData({ ...formData, slot_name: value });
+
+    // Show suggestions after 3 characters
+    if (value.length >= 3) {
+      const filtered = slots.filter(slot =>
+        slot.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredSlots(filtered);
+      setShowSlotSuggestions(true);
+    } else {
+      setShowSlotSuggestions(false);
+      setFilteredSlots([]);
+    }
   };
 
   // ============================================================================
@@ -339,6 +373,44 @@ export default function BonusHuntInputManager({ userId }) {
         <form onSubmit={handleAddBonus} className="bonus-form">
           <div className="form-row">
             <div className="form-group">
+              <label>Start Amount (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.start_amount}
+                onChange={(e) => setFormData({ ...formData, start_amount: e.target.value })}
+                placeholder="e.g., 500.00"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Target Amount (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.target_amount}
+                onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
+                placeholder="e.g., 2000.00"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Stop Loss (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.stop_loss}
+                onChange={(e) => setFormData({ ...formData, stop_loss: e.target.value })}
+                placeholder="e.g., 0 for none"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
               <label>Hunt Name (optional)</label>
               <input
                 type="text"
@@ -348,21 +420,35 @@ export default function BonusHuntInputManager({ userId }) {
               />
             </div>
 
-            <div className="form-group required">
+            <div className="form-group required" style={{ position: 'relative' }}>
               <label>Slot Name *</label>
               <input
                 type="text"
                 value={formData.slot_name}
-                onChange={(e) => setFormData({ ...formData, slot_name: e.target.value })}
-                placeholder="Select from dropdown or type"
+                onChange={handleSlotNameChange}
+                onFocus={() => formData.slot_name.length >= 3 && setShowSlotSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSlotSuggestions(false), 200)}
+                placeholder="Type at least 3 letters..."
                 required
               />
-              {slots.length > 0 && (
-                <datalist id="slots-list">
-                  {slots.map((slot, idx) => (
-                    <option key={idx} value={slot.name} />
+              {showSlotSuggestions && filteredSlots.length > 0 && (
+                <div className="slot-suggestions">
+                  {filteredSlots.slice(0, 10).map((slot) => (
+                    <div
+                      key={slot.id}
+                      className="suggestion-item"
+                      onClick={() => handleSlotSelect(slot)}
+                    >
+                      {slot.image_link && (
+                        <img src={slot.image_link} alt={slot.name} />
+                      )}
+                      <div className="suggestion-info">
+                        <span className="suggestion-name">{slot.name}</span>
+                        <span className="suggestion-provider">{slot.provider}</span>
+                      </div>
+                    </div>
                   ))}
-                </datalist>
+                </div>
               )}
             </div>
 
@@ -391,16 +477,15 @@ export default function BonusHuntInputManager({ userId }) {
               />
             </div>
 
-            <div className="form-group required">
-              <label>Bonus Cost * (€)</label>
+            <div className="form-group">
+              <label>Bonus Cost (€)</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 value={formData.bonus_cost}
                 onChange={(e) => setFormData({ ...formData, bonus_cost: e.target.value })}
-                placeholder="100.00"
-                required
+                placeholder="100.00 (optional)"
               />
             </div>
 
