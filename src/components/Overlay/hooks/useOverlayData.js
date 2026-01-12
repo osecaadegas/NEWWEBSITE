@@ -27,13 +27,27 @@ export function useOverlayData(userId) {
   // ============================================================================
 
   useEffect(() => {
-    console.log('🔑 useOverlayData called with userId:', userId);
+    console.log('🔑 useOverlayData useEffect triggered with userId:', userId);
+    
     if (!userId) {
       console.warn('⚠️ No userId provided to useOverlayData - skipping fetch');
       setLoading(false);
+      // Reset data to empty state when no userId
+      setData({
+        bonuses: [],
+        bonusStats: null,
+        activeHunt: null,
+        activeHuntBonuses: [],
+        tournaments: [],
+        tournamentRounds: [],
+        slotHistory: [],
+        sessionStats: null,
+        currentSlot: null
+      });
       return;
     }
 
+    console.log('✅ Valid userId detected, starting data fetch...');
     setLoading(true);
 
     const fetchAllData = async () => {
@@ -116,7 +130,7 @@ export function useOverlayData(userId) {
         console.log('📊 Data fetched:');
         console.log('  Bonuses:', bonusesRes.data?.length || 0);
         console.log('  Stats:', statsRes.data ? 'Found' : 'None');
-        console.log('  Active Hunt:', activeHuntRes.data ? activeHuntRes.data.hunt_name : 'None');
+        console.log('  Active Hunt:', activeHuntRes.data ? '1' : '0');
         console.log('  Active Hunt Bonuses:', activeHuntBonusesRes.data?.length || 0);
         console.log('  Tournaments:', tournamentsRes.data?.length || 0);
         console.log('  Rounds:', roundsRes.data?.length || 0);
@@ -131,7 +145,7 @@ export function useOverlayData(userId) {
           );
         }
 
-        setData({
+        const newData = {
           bonuses: bonusesRes.data || [],
           bonusStats: statsRes.data || null,
           activeHunt: activeHuntRes.data || null,
@@ -141,7 +155,15 @@ export function useOverlayData(userId) {
           slotHistory: slotsRes.data || [],
           sessionStats: sessionRes.data || null,
           currentSlot: null // Set by user
+        };
+
+        console.log('💾 Setting data state:', {
+          activeHunt: newData.activeHunt ? 'YES' : 'NO',
+          activeHuntBonuses: newData.activeHuntBonuses.length,
+          bonuses: newData.bonuses.length
         });
+
+        setData(newData);
 
         setLoading(false);
       } catch (error) {
