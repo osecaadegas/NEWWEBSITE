@@ -350,40 +350,7 @@ export default function Sidebar() {
             </div>
           )}
 
-          {/* Premium dropdown - Available for premium users only */}
-          {isPremium && (
-            <div className="sidebar-item-wrapper">
-              <button
-                className={`sidebar-item ${showPremiumDropdown ? 'active' : ''}`}
-                onClick={() => setShowPremiumDropdown(!showPremiumDropdown)}
-              >
-                <span className="sidebar-icon">
-                  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M12 2L4 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-8-5zm0 16.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V9.3l7-4.66v14.35z"/></svg>
-                </span>
-                <span className="sidebar-label">Premium</span>
-                <span className={`dropdown-arrow ${showPremiumDropdown ? 'open' : ''}`}>▼</span>
-              </button>
-
-              {showPremiumDropdown && (
-                <div className="sidebar-dropdown">
-                  <button
-                    className={`sidebar-subitem ${isActive('/premium/overlay') ? 'active' : ''}`}
-                    onClick={() => handleNavigation('/premium/overlay')}
-                  >
-                    <span className="subitem-icon">📺</span>
-                    <span className="subitem-label">Overlay V1</span>
-                  </button>
-                  <button
-                    className={`sidebar-subitem ${isActive('/premium/overlay-controls') ? 'active' : ''}`}
-                    onClick={() => handleNavigation('/premium/overlay-controls')}
-                  >
-                    <span className="subitem-icon">🎛️</span>
-                    <span className="subitem-label">Overlay V2 Dashboard</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+          {/* Premium dropdown removed - overlay system deleted */}
 
           {/* WebMod dropdown - Only for admins and slot_modders */}
           {(isAdmin || isSlotModder) && (

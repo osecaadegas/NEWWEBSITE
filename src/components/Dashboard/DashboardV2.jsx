@@ -18,7 +18,6 @@ import PresetsTab from './tabs/PresetsTab';
 import SubscriptionTab from './tabs/SubscriptionTab';
 
 // Input Managers
-import BonusHuntInputManager from './BonusHuntInputManager/BonusHuntInputManager';
 import TournamentInputManager from './TournamentInputManager/TournamentInputManager';
 import SlotSelectionManager from './SlotSelectionManager/SlotSelectionManager';
 
@@ -202,9 +201,6 @@ export default function DashboardV2() {
         )}
         {activeTab === 'presets' && (
           <PresetsTab overlay={overlay} setOverlay={setOverlay} />
-        )}
-        {activeTab === 'bonus-hunt' && (
-          <BonusHuntInputManager userId={user.id} />
         )}
         {activeTab === 'tournament' && (
           <TournamentInputManager userId={user.id} />

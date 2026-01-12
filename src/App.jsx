@@ -32,8 +32,6 @@ import ProtectedAdminRoute from './components/ProtectedRoute/ProtectedAdminRoute
 import VoucherManager from './components/VoucherManager/VoucherManager';
 import VoucherRedeemPage from './components/VoucherRedeemPage/VoucherRedeemPage';
 import GiveawayCreator from './components/GiveawayCreator/GiveawayCreator';
-import DashboardV2 from './components/Dashboard/DashboardV2';
-import OverlayV2 from './components/Overlay/OverlayV2';
 import ProfilePage from './components/ProfilePage/ProfilePage';
 import DailyWheelPage from './components/DailyWheel/DailyWheelPage';
 
@@ -46,7 +44,7 @@ function AppContent({ isAdminOverlay = false }) {
 
   // Toggle body class based on current route
   useEffect(() => {
-    if (location.pathname === '/overlay' || location.pathname === '/admin-overlay' || location.pathname === '/premium/overlay' || location.pathname === '/premium/overlay-v2') {
+    if (location.pathname === '/admin-overlay') {
       document.body.classList.add('no-sidebar');
     } else {
       document.body.classList.remove('no-sidebar');
@@ -569,7 +567,7 @@ function ProtectedOverlay({ isAdminOverlay = false }) {
 function LayoutWrapper({ children }) {
   const location = useLocation();
   const isWidgetRoute = location.pathname.startsWith('/widgets/');
-  const isPremiumOverlay = location.pathname === '/premium/overlay';
+
   const showSidebar = location.pathname !== '/overlay' && 
                       location.pathname !== '/admin-overlay' && 
                       !isWidgetRoute &&
@@ -611,10 +609,6 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
 
                 
-                {/* Premium Routes - For premium users */}
-                <Route path="/premium/overlay-controls" element={<DashboardV2 />} />
-                <Route path="/premium/overlay" element={<OverlayV2 />} />
-
                 {/* WebMod Routes - For admins and slot_modders */}
                 <Route path="/webmod/slot-manager" element={<SlotManagerPage />} />
                 <Route path="/webmod/points-manager" element={<PointsManager />} />
