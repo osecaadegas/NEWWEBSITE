@@ -58,13 +58,12 @@ export function useOverlayData(userId) {
             .eq('user_id', userId)
             .single(),
 
-          // Fetch active bonus hunt session (status = 'opening')
+          // Fetch active bonus hunt session (is_active_for_display = true)
           supabase
             .from('bonus_hunt_sessions')
             .select('*')
             .eq('user_id', userId)
-            .eq('status', 'opening')
-            .order('started_at', { ascending: false })
+            .eq('is_active_for_display', true)
             .limit(1)
             .single(),
 

@@ -293,8 +293,35 @@ export default function BonusHuntInputManager({ userId }) {
   // HUNT MANAGEMENT
   // ============================================================================
 
+  const setActiveHunt = async (sessionId) => {
+    try {
+      // First, deactivate all hunts for this user
+      await supabase
+        .from('bonus_hunt_sessions')
+        .update({ is_active_for_display: false })
+        .eq('user_id', userId);
+
+      // Then activate the selected hunt
+      const { error } = await supabase
+        .from('bonus_hunt_sessions')
+        .update({ is_active_for_display: true })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+
+      // Reload sessions to update UI
+      loadSessions();
+    } catch (err) {
+      console.error('Error setting active hunt:', err);
+      setError(err.message);
+    }
+  };
+
   const editHunt = async (session) => {
     try {
+      // Set this hunt as active when editing
+      await setActiveHunt(session.id);
+      
       const bonuses = await loadSessionBonuses(session.id);
       setCurrentSession(session);
       setCurrentBonuses(bonuses);
@@ -355,6 +382,9 @@ export default function BonusHuntInputManager({ userId }) {
 
   const continueOpeningBonuses = async (session) => {
     try {
+      // Set this hunt as active when opening
+      await setActiveHunt(session.id);
+      
       const bonuses = await loadSessionBonuses(session.id);
       
       // Find first unopened bonus
@@ -515,6 +545,14 @@ export default function BonusHuntInputManager({ userId }) {
                 </div>
 
                 <div className="hunt-card-actions">
+                  <button 
+                    onClick={() => setActiveHunt(session.id)}
+                    className={session.is_active_for_display ? "btn-active" : "btn-secondary"}
+                    disabled={session.is_active_for_display}
+                  >
+                    {session.is_active_for_display ? '⭐ Active' : 'Set Active'}
+                  </button>
+                  
                   {session.status === 'building' && (
                     <>
                       <button 
