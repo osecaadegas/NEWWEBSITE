@@ -232,6 +232,16 @@ export default function OverlayV2() {
     );
   }
 
+  // Wait for userId to be available before rendering widgets
+  // This prevents useOverlayData from being called with null userId
+  if (!userId) {
+    return (
+      <div className="overlay-container overlay-loading">
+        <div className="loading-spinner"></div>
+      </div>
+    );
+  }
+
   const theme = overlayData.settings?.theme || {};
 
   return (
