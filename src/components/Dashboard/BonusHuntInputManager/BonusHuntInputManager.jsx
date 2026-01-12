@@ -83,12 +83,18 @@ export default function BonusHuntInputManager({ userId }) {
     try {
       const { data, error } = await supabase
         .from('slots')
-        .select('name, provider, image_link')
-        .eq('is_active', true)
+        .select('id, name, provider, image')
         .order('name');
 
       if (error) throw error;
-      setSlots(data || []);
+      
+      // Map image field to image_link for compatibility
+      const slotsWithImageLink = (data || []).map(slot => ({
+        ...slot,
+        image_link: slot.image
+      }));
+      
+      setSlots(slotsWithImageLink);
     } catch (err) {
       console.error('Error fetching slots:', err);
     }
