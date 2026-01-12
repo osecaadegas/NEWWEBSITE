@@ -32,8 +32,6 @@ import ProtectedAdminRoute from './components/ProtectedRoute/ProtectedAdminRoute
 import VoucherManager from './components/VoucherManager/VoucherManager';
 import VoucherRedeemPage from './components/VoucherRedeemPage/VoucherRedeemPage';
 import GiveawayCreator from './components/GiveawayCreator/GiveawayCreator';
-import OverlayControls from './components/OverlayControls/OverlayControls';
-import Overlay from './components/Overlay/Overlay';
 import DashboardV2 from './components/Dashboard/DashboardV2';
 import OverlayV2 from './components/Overlay/OverlayV2';
 import ProfilePage from './components/ProfilePage/ProfilePage';
@@ -616,10 +614,6 @@ function App() {
                 {/* Premium Routes - For premium users */}
                 <Route path="/premium/overlay-controls" element={<DashboardV2 />} />
                 <Route path="/premium/overlay" element={<OverlayV2 />} />
-                <Route path="/premium/overlay-v1" element={<Overlay />} />
-                
-                {/* Legacy routes - Old overlay system */}
-                <Route path="/premium/overlay-controls-v1" element={<OverlayControls />} />
 
                 {/* WebMod Routes - For admins and slot_modders */}
                 <Route path="/webmod/slot-manager" element={<SlotManagerPage />} />
