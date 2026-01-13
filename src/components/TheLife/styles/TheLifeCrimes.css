@@ -155,7 +155,7 @@
 }
 
 .custom-loader {
-  animation: spin 1.5s linear alternate infinite;
+  animation: spin 1.5s linear infinite;
   background: #d4af37;
   border-radius: 50%;
   height: 120px;
@@ -207,7 +207,7 @@
 }
 
 .custom-loader .inner {
-  animation: load 1.5s linear alternate infinite;
+  animation: load 1.5s linear infinite;
   border: solid 1px #d4af37;
   border-radius: 50%;
   height: 1.75em;
