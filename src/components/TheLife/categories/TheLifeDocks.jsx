@@ -152,7 +152,8 @@ export default function TheLifeDocks({ player, setPlayer, theLifeInventory, setM
     }
 
     try {
-      const dockPrice = Math.floor(quantity * 80);
+      const streetPrice = inventoryItem.item.resell_price || 150;
+      const dockPrice = Math.floor(quantity * streetPrice * 0.8);
       const newQuantity = inventoryItem.quantity - quantity;
       
       // Update player cash
@@ -230,7 +231,8 @@ export default function TheLifeDocks({ player, setPlayer, theLifeInventory, setM
                 const timeRemaining = Math.floor(boat.time_remaining_minutes);
                 const isFull = boat.current_shipments >= boat.max_shipments;
                 const inputAmount = parseInt(loadAmounts[boat.id] || 0);
-                const estimatedPayout = inputAmount > 0 ? Math.floor(inputAmount * 80) : 0;
+                const streetPrice = inventoryItem?.item?.resell_price || 150;
+                const estimatedPayout = inputAmount > 0 ? Math.floor(inputAmount * streetPrice * 0.8) : 0;
                 
                 return (
                   <div key={boat.id} className="modern-dock-card">
