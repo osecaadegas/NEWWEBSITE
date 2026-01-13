@@ -278,9 +278,8 @@ export default function TheLifeCrimes({
                 )}
                 {isLoading && (
                   <div className="loading-overlay">
-                    <div className="custom-loader">
-                      <div className="inner"></div>
-                    </div>
+                    <div className="loading-spinner"></div>
+                    <span>Loading...</span>
                   </div>
                 )}
                 <div className="crime-overlay-top">
