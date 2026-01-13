@@ -87,6 +87,9 @@
   transition: all 0.3s ease;
   position: relative;
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
 }
 
 .crime-card:hover {
