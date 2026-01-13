@@ -79,6 +79,7 @@
 
 .crime-card {
   min-width: 280px;
+  max-width: 280px;
   flex-shrink: 0;
   background: rgba(30, 36, 50, 0.6);
   border-radius: 8px;
@@ -89,7 +90,6 @@
   backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
-  height: fit-content;
 }
 
 .crime-card:hover {
