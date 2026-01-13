@@ -258,6 +258,12 @@ export default function TheLifeCrimes({
               key={robbery.id} 
               className={`crime-card ${player.level < robbery.min_level_required ? 'locked' : ''} ${isLoading ? 'loading' : ''}`}
             >
+              {isLoading && (
+                <div className="loading-overlay">
+                  <div className="loading-spinner"></div>
+                  <span>Loading...</span>
+                </div>
+              )}
               <div 
                 className="crime-image-container"
                 onClick={() => {
@@ -266,20 +272,13 @@ export default function TheLifeCrimes({
                   }
                 }}
                 style={{
-                  cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  opacity: isLoading ? 0.6 : 1
+                  cursor: isDisabled ? 'not-allowed' : 'pointer'
                 }}
               >
                 <img src={imageUrl} alt={robbery.name} className="crime-image" />
                 {player.level < robbery.min_level_required && (
                   <div className="locked-overlay">
                     <span>🔒 Level {robbery.min_level_required} Required</span>
-                  </div>
-                )}
-                {isLoading && (
-                  <div className="loading-overlay">
-                    <div className="loading-spinner"></div>
-                    <span>Loading...</span>
                   </div>
                 )}
                 <div className="crime-overlay-top">
