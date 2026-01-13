@@ -154,7 +154,6 @@ export default function TheLifePVP({
       }
 
       // Send broadcast notification to target player
-      console.log('📢 Sending attack notification to target:', target.user_id);
       await supabase.channel(`player-attacks-${target.user_id}`).send({
         type: 'broadcast',
         event: 'player_attacked',
@@ -194,7 +193,7 @@ export default function TheLifePVP({
           p_user_id: user.id
         });
       } catch (err) {
-        console.error('Heartbeat error:', err);
+        // Silent fail for heartbeat - not critical
       }
     };
 
@@ -205,7 +204,6 @@ export default function TheLifePVP({
     const attackChannel = supabase
       .channel(`player-attacks-${user.id}`)
       .on('broadcast', { event: 'player_attacked' }, (payload) => {
-        console.log('🚨 BROADCAST: Received attack notification!', payload);
         if (payload.payload.target_user_id === user.id) {
           // Refresh player data immediately
           supabase
@@ -214,16 +212,11 @@ export default function TheLifePVP({
             .eq('user_id', user.id)
             .single()
             .then(({ data }) => {
-              if (data) {
-                console.log('🔄 Refreshed player data after attack:', data);
-                setPlayer(data);
-              }
+              if (data) setPlayer(data);
             });
         }
       })
-      .subscribe((status) => {
-        console.log('📡 Attack notification channel status:', status);
-      });
+      .subscribe();
 
     return () => {
       clearInterval(heartbeatInterval);

@@ -209,9 +209,10 @@ export const useTheLifeData = (user) => {
         .order('min_level_required', { ascending: true });
 
       if (error) throw error;
-      setRobberies(data);
+      setRobberies(data || []);
     } catch (err) {
       console.error('Error loading robberies:', err);
+      setRobberies([]);
     }
   };
 
@@ -227,56 +228,45 @@ export const useTheLifeData = (user) => {
       setBusinesses(data || []);
     } catch (err) {
       console.error('Error loading businesses:', err);
+      setBusinesses([]);
     }
   };
 
   const loadOwnedBusinesses = async () => {
+    if (!player?.id) return;
     try {
-      const { data: playerData } = await supabase
-        .from('the_life_players')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!playerData) return;
-
       const { data, error } = await supabase
         .from('the_life_player_businesses')
         .select(`
           *,
           business:the_life_businesses(*)
         `)
-        .eq('player_id', playerData.id);
+        .eq('player_id', player.id);
 
       if (error) throw error;
       setOwnedBusinesses(data || []);
     } catch (err) {
       console.error('Error loading owned businesses:', err);
+      setOwnedBusinesses([]);
     }
   };
 
   const loadTheLifeInventory = async () => {
+    if (!player?.id) return;
     try {
-      const { data: playerData } = await supabase
-        .from('the_life_players')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!playerData) return;
-
       const { data, error } = await supabase
         .from('the_life_player_inventory')
         .select(`
           *,
           item:the_life_items(*)
         `)
-        .eq('player_id', playerData.id);
+        .eq('player_id', player.id);
 
       if (error) throw error;
       setTheLifeInventory(data || []);
     } catch (err) {
       console.error('Error loading inventory:', err);
+      setTheLifeInventory([]);
     }
   };
 
@@ -379,19 +369,12 @@ export const useTheLifeData = (user) => {
   };
 
   const loadDrugOps = async () => {
+    if (!player?.id) return;
     try {
-      const { data: playerData } = await supabase
-        .from('the_life_players')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!playerData) return;
-
       const { data, error } = await supabase
         .from('the_life_business_productions')
         .select('*')
-        .eq('player_id', playerData.id)
+        .eq('player_id', player.id)
         .eq('collected', false);
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -409,29 +392,24 @@ export const useTheLifeData = (user) => {
       setDrugOps(opsData);
     } catch (err) {
       console.error('Error loading drug ops:', err);
+      setDrugOps({});
     }
   };
 
   const loadBrothel = async () => {
+    if (!player?.id) return;
     try {
-      const { data: playerData } = await supabase
-        .from('the_life_players')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!playerData) return;
-
       const { data, error } = await supabase
         .from('the_life_brothels')
         .select('*')
-        .eq('player_id', playerData.id)
+        .eq('player_id', player.id)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error;
       setBrothel(data);
     } catch (err) {
       console.error('Error loading brothel:', err);
+      setBrothel(null);
     }
   };
 
@@ -447,31 +425,26 @@ export const useTheLifeData = (user) => {
       setAvailableWorkers(data || []);
     } catch (err) {
       console.error('Error loading available workers:', err);
+      setAvailableWorkers([]);
     }
   };
 
   const loadHiredWorkers = async () => {
+    if (!player?.id) return;
     try {
-      const { data: playerData } = await supabase
-        .from('the_life_players')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!playerData) return;
-
       const { data, error } = await supabase
         .from('the_life_player_brothel_workers')
         .select(`
           *,
           worker:the_life_brothel_workers(*)
         `)
-        .eq('player_id', playerData.id);
+        .eq('player_id', player.id);
 
       if (error) throw error;
       setHiredWorkers(data || []);
     } catch (err) {
       console.error('Error loading hired workers:', err);
+      setHiredWorkers([]);
     }
   };
 
@@ -479,65 +452,44 @@ export const useTheLifeData = (user) => {
     try {
       const { data, error } = await supabase
         .from('the_life_players')
-        .select(`
-          id,
-          user_id,
-          level,
-          xp,
-          cash,
-          bank_balance,
-          pvp_wins,
-          total_robberies
-        `)
+        .select('id, user_id, level, xp, cash, bank_balance, pvp_wins, total_robberies, se_username, twitch_username')
         .order('level', { ascending: false })
         .order('xp', { ascending: false })
         .limit(10);
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
-        const enrichedData = await Promise.all(
-          data.map(async (playerData) => {
-            let metadata = null;
-            try {
-              const result = await supabase
-                .rpc('get_user_metadata', { user_id: playerData.user_id });
-              metadata = result.data;
-            } catch (err) {
-              console.error('Error fetching metadata:', err);
-            }
-            
-            let twitchUsername = 'Player';
-            
-            if (metadata) {
-              if (metadata.identities && metadata.identities.length > 0) {
-                const twitchIdentity = metadata.identities.find(i => i.provider === 'twitch');
-                if (twitchIdentity?.identity_data) {
-                  twitchUsername = twitchIdentity.identity_data.preferred_username || 
-                                  twitchIdentity.identity_data.user_name ||
-                                  twitchIdentity.identity_data.full_name;
-                }
-              }
-              if (twitchUsername === 'Player' && metadata.user_metadata) {
-                twitchUsername = metadata.user_metadata.preferred_username || 
-                                metadata.user_metadata.user_name ||
-                                metadata.user_metadata.full_name ||
-                                metadata.email?.split('@')[0] ||
-                                'Player';
-              }
-            }
-            
-            return {
-              ...playerData,
-              username: twitchUsername,
-              net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
-            };
-          })
-        );
-        setLeaderboard(enrichedData);
-      } else {
+      if (!data || data.length === 0) {
         setLeaderboard([]);
+        return;
       }
+
+      // Batch fetch usernames from profiles for players without se_username
+      const userIds = data.filter(p => !p.se_username && !p.twitch_username).map(p => p.user_id);
+      
+      let profileMap = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, twitch_username')
+          .in('user_id', userIds);
+        
+        profiles?.forEach(p => {
+          if (p.twitch_username) profileMap[p.user_id] = p.twitch_username;
+        });
+      }
+
+      // Map usernames efficiently
+      const enrichedData = data.map(playerData => ({
+        ...playerData,
+        username: playerData.se_username || 
+                  playerData.twitch_username || 
+                  profileMap[playerData.user_id] || 
+                  'Player',
+        net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
+      }));
+
+      setLeaderboard(enrichedData);
     } catch (err) {
       console.error('Error loading leaderboard:', err);
       setLeaderboard([]);
@@ -592,28 +544,37 @@ export const useTheLifeData = (user) => {
 
   // Initialize data on mount
   useEffect(() => {
-    if (user) {
-      initializePlayer();
-      loadRobberies();
-      loadTheLifeInventory();
-      loadBusinesses();
-      loadDrugOps();
-      loadBrothel();
-      loadAvailableWorkers();
-      loadHiredWorkers();
-      loadOwnedBusinesses();
-      loadOnlinePlayers();
-      loadLeaderboard();
-      loadCategoryInfo();
-      startStaminaRefill();
+    if (user && !loading) {
+      const loadData = async () => {
+        await initializePlayer();
+        // Load all data in parallel for faster initial load
+        await Promise.all([
+          loadRobberies(),
+          loadBusinesses(),
+          loadAvailableWorkers(),
+          loadCategoryInfo()
+        ]);
+        // These depend on player.id, load after player is initialized
+        if (player?.id) {
+          Promise.all([
+            loadTheLifeInventory(),
+            loadDrugOps(),
+            loadBrothel(),
+            loadHiredWorkers(),
+            loadOwnedBusinesses()
+          ]);
+        }
+        loadOnlinePlayers();
+        loadLeaderboard();
+        startStaminaRefill();
+      };
+      loadData();
     }
   }, [user]);
 
   // Subscribe to real-time updates
   useEffect(() => {
     if (!user?.id) return;
-
-    console.log('🔴 Setting up realtime subscription for user:', user.id);
 
     const channel = supabase
       .channel(`thelife-updates-${user.id}`, {
@@ -629,11 +590,8 @@ export const useTheLifeData = (user) => {
           table: 'the_life_players'
         }, 
         (payload) => {
-          console.log('📨 Received player update event:', payload);
-          
           // Only update if this is the current user's data
           if (payload.new && payload.new.user_id === user.id) {
-            console.log('🔥 REALTIME: My player data changed!', payload.new);
             setPlayer(prevPlayer => ({
               ...prevPlayer,
               ...payload.new
@@ -641,14 +599,11 @@ export const useTheLifeData = (user) => {
             
             // If player was sent to hospital or jail, show message
             if (payload.new.hp === 0 && payload.new.hospital_until) {
-              console.log('💀 Player sent to hospital!');
               setMessage({ 
                 type: 'error', 
                 text: 'You were attacked and sent to the hospital!' 
               });
             }
-          } else {
-            console.log('📭 Update was for another player, ignoring');
           }
         }
       )
@@ -658,10 +613,7 @@ export const useTheLifeData = (user) => {
           schema: 'public', 
           table: 'the_life_robberies' 
         }, 
-        (payload) => {
-          console.log('Robbery data changed, reloading...', payload);
-          loadRobberies();
-        }
+        () => loadRobberies()
       )
       .on('postgres_changes', 
         { 
@@ -669,10 +621,7 @@ export const useTheLifeData = (user) => {
           schema: 'public', 
           table: 'the_life_category_info' 
         }, 
-        (payload) => {
-          console.log('Category info changed, reloading...', payload);
-          loadCategoryInfo();
-        }
+        () => loadCategoryInfo()
       )
       .on('postgres_changes', 
         { 
@@ -680,26 +629,15 @@ export const useTheLifeData = (user) => {
           schema: 'public', 
           table: 'the_life_player_inventory' 
         }, 
-        (payload) => {
-          console.log('Inventory changed, reloading...', payload);
-          loadTheLifeInventory();
-        }
+        () => loadTheLifeInventory()
       )
       .subscribe((status) => {
-        console.log('📡 Realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to realtime updates!');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Channel error - retrying connection...');
-        } else if (status === 'TIMED_OUT') {
-          console.error('⏱️ Subscription timed out');
-        } else if (status === 'CLOSED') {
-          console.warn('⚠️ Channel closed');
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error('Realtime connection issue:', status);
         }
       });
 
     return () => {
-      console.log('🔴 Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.id]); // Only depend on user.id, not player
