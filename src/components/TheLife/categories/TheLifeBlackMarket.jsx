@@ -145,7 +145,7 @@ export default function TheLifeBlackMarket({
       return;
     }
     
-    const streetPrice = Math.floor(quantity * 150);
+    const streetPrice = Math.floor(quantity * (inv.item.resell_price || 150));
     const xpReward = Math.floor(quantity * 10);
     const jailRisk = 35;
     const roll = Math.random() * 100;
@@ -245,7 +245,7 @@ export default function TheLifeBlackMarket({
             <div className="market-items-grid">
               {streetItems.map(inv => {
                 const quantity = streetQuantities[inv.id] || 1;
-                const streetPrice = Math.floor(quantity * 150);
+                const streetPrice = Math.floor(quantity * (inv.item.resell_price || 150));
                 const xpReward = Math.floor(quantity * 10);
                 const jailRisk = 35;
                 
