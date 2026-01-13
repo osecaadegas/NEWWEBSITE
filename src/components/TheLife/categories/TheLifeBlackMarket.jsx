@@ -18,6 +18,8 @@ export default function TheLifeBlackMarket({
   const [storeItems, setStoreItems] = useState([]);
   const [storeCategory, setStoreCategory] = useState('all');
   const [loadingStore, setLoadingStore] = useState(false);
+  const [quantities, setQuantities] = useState({}); // Track quantity for each item
+  const [streetQuantities, setStreetQuantities] = useState({}); // Track quantity for street selling
 
   // Load store items
   useEffect(() => {
@@ -58,15 +60,17 @@ export default function TheLifeBlackMarket({
     }
   };
 
-  const buyStoreItem = async (storeItem) => {
-    if (player.cash < storeItem.price) {
+  const buyStoreItem = async (storeItem, quantity = 1) => {
+    const totalCost = storeItem.price * quantity;
+    
+    if (player.cash < totalCost) {
       setMessage({ type: 'error', text: 'Not enough cash!' });
       return;
     }
 
     // Check stock
-    if (storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0) {
-      setMessage({ type: 'error', text: 'Out of stock!' });
+    if (storeItem.stock_quantity !== null && storeItem.stock_quantity < quantity) {
+      setMessage({ type: 'error', text: `Only ${storeItem.stock_quantity} left in stock!` });
       return;
     }
 
@@ -74,7 +78,7 @@ export default function TheLifeBlackMarket({
       // Update player cash
       const { error: playerError } = await supabase
         .from('the_life_players')
-        .update({ cash: player.cash - storeItem.price })
+        .update({ cash: player.cash - totalCost })
         .eq('user_id', user.id);
 
       if (playerError) throw playerError;
@@ -98,7 +102,7 @@ export default function TheLifeBlackMarket({
         if (existing) {
           await supabase
             .from('the_life_player_inventory')
-            .update({ quantity: existing.quantity + 1 })
+            .update({ quantity: existing.quantity + quantity })
             .eq('id', existing.id);
         } else {
           await supabase
@@ -106,7 +110,7 @@ export default function TheLifeBlackMarket({
             .insert({
               player_id: playerData.id,
               item_id: storeItem.item_id,
-              quantity: 1
+              quantity: quantity
             });
         }
       }
@@ -115,11 +119,12 @@ export default function TheLifeBlackMarket({
       if (storeItem.stock_quantity !== null) {
         await supabase
           .from('the_life_store_items')
-          .update({ stock_quantity: storeItem.stock_quantity - 1 })
+          .update({ stock_quantity: storeItem.stock_quantity - quantity })
           .eq('id', storeItem.id);
       }
 
-      setMessage({ type: 'success', text: `Purchased ${storeItem.item.name}!` });
+      setMessage({ type: 'success', text: `Purchased ${quantity}x ${storeItem.item.name}!` });
+      setQuantities({ ...quantities, [storeItem.id]: 1 }); // Reset quantity to 1
       initializePlayer();
       loadTheLifeInventory();
       loadStoreItems();
@@ -129,14 +134,19 @@ export default function TheLifeBlackMarket({
     }
   };
 
-  const sellOnStreet = async (inv) => {
+  const sellOnStreet = async (inv, quantity = 1) => {
     if (isInHospital) {
       setMessage({ type: 'error', text: 'You cannot sell drugs while in hospital!' });
       return;
     }
+
+    if (quantity > inv.quantity) {
+      setMessage({ type: 'error', text: 'You don\'t have that many items!' });
+      return;
+    }
     
-    const streetPrice = Math.floor(inv.quantity * 150);
-    const xpReward = Math.floor(inv.quantity * 10);
+    const streetPrice = Math.floor(quantity * 150);
+    const xpReward = Math.floor(quantity * 10);
     const jailRisk = 35;
     const roll = Math.random() * 100;
     const caught = roll < jailRisk;
@@ -155,13 +165,23 @@ export default function TheLifeBlackMarket({
         .eq('user_id', user.id);
       
       if (!error) {
-        await supabase
-          .from('the_life_player_inventory')
-          .delete()
-          .eq('id', inv.id);
+        // Update or delete inventory
+        const newQuantity = inv.quantity - quantity;
+        if (newQuantity <= 0) {
+          await supabase
+            .from('the_life_player_inventory')
+            .delete()
+            .eq('id', inv.id);
+        } else {
+          await supabase
+            .from('the_life_player_inventory')
+            .update({ quantity: newQuantity })
+            .eq('id', inv.id);
+        }
         
         showEventMessage('jail_street');
-        setMessage({ type: 'error', text: `Busted! Cops confiscated your drugs. ${jailTime} min in jail, lost 15 HP!` });
+        setMessage({ type: 'error', text: `Busted! Cops confiscated ${quantity} item(s). ${jailTime} min in jail, lost 15 HP!` });
+        setStreetQuantities({ ...streetQuantities, [inv.id]: 1 }); // Reset quantity
         initializePlayer();
         loadTheLifeInventory();
       }
@@ -175,12 +195,22 @@ export default function TheLifeBlackMarket({
         .eq('user_id', user.id);
       
       if (!error) {
-        await supabase
-          .from('the_life_player_inventory')
-          .delete()
-          .eq('id', inv.id);
+        // Update or delete inventory
+        const newQuantity = inv.quantity - quantity;
+        if (newQuantity <= 0) {
+          await supabase
+            .from('the_life_player_inventory')
+            .delete()
+            .eq('id', inv.id);
+        } else {
+          await supabase
+            .from('the_life_player_inventory')
+            .update({ quantity: newQuantity })
+            .eq('id', inv.id);
+        }
         
-        setMessage({ type: 'success', text: `Sold for $${streetPrice.toLocaleString()} and ${xpReward} XP!` });
+        setMessage({ type: 'success', text: `Sold ${quantity}x for $${streetPrice.toLocaleString()} and ${xpReward} XP!` });
+        setStreetQuantities({ ...streetQuantities, [inv.id]: 1 }); // Reset quantity
         initializePlayer();
         loadTheLifeInventory();
       }
@@ -214,15 +244,48 @@ export default function TheLifeBlackMarket({
           ) : (
             <div className="market-items-grid">
               {streetItems.map(inv => {
-                const streetPrice = Math.floor(inv.quantity * 150);
-                const xpReward = Math.floor(inv.quantity * 10);
+                const quantity = streetQuantities[inv.id] || 1;
+                const streetPrice = Math.floor(quantity * 150);
+                const xpReward = Math.floor(quantity * 10);
                 const jailRisk = 35;
                 
                 return (
                   <div key={inv.id} className="market-item resell-item">
                     <img src={inv.item.icon} alt={inv.item.name} className="item-image" />
                     <h4>{inv.item.name}</h4>
-                    <p>Quantity: {inv.quantity}</p>
+                    <p>Available: {inv.quantity}</p>
+
+                    <div className="quantity-selector">
+                      <label>Quantity to Sell:</label>
+                      <div className="quantity-controls">
+                        <button 
+                          className="qty-btn"
+                          onClick={() => setStreetQuantities({ ...streetQuantities, [inv.id]: Math.max(1, quantity - 1) })}
+                          disabled={quantity <= 1}
+                        >
+                          -
+                        </button>
+                        <input 
+                          type="number" 
+                          min="1"
+                          max={inv.quantity}
+                          value={quantity}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            setStreetQuantities({ ...streetQuantities, [inv.id]: Math.min(Math.max(1, val), inv.quantity) });
+                          }}
+                          className="qty-input"
+                        />
+                        <button 
+                          className="qty-btn"
+                          onClick={() => setStreetQuantities({ ...streetQuantities, [inv.id]: Math.min(inv.quantity, quantity + 1) })}
+                          disabled={quantity >= inv.quantity}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="resell-stats">
                       <div className="stat">💵 ${streetPrice.toLocaleString()}</div>
                       <div className="stat">⭐ +{xpReward} XP</div>
@@ -230,9 +293,9 @@ export default function TheLifeBlackMarket({
                     </div>
                     <button 
                       className="market-sell-btn resell-btn"
-                      onClick={() => sellOnStreet(inv)}
+                      onClick={() => sellOnStreet(inv, quantity)}
                     >
-                      Sell on Streets
+                      Sell {quantity > 1 ? `(${quantity})` : ''} on Streets
                     </button>
                   </div>
                 );
@@ -289,31 +352,74 @@ export default function TheLifeBlackMarket({
             <p className="no-items">No items available in this category</p>
           ) : (
             <div className="market-items-grid">
-              {storeItems.map(storeItem => (
-                <div key={storeItem.id} className="market-item">
-                  <img src={storeItem.item.icon} alt={storeItem.item.name} className="item-image" />
-                  <h4>{storeItem.item.name}</h4>
-                  <p>{storeItem.item.description || 'No description'}</p>
-                  {storeItem.stock_quantity !== null && (
-                    <div className="stock-info">
-                      Stock: {storeItem.stock_quantity}
+              {storeItems.map(storeItem => {
+                const quantity = quantities[storeItem.id] || 1;
+                const totalCost = storeItem.price * quantity;
+                const maxQuantity = storeItem.stock_quantity !== null 
+                  ? Math.min(storeItem.stock_quantity, Math.floor(player.cash / storeItem.price))
+                  : Math.floor(player.cash / storeItem.price);
+                
+                return (
+                  <div key={storeItem.id} className="market-item">
+                    <img src={storeItem.item.icon} alt={storeItem.item.name} className="item-image" />
+                    <h4>{storeItem.item.name}</h4>
+                    <p>{storeItem.item.description || 'No description'}</p>
+                    {storeItem.stock_quantity !== null && (
+                      <div className="stock-info">
+                        Stock: {storeItem.stock_quantity}
+                      </div>
+                    )}
+                    {storeItem.limited_time_until && (
+                      <div className="limited-time-badge">
+                        ⏰ Limited Time
+                      </div>
+                    )}
+                    
+                    <div className="quantity-selector">
+                      <label>Quantity:</label>
+                      <div className="quantity-controls">
+                        <button 
+                          className="qty-btn"
+                          onClick={() => setQuantities({ ...quantities, [storeItem.id]: Math.max(1, quantity - 1) })}
+                          disabled={quantity <= 1}
+                        >
+                          -
+                        </button>
+                        <input 
+                          type="number" 
+                          min="1"
+                          max={maxQuantity}
+                          value={quantity}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            setQuantities({ ...quantities, [storeItem.id]: Math.min(Math.max(1, val), maxQuantity) });
+                          }}
+                          className="qty-input"
+                        />
+                        <button 
+                          className="qty-btn"
+                          onClick={() => setQuantities({ ...quantities, [storeItem.id]: Math.min(maxQuantity, quantity + 1) })}
+                          disabled={quantity >= maxQuantity}
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
-                  )}
-                  {storeItem.limited_time_until && (
-                    <div className="limited-time-badge">
-                      ⏰ Limited Time
+                    
+                    <div className="item-price">
+                      ${totalCost.toLocaleString()} 
+                      {quantity > 1 && <span className="unit-price">(${storeItem.price.toLocaleString()} each)</span>}
                     </div>
-                  )}
-                  <div className="item-price">${storeItem.price.toLocaleString()}</div>
-                  <button 
-                    className="market-buy-btn"
-                    onClick={() => buyStoreItem(storeItem)}
-                    disabled={player.cash < storeItem.price || (storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0)}
-                  >
-                    {storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0 ? 'Out of Stock' : 'Buy'}
-                  </button>
-                </div>
-              ))}
+                    <button 
+                      className="market-buy-btn"
+                      onClick={() => buyStoreItem(storeItem, quantity)}
+                      disabled={player.cash < totalCost || (storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0)}
+                    >
+                      {storeItem.stock_quantity !== null && storeItem.stock_quantity <= 0 ? 'Out of Stock' : `Buy ${quantity > 1 ? `(${quantity})` : ''}`}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

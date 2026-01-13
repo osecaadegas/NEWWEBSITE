@@ -2300,7 +2300,7 @@ export default function AdminPanel() {
       {/* Edit User Modal */}
       {editingUser && (
         <div className="modal-overlay" onClick={() => setEditingUser(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
             <h2>Manage User Roles</h2>
             <div className="modal-body">
               <div className="form-group">
@@ -2476,7 +2476,7 @@ export default function AdminPanel() {
       {/* Offer Modal */}
       {showOfferModal && (
         <div className="modal-overlay" onClick={closeOfferModal}>
-          <div className="modal-content offer-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content offer-modal large" onClick={(e) => e.stopPropagation()}>
             <h2>{editingOffer ? 'Edit Casino Offer' : 'Create New Casino Offer'}</h2>
             <div className="modal-body offer-form">
               <div className="offer-form-split">
@@ -4348,7 +4348,7 @@ export default function AdminPanel() {
           {/* Store Item Modal */}
           {showStoreModal && (
             <div className="modal-overlay" onClick={closeStoreModal}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>{editingStoreItem ? 'Edit Store Item' : 'Add Store Item'}</h2>
                   <button onClick={closeStoreModal} className="modal-close">×</button>
@@ -4568,7 +4568,7 @@ export default function AdminPanel() {
           {/* Boat Modal */}
           {showBoatModal && (
             <div className="modal-overlay" onClick={closeBoatModal}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>{editingBoat ? 'Edit Boat Schedule' : 'Schedule New Boat'}</h2>
                   <button onClick={closeBoatModal} className="modal-close">×</button>
@@ -4672,7 +4672,7 @@ export default function AdminPanel() {
           {/* Event Message Modal */}
           {showEventMessageModal && (
             <div className="modal-overlay" onClick={closeEventMessageModal}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>{editingEventMessage ? 'Edit Event Message' : 'Add New Event Message'}</h2>
                   <button onClick={closeEventMessageModal} className="modal-close">×</button>
@@ -4744,7 +4744,7 @@ export default function AdminPanel() {
           {/* Category Info Modal */}
           {showCategoryModal && (
             <div className="modal-overlay" onClick={closeCategoryModal}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>{editingCategory ? 'Edit Category Info' : 'Add New Category Info'}</h2>
                   <button onClick={closeCategoryModal} className="modal-close">×</button>
@@ -5084,7 +5084,7 @@ export default function AdminPanel() {
           {/* Prize Modal */}
           {showWheelModal && (
             <div className="modal-overlay" onClick={() => setShowWheelModal(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h2>{editingPrize ? 'Edit Prize' : 'Add New Prize'}</h2>
                   <button className="close-btn" onClick={() => setShowWheelModal(false)}>✕</button>

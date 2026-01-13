@@ -1,5 +1,5 @@
 import { supabase } from '../../../config/supabaseClient';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import '../styles/TheLifeCrimes.css';
 
 /**
@@ -17,6 +17,8 @@ export default function TheLifeCrimes({
   isInHospital 
 }) {
   const scrollContainerRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [cooldownCrimeId, setCooldownCrimeId] = useState(null);
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
@@ -28,6 +30,11 @@ export default function TheLifeCrimes({
     }
   };
   const attemptRobbery = async (robbery) => {
+    // Prevent spam clicking
+    if (loading || cooldownCrimeId === robbery.id) {
+      return;
+    }
+
     if (player.stamina < robbery.stamina_cost) {
       setMessage({ type: 'error', text: 'Not enough stamina!' });
       return;
@@ -39,6 +46,8 @@ export default function TheLifeCrimes({
     }
 
     try {
+      setLoading(true);
+      setCooldownCrimeId(robbery.id);
       const levelDifference = player.level - robbery.min_level_required;
       let successChance = robbery.success_rate;
       
@@ -201,6 +210,12 @@ export default function TheLifeCrimes({
     } catch (err) {
       console.error('Error attempting robbery:', err);
       setMessage({ type: 'error', text: 'An error occurred' });
+    } finally {
+      // Set cooldown for 1 second
+      setTimeout(() => {
+        setLoading(false);
+        setCooldownCrimeId(null);
+      }, 1000);
     }
   };
 
@@ -235,26 +250,37 @@ export default function TheLifeCrimes({
           
           displaySuccessChance = Math.max(5, Math.min(95, displaySuccessChance));
           
+          const isLoading = loading && cooldownCrimeId === robbery.id;
+          const isDisabled = player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost || loading;
+          
           return (
             <div 
               key={robbery.id} 
-              className={`crime-card ${player.level < robbery.min_level_required ? 'locked' : ''}`}
+              className={`crime-card ${player.level < robbery.min_level_required ? 'locked' : ''} ${isLoading ? 'loading' : ''}`}
             >
               <div 
                 className="crime-image-container"
                 onClick={() => {
-                  if (!(player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost)) {
+                  if (!isDisabled) {
                     attemptRobbery(robbery);
                   }
                 }}
                 style={{
-                  cursor: (player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost) ? 'not-allowed' : 'pointer'
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.6 : 1
                 }}
               >
                 <img src={imageUrl} alt={robbery.name} className="crime-image" />
                 {player.level < robbery.min_level_required && (
                   <div className="locked-overlay">
                     <span>🔒 Level {robbery.min_level_required} Required</span>
+                  </div>
+                )}
+                {isLoading && (
+                  <div className="loading-overlay">
+                    <div className="custom-loader">
+                      <div className="inner"></div>
+                    </div>
                   </div>
                 )}
                 <div className="crime-overlay-top">
@@ -273,9 +299,9 @@ export default function TheLifeCrimes({
                     e.stopPropagation();
                     attemptRobbery(robbery);
                   }}
-                  disabled={player.level < robbery.min_level_required || isInJail || isInHospital || player.stamina < robbery.stamina_cost}
+                  disabled={isDisabled}
                 >
-                  {player.level < robbery.min_level_required ? '🔒 Locked' : 'Commit Crime'}
+                  {isLoading ? '⏳ Processing...' : player.level < robbery.min_level_required ? '🔒 Locked' : 'Commit Crime'}
                 </button>
               </div>
             </div>
