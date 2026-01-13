@@ -544,33 +544,28 @@ export const useTheLifeData = (user) => {
 
   // Initialize data on mount
   useEffect(() => {
-    if (user && !loading) {
-      const loadData = async () => {
-        await initializePlayer();
-        // Load all data in parallel for faster initial load
-        await Promise.all([
-          loadRobberies(),
-          loadBusinesses(),
-          loadAvailableWorkers(),
-          loadCategoryInfo()
-        ]);
-        // These depend on player.id, load after player is initialized
-        if (player?.id) {
-          Promise.all([
-            loadTheLifeInventory(),
-            loadDrugOps(),
-            loadBrothel(),
-            loadHiredWorkers(),
-            loadOwnedBusinesses()
-          ]);
-        }
-        loadOnlinePlayers();
-        loadLeaderboard();
-        startStaminaRefill();
-      };
-      loadData();
+    if (user) {
+      initializePlayer();
+      loadRobberies();
+      loadBusinesses();
+      loadAvailableWorkers();
+      loadCategoryInfo();
+      loadOnlinePlayers();
+      loadLeaderboard();
     }
   }, [user]);
+
+  // Load player-specific data after player is initialized
+  useEffect(() => {
+    if (player?.id) {
+      loadTheLifeInventory();
+      loadDrugOps();
+      loadBrothel();
+      loadHiredWorkers();
+      loadOwnedBusinesses();
+      startStaminaRefill();
+    }
+  }, [player?.id]);
 
   // Subscribe to real-time updates
   useEffect(() => {
