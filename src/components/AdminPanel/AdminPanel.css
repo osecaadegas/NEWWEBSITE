@@ -2212,8 +2212,6 @@
   background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
   box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
 }
-  cursor: pointer;
-}
 
 /* Workers Management */
 .workers-grid-scroll {
