@@ -464,18 +464,31 @@ export const useTheLifeData = (user) => {
         return;
       }
 
-      // Batch fetch usernames from profiles for players without se_username
+      // Batch fetch usernames from SE connections and profiles for players without se_username
       const userIds = data.filter(p => !p.se_username && !p.twitch_username).map(p => p.user_id);
       
-      let profileMap = {};
+      let usernameMap = {};
       if (userIds.length > 0) {
+        // First check streamelements_connections for SE username
+        const { data: seConnections } = await supabase
+          .from('streamelements_connections')
+          .select('user_id, se_username')
+          .in('user_id', userIds);
+        
+        seConnections?.forEach(conn => {
+          if (conn.se_username) usernameMap[conn.user_id] = conn.se_username;
+        });
+
+        // Then check profiles for Twitch username as fallback
         const { data: profiles } = await supabase
           .from('user_profiles')
           .select('user_id, twitch_username')
           .in('user_id', userIds);
         
         profiles?.forEach(p => {
-          if (p.twitch_username) profileMap[p.user_id] = p.twitch_username;
+          if (p.twitch_username && !usernameMap[p.user_id]) {
+            usernameMap[p.user_id] = p.twitch_username;
+          }
         });
       }
 
@@ -484,7 +497,7 @@ export const useTheLifeData = (user) => {
         ...playerData,
         username: playerData.se_username || 
                   playerData.twitch_username || 
-                  profileMap[playerData.user_id] || 
+                  usernameMap[playerData.user_id] || 
                   'Player',
         net_worth: (playerData.cash || 0) + (playerData.bank_balance || 0)
       }));
