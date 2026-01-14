@@ -260,6 +260,7 @@ export function subscribeToRandomSlot(userId, callback) {
     .subscribe();
 
   return subscription;
+  */
 }
 
 export function unsubscribe(subscription) {
