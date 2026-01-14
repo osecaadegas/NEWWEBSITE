@@ -190,7 +190,10 @@ export default function TheLifeBusinesses({
         
         // Apply conversion rate if exists (for money laundering)
         if (business.conversion_rate) {
-          cashReward = Math.floor(cashReward * (1 - business.conversion_rate));
+          // Apply 50,000 max cap for money laundering
+          const maxCashReward = 50000;
+          const uncappedReward = Math.floor(cashReward * (1 - business.conversion_rate));
+          cashReward = Math.min(uncappedReward, maxCashReward);
         }
 
         // Store reward info in production
@@ -637,7 +640,9 @@ export default function TheLifeBusinesses({
               
               let cashReward = option.reward_cash * selectedQty;
               if (selectedBusiness?.conversion_rate) {
-                cashReward = Math.floor(cashReward * (1 - selectedBusiness.conversion_rate));
+                const maxCashReward = 50000;
+                const uncappedReward = Math.floor(cashReward * (1 - selectedBusiness.conversion_rate));
+                cashReward = Math.min(uncappedReward, maxCashReward);
               }
 
               return (
@@ -726,9 +731,16 @@ export default function TheLifeBusinesses({
                     <div style={{color: '#22c55e', fontWeight: '600', fontSize: '1rem'}}>
                       💰 Reward: ${cashReward.toLocaleString()}
                       {selectedBusiness?.conversion_rate && (
-                        <span style={{fontSize: '0.85rem', color: '#cbd5e0', marginLeft: '8px'}}>
-                          ({(selectedBusiness.conversion_rate * 100).toFixed(0)}% fee applied)
-                        </span>
+                        <>
+                          <span style={{fontSize: '0.85rem', color: '#cbd5e0', marginLeft: '8px'}}>
+                            ({(selectedBusiness.conversion_rate * 100).toFixed(0)}% fee applied)
+                          </span>
+                          {cashReward >= 50000 && (
+                            <span style={{fontSize: '0.85rem', color: '#fbbf24', marginLeft: '8px', fontWeight: 'bold'}}>
+                              (MAX CAP: $50,000)
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

@@ -22,25 +22,16 @@ export function useSubscription() {
 
     loadSubscription();
 
-    // Subscribe to subscription changes
-    const channel = supabase
-      .channel(`subscription_${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'subscriptions',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          setSubscription(payload.new);
-        }
-      )
-      .subscribe();
+    // REPLACED REALTIME WITH POLLING TO REDUCE EGRESS
+    console.warn('useSubscription: Realtime disabled for egress reduction. Using polling instead.');
+    
+    // Poll every 60 seconds (subscription status rarely changes)
+    const subscriptionInterval = setInterval(() => {
+      loadSubscription();
+    }, 60000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(subscriptionInterval);
     };
   }, [user]);
 

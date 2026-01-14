@@ -491,3 +491,75 @@
   color: rgba(255, 255, 255, 0.5);
   font-style: italic;
 }
+
+/* Winners Button */
+.view-winners-btn {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.view-winners-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+}
+
+/* Winners Modal Specific Styles */
+.winners-modal .modal-header {
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
+  border-bottom-color: rgba(240, 147, 251, 0.3);
+}
+
+.winner-row {
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.1), rgba(245, 87, 108, 0.1));
+  border-color: rgba(240, 147, 251, 0.3);
+}
+
+.winner-row:hover {
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.15), rgba(245, 87, 108, 0.15));
+  border-color: rgba(240, 147, 251, 0.5);
+}
+
+.winner-position {
+  font-size: 1.5rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.winner-avatar {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  box-shadow: 0 4px 12px rgba(240, 147, 251, 0.4);
+}
+
+.winner-name {
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.winner-crown {
+  font-size: 1.2rem;
+  animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}

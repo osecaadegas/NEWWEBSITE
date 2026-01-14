@@ -571,69 +571,43 @@ export const useTheLifeData = (user) => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel(`thelife-updates-${user.id}`, {
-        config: {
-          broadcast: { self: true },
-          presence: { key: user.id }
+    // REPLACED REALTIME WITH POLLING TO REDUCE EGRESS
+    console.warn('useTheLifeData: Realtime disabled for egress reduction. Using polling instead.');
+    
+    // Poll player data every 15 seconds (needs to be responsive for gameplay)
+    const playerInterval = setInterval(async () => {
+      const { data } = await supabase
+        .from('the_life_players')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data) {
+        setPlayer(prevPlayer => ({
+          ...prevPlayer,
+          ...data
+        }));
+        
+        // If player was sent to hospital or jail, show message
+        if (data.hp === 0 && data.hospital_until && (!player || player.hp !== 0)) {
+          setMessage({ 
+            type: 'error', 
+            text: 'You were attacked and sent to the hospital!' 
+          });
         }
-      })
-      .on('postgres_changes', 
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'the_life_players'
-        }, 
-        (payload) => {
-          // Only update if this is the current user's data
-          if (payload.new && payload.new.user_id === user.id) {
-            setPlayer(prevPlayer => ({
-              ...prevPlayer,
-              ...payload.new
-            }));
-            
-            // If player was sent to hospital or jail, show message
-            if (payload.new.hp === 0 && payload.new.hospital_until) {
-              setMessage({ 
-                type: 'error', 
-                text: 'You were attacked and sent to the hospital!' 
-              });
-            }
-          }
-        }
-      )
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'the_life_robberies' 
-        }, 
-        () => loadRobberies()
-      )
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'the_life_category_info' 
-        }, 
-        () => loadCategoryInfo()
-      )
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'the_life_player_inventory' 
-        }, 
-        () => loadTheLifeInventory()
-      )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error('Realtime connection issue:', status);
-        }
-      });
+      }
+    }, 15000);
+    
+    // Poll other data every 30 seconds (less critical)
+    const dataInterval = setInterval(() => {
+      loadRobberies();
+      loadCategoryInfo();
+      loadTheLifeInventory();
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(playerInterval);
+      clearInterval(dataInterval);
     };
   }, [user?.id]); // Only depend on user.id, not player
 

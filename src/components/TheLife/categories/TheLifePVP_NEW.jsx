@@ -153,17 +153,18 @@ export default function TheLifePVP({
         setPlayer(updatedPlayer);
       }
 
-      // Send broadcast notification to target player
-      await supabase.channel(`player-attacks-${target.user_id}`).send({
-        type: 'broadcast',
-        event: 'player_attacked',
-        payload: {
-          target_user_id: target.user_id,
-          attacker_username: player.se_username || 'Player',
-          won: result.won,
-          timestamp: new Date().toISOString()
-        }
-      });
+      // DISABLED BROADCAST NOTIFICATION TO REDUCE EGRESS
+      // Target player will see the update on their next poll (15 seconds)
+      // await supabase.channel(`player-attacks-${target.user_id}`).send({
+      //   type: 'broadcast',
+      //   event: 'player_attacked',
+      //   payload: {
+      //     target_user_id: target.user_id,
+      //     attacker_username: player.se_username || 'Player',
+      //     won: result.won,
+      //     timestamp: new Date().toISOString()
+      //   }
+      // });
 
       // Refresh lists
       loadOnlinePlayers();
@@ -200,85 +201,41 @@ export default function TheLifePVP({
     sendHeartbeat();
     const heartbeatInterval = setInterval(sendHeartbeat, 30000);
 
-    // Listen for attack notifications via broadcast
-    const attackChannel = supabase
-      .channel(`player-attacks-${user.id}`)
-      .on('broadcast', { event: 'player_attacked' }, (payload) => {
-        if (payload.payload.target_user_id === user.id) {
-          // Refresh player data immediately
-          supabase
-            .from('the_life_players')
-            .select('*')
-            .eq('user_id', user.id)
-            .single()
-            .then(({ data }) => {
-              if (data) setPlayer(data);
-            });
-        }
-      })
-      .subscribe();
+    // REPLACED REALTIME ATTACK NOTIFICATIONS WITH POLLING TO REDUCE EGRESS
+    console.warn('TheLifePVP: Attack notifications disabled for egress reduction. Player data polled every 15s.');
+    
+    // The player data is already being polled in useTheLifeData.js every 15 seconds
+    // This will catch attack updates without needing a broadcast channel
 
     return () => {
       clearInterval(heartbeatInterval);
-      supabase.removeChannel(attackChannel);
     };
   }, [player?.id, user?.id]);
 
-  // Load data
+  // Load data - REPLACED REALTIME WITH POLLING TO REDUCE EGRESS
   useEffect(() => {
     loadChat();
     loadBattleLogs();
     loadOnlinePlayers();
 
-    const chatSub = supabase
-      .channel('pvp_chat')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'the_life_pvp_chat' },
-        () => loadChat()
-      )
-      .subscribe();
+    // Poll for chat updates every 5 seconds instead of Realtime
+    const chatInterval = setInterval(() => {
+      loadChat();
+    }, 5000);
 
-    const logsSub = supabase
-      .channel('pvp_logs')
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'the_life_pvp_logs' },
-        async (payload) => {
-          loadBattleLogs();
-          
-          // Check if current player was defeated
-          if (payload.new.defender_id === player?.id && payload.new.winner_id !== player?.id) {
-            // Player was attacked and lost - show defeat popup
-            const { data: attackerData } = await supabase
-              .from('the_life_players')
-              .select('se_username, avatar_url, user_id')
-              .eq('id', payload.new.attacker_id)
-              .single();
+    // Poll for battle logs every 10 seconds instead of Realtime
+    const logsInterval = setInterval(() => {
+      loadBattleLogs();
+    }, 10000);
 
-            if (attackerData) {
-              setDefeatedPopup({
-                attacker: attackerData,
-                cashStolen: payload.new.cash_stolen
-              });
-
-              // Auto close after 10 seconds and redirect to hospital
-              setTimeout(() => {
-                setDefeatedPopup(null);
-                setActiveTab?.('hospital');
-              }, 10000);
-            }
-          }
-        }
-      )
-      .subscribe();
-
+    // Poll for online players every 20 seconds
     const refreshInterval = setInterval(() => {
       loadOnlinePlayers();
-      loadBattleLogs();
     }, 20000);
 
     return () => {
-      chatSub.unsubscribe();
-      logsSub.unsubscribe();
+      clearInterval(chatInterval);
+      clearInterval(logsInterval);
       clearInterval(refreshInterval);
     };
   }, []);

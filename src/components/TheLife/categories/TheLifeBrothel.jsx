@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../../config/supabaseClient';
 import '../styles/TheLifeBrothel.css';
 
@@ -20,6 +20,29 @@ export default function TheLifeBrothel({
   user
 }) {
   const [showHiredWorkers, setShowHiredWorkers] = useState(false);
+
+  // Sync worker count when data loads
+  useEffect(() => {
+    const syncWorkerCount = async () => {
+      if (brothel && hiredWorkers.length > 0) {
+        const actualCount = hiredWorkers.length;
+        const storedCount = brothel.workers || 0;
+        
+        // Fix mismatch
+        if (actualCount !== storedCount) {
+          console.log(`Syncing worker count: stored=${storedCount}, actual=${actualCount}`);
+          await supabase.from('the_life_brothels').update({
+            workers: actualCount
+          }).eq('id', brothel.id);
+          
+          // Reload to get updated data
+          await loadBrothel();
+        }
+      }
+    };
+    
+    syncWorkerCount();
+  }, [brothel, hiredWorkers]);
 
   // Initialize brothel
   const initBrothel = async () => {
@@ -71,7 +94,7 @@ export default function TheLifeBrothel({
     }
 
     const totalSlots = (brothel.worker_slots || 3) + (brothel.additional_slots || 0);
-    const usedSlots = brothel.workers || 0;
+    const usedSlots = hiredWorkers.length; // Use actual hired workers count
 
     if (usedSlots >= totalSlots) {
       setMessage({ type: 'error', text: `No worker slots available! (${usedSlots}/${totalSlots} used)` });
@@ -95,7 +118,7 @@ export default function TheLifeBrothel({
       });
 
       const newTotalIncome = (brothel.income_per_hour || 0) + worker.income_per_hour;
-      const newWorkerCount = (brothel.workers || 0) + 1;
+      const newWorkerCount = hiredWorkers.length + 1; // Calculate from actual count
 
       await supabase.from('the_life_brothels').update({
         workers: newWorkerCount,
@@ -131,7 +154,7 @@ export default function TheLifeBrothel({
       await supabase.from('the_life_player_brothel_workers').delete().eq('id', hiredWorker.id);
 
       const newTotalIncome = (brothel.income_per_hour || 0) - hiredWorker.worker.income_per_hour;
-      const newWorkerCount = (brothel.workers || 0) - 1;
+      const newWorkerCount = hiredWorkers.length - 1; // Calculate from actual count
 
       await supabase.from('the_life_brothels').update({
         workers: Math.max(0, newWorkerCount),
@@ -298,7 +321,7 @@ export default function TheLifeBrothel({
 
   // Main brothel view
   const totalSlots = (brothel.worker_slots || 3) + (brothel.additional_slots || 0);
-  const usedSlots = brothel.workers || 0;
+  const usedSlots = hiredWorkers.length; // Use actual hired workers count
   const availableIncome = calculateAvailableIncome();
   const slotsFull = usedSlots >= totalSlots;
 

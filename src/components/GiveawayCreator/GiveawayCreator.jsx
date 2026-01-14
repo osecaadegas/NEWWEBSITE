@@ -9,6 +9,9 @@ function GiveawayCreator() {
   const [showParticipants, setShowParticipants] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [showWinners, setShowWinners] = useState(null);
+  const [winners, setWinners] = useState([]);
+  const [loadingWinners, setLoadingWinners] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -255,6 +258,60 @@ function GiveawayCreator() {
     }
   };
 
+  const viewWinners = async (giveawayId) => {
+    setShowWinners(giveawayId);
+    setLoadingWinners(true);
+
+    try {
+      const { data: winnerRecords, error } = await supabase
+        .from('giveaway_winners')
+        .select('user_id, selected_at')
+        .eq('giveaway_id', giveawayId)
+        .order('selected_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Get SE usernames
+      const { data: seAccounts } = await supabase
+        .from('streamelements_connections')
+        .select('user_id, se_username');
+
+      // Get Twitch usernames
+      const { data: userProfiles } = await supabase
+        .from('user_profiles')
+        .select('user_id, twitch_username');
+
+      const seUsernameMap = {};
+      if (seAccounts) {
+        seAccounts.forEach(account => {
+          seUsernameMap[account.user_id] = account.se_username;
+        });
+      }
+
+      const twitchUsernameMap = {};
+      if (userProfiles) {
+        userProfiles.forEach(profile => {
+          if (profile.twitch_username) {
+            twitchUsernameMap[profile.user_id] = profile.twitch_username;
+          }
+        });
+      }
+
+      const enrichedWinners = winnerRecords?.map((winner, index) => ({
+        ...winner,
+        username: seUsernameMap[winner.user_id] || twitchUsernameMap[winner.user_id] || 'Unknown User',
+        position: index + 1
+      })) || [];
+
+      setWinners(enrichedWinners);
+    } catch (error) {
+      console.error('Error fetching winners:', error);
+      alert('Failed to load winners');
+    } finally {
+      setLoadingWinners(false);
+    }
+  };
+
   if (loading) {
     return <div className="giveaway-creator"><div className="loading">Loading...</div></div>;
   }
@@ -439,7 +496,12 @@ function GiveawayCreator() {
                       </button>
                     )}
                     {winnersCount > 0 && (
-                      <span className="winners-badge">🏆 {winnersCount} Winner(s)</span>
+                      <button 
+                        onClick={() => viewWinners(giveaway.id)}
+                        className="view-winners-btn"
+                      >
+                        🏆 View Winners ({winnersCount})
+                      </button>
                     )}
                     <button 
                       onClick={() => deleteGiveaway(giveaway.id)}
@@ -492,6 +554,51 @@ function GiveawayCreator() {
                       >
                         Remove
                       </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Winners Modal */}
+      {showWinners && (
+        <>
+          <div className="modal-overlay" onClick={() => setShowWinners(null)}></div>
+          <div className="participants-modal winners-modal">
+            <div className="modal-header">
+              <h2>🏆 Giveaway Winners</h2>
+              <button className="modal-close" onClick={() => setShowWinners(null)}>✕</button>
+            </div>
+            
+            <div className="modal-body">
+              {loadingWinners ? (
+                <div className="loading">Loading winners...</div>
+              ) : winners.length === 0 ? (
+                <div className="empty-state">No winners yet</div>
+              ) : (
+                <div className="participants-list">
+                  {winners.map((winner) => (
+                    <div key={winner.user_id} className="participant-row winner-row">
+                      <div className="participant-info">
+                        <div className="winner-position">
+                          {winner.position === 1 ? '🥇' : winner.position === 2 ? '🥈' : winner.position === 3 ? '🥉' : `#${winner.position}`}
+                        </div>
+                        <div className="participant-avatar winner-avatar">
+                          {winner.username.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="participant-details">
+                          <div className="participant-name winner-name">
+                            {winner.username}
+                            <span className="winner-crown">👑</span>
+                          </div>
+                          <div className="participant-meta">
+                            Won on {new Date(winner.selected_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

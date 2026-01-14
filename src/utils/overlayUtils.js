@@ -197,8 +197,14 @@ export async function upsertUserRandomSlot(userId, randomSlotState) {
 }
 
 // ==================== REAL-TIME SUBSCRIPTIONS ====================
+// ⚠️ DISABLED TO REDUCE EGRESS - Use polling instead
 
 export function subscribeToOverlayState(userId, callback) {
+  // REALTIME DISABLED - Implement polling in your component instead
+  console.warn('subscribeToOverlayState: Realtime disabled for egress reduction. Use polling.');
+  return { unsubscribe: () => {} };
+  
+  /* ORIGINAL REALTIME CODE (DISABLED):
   const subscription = supabase
     .channel(`overlay_state_${userId}`)
     .on(
@@ -216,49 +222,27 @@ export function subscribeToOverlayState(userId, callback) {
     .subscribe();
 
   return subscription;
+  */
 }
 
 export function subscribeToTournament(userId, callback) {
-  const subscription = supabase
-    .channel(`tournament_${userId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'user_tournaments',
-        filter: `user_id=eq.${userId}`
-      },
-      (payload) => {
-        callback(payload);
-      }
-    )
-    .subscribe();
-
-  return subscription;
+  // REALTIME DISABLED - Use polling instead
+  console.warn('subscribeToTournament: Realtime disabled for egress reduction');
+  return { unsubscribe: () => {} };
 }
 
 export function subscribeToGiveaway(userId, callback) {
-  const subscription = supabase
-    .channel(`giveaway_${userId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'user_giveaways',
-        filter: `user_id=eq.${userId}`
-      },
-      (payload) => {
-        callback(payload);
-      }
-    )
-    .subscribe();
-
-  return subscription;
+  // REALTIME DISABLED - Use polling instead
+  console.warn('subscribeToGiveaway: Realtime disabled for egress reduction');
+  return { unsubscribe: () => {} };
 }
 
 export function subscribeToRandomSlot(userId, callback) {
+  // REALTIME DISABLED - Use polling instead
+  console.warn('subscribeToRandomSlot: Realtime disabled for egress reduction');
+  return { unsubscribe: () => {} };
+  
+  /* ORIGINAL CODE (DISABLED):
   const subscription = supabase
     .channel(`random_slot_${userId}`)
     .on(

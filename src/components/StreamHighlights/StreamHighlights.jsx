@@ -12,23 +12,16 @@ export default function StreamHighlights() {
   useEffect(() => {
     loadHighlights();
 
-    const channel = supabase
-      .channel('highlights-changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'stream_highlights' 
-        }, 
-        (payload) => {
-          console.log('Highlights changed, reloading...', payload);
-          loadHighlights();
-        }
-      )
-      .subscribe();
+    // REPLACED REALTIME WITH POLLING TO REDUCE EGRESS
+    console.warn('StreamHighlights: Realtime disabled for egress reduction. Using polling instead.');
+    
+    // Poll every 30 seconds (highlights don't change frequently)
+    const highlightsInterval = setInterval(() => {
+      loadHighlights();
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(highlightsInterval);
     };
   }, []);
 

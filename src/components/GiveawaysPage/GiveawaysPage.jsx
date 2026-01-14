@@ -15,13 +15,31 @@ export default function GiveawaysPage() {
   useEffect(() => {
     fetchGiveaways();
     fetchAllParticipants();
+    checkAndDrawExpiredGiveaways();
     if (user) {
       fetchUserEntries();
     }
   }, [user]);
 
+  const checkAndDrawExpiredGiveaways = async () => {
+    try {
+      // Call the auto-draw API to check and draw winners for expired giveaways
+      await fetch('/api/auto-draw-winners', {
+        method: 'POST'
+      });
+      // Refresh giveaways after auto-draw
+      setTimeout(() => fetchGiveaways(), 2000);
+    } catch (error) {
+      console.error('Error checking expired giveaways:', error);
+    }
+  };
+
   const fetchGiveaways = async () => {
     try {
+      // Fetch active giveaways OR recently ended giveaways with winners (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
       const { data, error } = await supabase
         .from('giveaways')
         .select(`
@@ -29,8 +47,7 @@ export default function GiveawaysPage() {
           giveaway_entries(count),
           giveaway_winners(user_id)
         `)
-        .eq('is_active', true)
-        .gte('ends_at', new Date().toISOString())
+        .or(`is_active.eq.true,and(winners_drawn.eq.true,ends_at.gte.${sevenDaysAgo.toISOString()})`)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -330,6 +347,8 @@ export default function GiveawaysPage() {
               const userTickets = userEntries[giveaway.id] || 0;
               const winners = giveawayWinners[giveaway.id] || [];
               const isWinner = winners.some(w => w.user_id === user?.id);
+              const isExpired = new Date(giveaway.ends_at) < new Date();
+              const isEnded = !giveaway.is_active || isExpired;
               
               return (
                 <div key={giveaway.id} className="group relative bg-black/40 backdrop-blur-xl border border-yellow-500/20 rounded-3xl overflow-hidden hover:border-yellow-500/60 hover:scale-[1.02] transition-all duration-300 hover:shadow-2xl hover:shadow-yellow-500/25">
@@ -359,7 +378,7 @@ export default function GiveawaysPage() {
                       <img src={giveaway.image_url} alt={giveaway.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                       <div className="absolute top-4 right-4 bg-black/90 backdrop-blur-md px-4 py-2 rounded-xl text-sm font-bold text-yellow-400 shadow-xl border border-yellow-500/30">
-                        ⏱ {getTimeRemaining(giveaway.ends_at)}
+                        {isEnded ? '⏱ ENDED' : `⏱ ${getTimeRemaining(giveaway.ends_at)}`}
                       </div>
                     </div>
                   )}
@@ -405,6 +424,10 @@ export default function GiveawaysPage() {
                     {!user ? (
                       <button className="w-full bg-gray-700/50 border border-gray-600 text-gray-300 font-bold py-4 px-6 rounded-2xl cursor-not-allowed backdrop-blur-sm">
                         🔒 Login to Enter
+                      </button>
+                    ) : isEnded ? (
+                      <button className="w-full bg-gray-700/50 border border-gray-600 text-gray-300 font-bold py-4 px-6 rounded-2xl cursor-not-allowed backdrop-blur-sm">
+                        🔒 Giveaway Ended
                       </button>
                     ) : userTickets > 0 && !giveaway.allow_multiple_tickets ? (
                       <button className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-black py-4 px-6 rounded-2xl shadow-lg shadow-green-500/30 cursor-default">

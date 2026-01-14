@@ -31,23 +31,24 @@ export default function TheLifeBlackMarket({
   const loadStoreItems = async () => {
     setLoadingStore(true);
     try {
+      // Filter out expired limited time items first
+      const now = new Date().toISOString();
+      
       let query = supabase
         .from('the_life_store_items')
         .select(`
           *,
-          item:the_life_items(*)
+          item:the_life_items(id, name, icon, description)
         `)
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
+        .or(`limited_time_until.is.null,limited_time_until.gte.${now}`)
+        .order('display_order', { ascending: true })
+        .limit(50); // Limit to 50 items max
 
       // Filter by category if not 'all'
       if (storeCategory !== 'all') {
         query = query.eq('category', storeCategory);
       }
-
-      // Filter out expired limited time items
-      const now = new Date().toISOString();
-      query = query.or(`limited_time_until.is.null,limited_time_until.gte.${now}`);
 
       const { data, error } = await query;
 
@@ -251,7 +252,13 @@ export default function TheLifeBlackMarket({
                 
                 return (
                   <div key={inv.id} className="market-item resell-item">
-                    <img src={inv.item.icon} alt={inv.item.name} className="item-image" />
+                    <img 
+                      src={inv.item.icon} 
+                      alt={inv.item.name} 
+                      className="item-image"
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <h4>{inv.item.name}</h4>
                     <p>Available: {inv.quantity}</p>
 
@@ -361,7 +368,13 @@ export default function TheLifeBlackMarket({
                 
                 return (
                   <div key={storeItem.id} className="market-item">
-                    <img src={storeItem.item.icon} alt={storeItem.item.name} className="item-image" />
+                    <img 
+                      src={storeItem.item.icon} 
+                      alt={storeItem.item.name} 
+                      className="item-image"
+                      loading="lazy"
+                      decoding="async"
+                    />
                     <h4>{storeItem.item.name}</h4>
                     <p>{storeItem.item.description || 'No description'}</p>
                     {storeItem.stock_quantity !== null && (
