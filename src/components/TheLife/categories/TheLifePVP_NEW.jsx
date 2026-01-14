@@ -60,7 +60,56 @@ export default function TheLifePVP({
         .order('created_at', { ascending: false })
         .limit(20);
 
-      setBattleLogs(data || []);
+      if (!data || data.length === 0) {
+        setBattleLogs([]);
+        return;
+      }
+
+      // Get user IDs for players without se_username
+      const userIds = [];
+      data.forEach(log => {
+        if (log.attacker && !log.attacker.se_username) userIds.push(log.attacker.user_id);
+        if (log.defender && !log.defender.se_username) userIds.push(log.defender.user_id);
+      });
+
+      // Fetch SE usernames for players without them
+      let usernameMap = {};
+      if (userIds.length > 0) {
+        const { data: seConnections } = await supabase
+          .from('streamelements_connections')
+          .select('user_id, se_username')
+          .in('user_id', userIds);
+
+        seConnections?.forEach(conn => {
+          if (conn.se_username) usernameMap[conn.user_id] = conn.se_username;
+        });
+
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, twitch_username')
+          .in('user_id', userIds);
+
+        profiles?.forEach(p => {
+          if (p.twitch_username && !usernameMap[p.user_id]) {
+            usernameMap[p.user_id] = p.twitch_username;
+          }
+        });
+      }
+
+      // Enrich logs with usernames
+      const enrichedLogs = data.map(log => ({
+        ...log,
+        attacker: log.attacker ? {
+          ...log.attacker,
+          se_username: log.attacker.se_username || usernameMap[log.attacker.user_id] || 'Player'
+        } : null,
+        defender: log.defender ? {
+          ...log.defender,
+          se_username: log.defender.se_username || usernameMap[log.defender.user_id] || 'Player'
+        } : null
+      }));
+
+      setBattleLogs(enrichedLogs);
     } catch (err) {
       console.error('Battle log error:', err);
     }
